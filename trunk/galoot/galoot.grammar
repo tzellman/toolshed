@@ -37,7 +37,7 @@ Tokens
     x     = ')('  ;
     y     = '¥'   ;
     z     = '2'   ;
-    blank = (' ' | 13 | 10)+; 
+    blank = (' ' | 13 | 10)+;
 
 //Ignored Tokens
 //    blank;
@@ -88,3 +88,16 @@ letter
        | {y} y
        | {z} z
        ;
+
+
+Abstract Syntax Tree
+
+   
+foreach
+    = [iter]:iterable [stmts]:statements*
+ 
+
+iterable
+    = {}
+
+
