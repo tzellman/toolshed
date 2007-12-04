@@ -1,0 +1,13 @@
+An amusement park is always fun to visit on a hot summer
+{{ noun.0 }}. When you get there, you can rent a
+{{ noun.1 }} and go for a swim. And there are lots of
+{{ adjective.0 }} things to eat. You can start off with a hot dog on
+a/an {{ noun.2 }} with mustard, relish, and {{ plnoun.0 }}
+on it. Then you can have a buttered ear of {{ noun.3 }} with a
+nice {{ adjective.1 }} slice of watermelon and a big bottle of
+cold {{ liquid.0 }}. When you are full, it's time to go on the
+roller coaster, which should settle your {{ noun.4 }}.
+Other amusement park rides are the Dodge-Em which has little
+{{ plnoun.1 }}, that you drive and run into other {{ plnoun.2 }},
+and the Merry-Go-Round where you can sit on a big {{ noun.5 }}
+and try to grab the gold {{ noun.6 }} as you ride past.
