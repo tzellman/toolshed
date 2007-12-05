@@ -1,5 +1,5 @@
 #labels Featured
-#Galoot is a Java templating engine, similar to the Django templating engine for Python.
+Galoot is a Java templating engine, similar to the Django templating engine for Python.
 
 = Introduction =
 
