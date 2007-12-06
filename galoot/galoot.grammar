@@ -10,11 +10,11 @@ Helpers
     any_char        = [0x0 .. 0xfffff];
 
     //whitespace
-    ht  = 9;
-    lf  = 10;
-    ff  = 12;
-    cr  = 13;
-    whitespace      = ht| lf | ff | cr | ' ';
+    ht              = 9;
+    lf              = 10;
+    ff              = 12;
+    cr              = 13;
+    ws              = ht| lf | ff | cr | ' ';
     
     variable_id     = (alpha | '_') (alpha_num | '_')*;
     member_id       = (alpha_num | '_')+;
@@ -37,8 +37,13 @@ States
     expr,           //when "inside" an expression: e.g. var.member
     expr_member,    //used to disambiguate id and member
     var_member,     //used to disambiguate id and member
-    tag,
-    command
+    command,        //TODO this might go away
+    block_tag,      //{% block name %} stuff {% endblock %}
+    load_tag,       //{% load plugin1 plugin2 %}
+    include_tag,    //{% include "file.html" %}, {% include fileFromVar %}
+    comment_block,  //{% comment %} foo bar {% endcomment %}
+    for_tag,        //{% for i in var %} do something {% endfor %}
+    if_tag          //{% if not var and var2 %} {% else %} {% endif %}
     ;
 
     
@@ -47,7 +52,7 @@ Tokens
 ///////////////////////////////////////////////////////////////////////////////
 
     {default}
-        comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
+        simple_comment  = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
     
     {default->var}
         var_start       = '{{';
@@ -55,73 +60,150 @@ Tokens
     {var->default}
         var_end         = '}}';
     
+    {default->block_tag}
+        block_start     = '{%' ws* 'block' ws+;
+    
+    {default->load_tag}
+        load_start      = '{%' ws* 'load' ws+;
+    
+    {default->include_tag}
+        include_start   = '{%' ws* 'include' ws+;
+    
+    {default->for_tag}
+        for_start       = '{%' ws* 'for' ws+;
+    
+    {default->if_tag}
+        if_start        = '{%' ws* 'if' ws+;
+    
+    {default}
+        else_tag        = '{%' ws* 'else' ws* '%}';
+    
+    {default}
+        if_end          = '{%' ws* 'endif' ws* '%}';
+    
+    {default->comment_block}
+        comment_start   = '{%' ws* 'comment' ws* '%}';
+    
+    {block_tag->default, load_tag->default, include_tag->default, for_tag->default, if_tag->default}
+        tag_end         = '%}';
+    
+    {default}
+        for_end         = '{%' ws* 'endfor' ws* '%}';
+    
+    {default}
+        block_end       = '{%' ws* 'endblock' ws* '%}';
+    
+    {comment_block->default}
+        comment_end     = '{%' ws* 'endcomment' ws* '%}';
+    
+    {comment_block}
+        comment_text    = any_char;
+    
     {default->command}
-        command_start   = '{>';
+        command_start   = '{%';
     
     {command->default}
-        command_end     = '<}';
+        command_end     = '%}';
     
-    {command}
+    {command, include_tag}
         string_literal  = '"' string_char* '"';
     
     {var->var_member, expr->expr_member}
         dot             = '.';
     
-    {var, expr, tag, command}
+    {for_tag}
+        kw_in           = 'in';
+    
+    {if_tag}
+        kw_not          = 'not';
+    
+    {if_tag}
+        kw_and          = 'and';
+    
+    {if_tag}
+        kw_or           = 'or';
+    
+    {var, expr, command, block_tag, load_tag, include_tag, for_tag, if_tag}
         id              = variable_id;
     
-    {expr_member->expr, var_member->var}
+    {expr_member->expr, var_member->var, include_tag, for_tag, if_tag}
         member          = member_id;
     
-    {expr, var, tag, command}
-        strip_ws        = whitespace+;
+    {expr, var, command, block_tag, load_tag, include_tag, for_tag, if_tag}
+        strip_ws        = ws+;
     
     {default}
         text_char       = any_char;
-    
-//    {default->tag}
-//        tag_start       = '{%';
-    
-//    {tag->default}
-//        tag_end         = '%}';
-    
-//    {tag} kw_block      = 'block';
-//    {tag} kw_endblock   = 'endblock';
-//    
-//    {tag} kw_for        = 'for';
-//    {tag} kw_in         = 'in';
-//    {tag} kw_endfor     = 'endfor';
-//    
-    
     
     
 
 ///////////////////////////////////////////////////////////////////////////////
 Ignored Tokens
 ///////////////////////////////////////////////////////////////////////////////
-    strip_ws, comment;
+    strip_ws,           //ignore whitespace (for certain states)
+    simple_comment,     //ignore simple comments, in the default state
+    comment_start,      //ignore the start of a comment block
+    comment_end,        //ignore the end of a comment block
+    comment_text        //ignore comment text
+    ;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 Productions
 ///////////////////////////////////////////////////////////////////////////////
 
-    document = [entities]:entity+;
+    document = [entities]:entity*;
     
     entity {-> entity} =
             {char}      [char]:text_char                                {-> New entity.char(char)}
         |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
         |   {command}   command_start [command]:command command_end     {-> New entity.command(command)}
-//        |   {block}     tag_start [block]:tag_block                               {-> New entity.tag_block(block)}
+        |   {block}     [block]:block                                   {-> New entity.block(block)}
+        |   {load}      [load]:load                                     {-> New entity.load(load)}
+        |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
+        |   {for}       [for]:for_block                                 {-> New entity.for(for)}
+        |   {if}        [if]:if_block                                   {-> New entity.if(if)}
         ;
     
-//    block_prefix {-> block_prefix} =
-//            tag_start kw_block [block]:id tag_end;
+    for_block {-> for_block} =
+                        for_start [iter_var]:id kw_in
+                            [variable]:var_expression tag_end
+                            [entities]:entity* for_end                  {-> New for_block(iter_var, variable, [entities.entity])}
+        ;
     
-//    block_suffix =      tag_start kw_endblock tag_end;
+    if_block {-> if_block} =
+                        if_start [expr1]:boolean_expr [expr2]:boolean_op?
+                            tag_end [entities]:entity*
+                            [else]:else_block? if_end                   {-> New if_block(expr1, expr2, [entities.entity], [else.entity])}
+        ;
+
+    boolean_expr {-> boolean_expr} =
+                        [not]:kw_not? [variable]:var_expression         {-> New boolean_expr(not, variable)}
+        ;
+
+    else_block {-> entity*} =
+                        else_tag [entities]:entity*                     {-> [entities.entity]}
+        ;
+
+                        
+    boolean_op {-> boolean_op} =
+            {and}   kw_and [not]:kw_not? [variable]:var_expression      {-> New boolean_op.and(not, variable)}
+        |   {or}    kw_or [not]:kw_not? [variable]:var_expression       {-> New boolean_op.or(not, variable)}
+        ;
     
-//    block {-> block} =
-//             [entities]:entity+;
+    
+    block {-> block} =
+                        block_start [id]:id tag_end
+                            [entities]:entity* block_end                {-> New block(id, [entities.entity])}
+        ;
+    
+    load {-> load} =    load_start [plugins]:id+ tag_end                {-> New load([plugins])}
+        ;
+    
+    include {-> include} =
+            {string}    [string]:string_literal                         {-> New include.string(string)}
+        |   {variable}  [variable]:var_expression                       {-> New include.variable(variable)}
+        ;
 
     var_expression {-> var_expression} = 
             {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression(referent, [lookup.member])}
@@ -140,28 +222,23 @@ Productions
             {string}    [string]:string_literal                         {-> New argument.string(string)}
         ;
     
-    
-//    tag_block {-> tag_block} =
-//            {for_loop}  [start]:start_for [entities]:entity* end_for    {-> New tag_block.for_loop(start, [entities.entity])};
-//            
-//    start_for {-> start_for} =
-//            tag_start kw_for [local_var]:id kw_in
-//                [referent]:id [lookup]:memberchain? tag_end             {-> New start_for(local_var, referent, [lookup.member])}
-//        ;
-//    
-//    end_for =           tag_start kw_endfor tag_end;
 
 ///////////////////////////////////////////////////////////////////////////////
 Abstract Syntax Tree
 ///////////////////////////////////////////////////////////////////////////////
 
-    document = [entities]:entity+;
+    document = [entities]:entity*;
     
     entity =
             {char}      [char]:text_char
         |   {variable}  [expr]:var_expression
-        |   {command}   [command]:command;
-//        |   {tag_block} [block]:tag_block;
+        |   {command}   [command]:command
+        |   {block}     [block]:block
+        |   {load}      [load]:load
+        |   {include}   [include]:include
+        |   {for}       [for]:for_block
+        |   {if}        [if]:if_block
+        ;
 
     var_expression =    [referent]:id [members]:member*;
     
@@ -169,10 +246,23 @@ Abstract Syntax Tree
     
     argument =
             {string}    [string]:string_literal;
-
+            
+    block =             [id]:id [entities]:entity*;
     
-//    start_for = [local_var]:id [referent]:id [members]:member*;
-//    
-//    tag_block =
-//            {for_loop}  [start]:start_for [entities]:entity*;
-        
+    for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
+    
+    load =              [plugins]:id+;
+    
+    include =
+            {string}    [string]:string_literal
+        |   {variable}  [variable]:var_expression;
+
+    if_block =          [expr1]:boolean_expr [expr2]:boolean_op?
+                            [entities]:entity* [else]:entity*;
+
+    boolean_expr =      [not]:kw_not? [variable]:var_expression;
+
+    boolean_op =
+            {and}       [not]:kw_not? [variable]:var_expression
+        |   {or}        [not]:kw_not? [variable]:var_expression;
+
