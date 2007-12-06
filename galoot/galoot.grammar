@@ -26,13 +26,10 @@ Tokens
     //variable translation tokens
     {base->var}     var_start       = '{{';
     {var->base}     var_end         = '}}';
-    //{var}           var_expression  = [any_char - '}']* ('}' [any_char - '}'])*;
-    //{var}  [member]:         pipe            = '|';
     {var}           dot             = '.';
     {var}           id              = (alpha | '_') (alpha_num | '_')*;
     {var}           member          = (alpha_num | '_')+;
     {var}           var_spaces      = (13 | 10 | 9 | 20);
-    
     
     {base}          text_char       = latin1_char;
     
@@ -52,21 +49,17 @@ Productions
     entity {-> entity} =
             {comment}   [comment]:comment                               {-> New entity.comment(comment)}
         |   {char}      [char]:text_char                                {-> New entity.char(char)}
-        |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)};
+        |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
+        ;
 
-    var_expression = 
-            | {reference} [referent]:id [lookup]:memberchain*
+    var_expression {-> var_expression} = 
+            {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression.reference(referent, [lookup.member])}
             ;
-//    var_expression {-> var_expression} = 
- //           | {reference} [referent]:id [lookup]:memberchain*           {-> New var_expression.reference(referent, [lookup.member])}
-  //          ;
 
     memberchain {-> member+} =
                 {single}   dot [member]:member                          {-> [member]}
             |   {multiple} dot [member]:member [rest]:memberchain       {-> [member, rest.member]}
             ;
-            
-        
         
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,13 +69,10 @@ Abstract Syntax Tree
     document = [entities]:entity+;
     
     entity =
-            {comment}   comment
-        |   {char}      text_char
-        |   {variable}  var_expression;
+            {comment}   [comment]:comment
+        |   {char}      [char]:text_char
+        |   {variable}  [expr]:var_expression;
 
-    /*var_expression = 
-          {reference} [referent]:id [members]:member*
-        | {empty}
-        ;
+    var_expression = 
+            {reference} [referent]:id [members]:member*;
         
-*/
