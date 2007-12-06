@@ -3,7 +3,12 @@ package galoot.interpret;
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.ACharEntity;
 import galoot.node.ACommentEntity;
-import galoot.node.AVariableEntity;
+import galoot.node.AVarExpression;
+import galoot.node.TId;
+import galoot.node.TMember;
+
+import java.util.Iterator;
+import java.util.LinkedList;
 
 public class Interpreter extends DepthFirstAdapter
 {
@@ -16,7 +21,7 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void inACharEntity(ACharEntity node)
     {
-        System.out.print(node.getTextChar().getText());
+        System.out.print(node.getChar().getText());
     }
 
     @Override
@@ -26,9 +31,17 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void inAVariableEntity(AVariableEntity node)
+    public void inAVarExpression(AVarExpression node)
     {
-        System.out.println("Var: " + node.getVarExpression().getText());
+        TId referent = node.getReferent();
+        System.out.print("Var expression:" + referent.getText());
+        LinkedList<TMember> members = node.getMembers();
+        for (Iterator iter = members.iterator(); iter.hasNext();)
+        {
+            TMember member = (TMember) iter.next();
+            System.out.print("." + member.getText());
+        }
+        System.out.println();
     }
-
+    
 }
