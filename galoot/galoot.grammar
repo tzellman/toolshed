@@ -1,103 +1,60 @@
+Package galoot;
 
+///////////////////////////////////////////////////////////////////////////////
+Helpers
+///////////////////////////////////////////////////////////////////////////////
 
-if-else 
-foreach
- . syntax for member/dictionary key/array index 
-define
+    digit           = ['0' .. '9'];
+    alpha           = [['A' .. 'Z'] + ['a' .. 'z']];
+    alpha_num       = alpha | digit;
+    any_char        = [0x0 .. 0xfffff];
+    latin1_char     = [0x0 .. 0xff];
+    
 
-include
+///////////////////////////////////////////////////////////////////////////////
+States
+///////////////////////////////////////////////////////////////////////////////
+    base, var;
 
-block syntax vs. single directive syntax
-
-
+    
+///////////////////////////////////////////////////////////////////////////////
 Tokens
-    a     = '4'   ;
-    b     = 'ß'   ;
-    c     = '('   ;
-    d     = 'Ð'   ;
-    e     = '3'   ;
-    f     = 'ƒ'   ;
-    g     = '9'   ;
-    h     = '|-|' ;
-    i     = '1'   ;
-    j     = '_|'  ;
-    k     = '|{'  ;
-    l     = '£'   ;
-    m     = '|\/|';
-    n     = '|\|' ;
-    o     = '0'   ;
-    p     = 'p'   ;
-    q     = '¶'   ;
-    r     = '®'   ;
-    s     = '$'   ;
-    t     = '7'   ;
-    u     = 'µ'   ;
-    v     = '\/'  ;
-    w     = '\/\/';
-    x     = ')('  ;
-    y     = '¥'   ;
-    z     = '2'   ;
-    blank = (' ' | 13 | 10)+;
+///////////////////////////////////////////////////////////////////////////////
 
+    {base}          comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
+    
+    //variable translation tokens
+    {base->var}     var_start       = '{{';
+    {var->base}     var_end         = '}}';
+    {var}           var_expression  = [any_char - '}']* ('}' [any_char - '}'])*;
+    
+    {base}          text_char       = latin1_char;
+    
+
+///////////////////////////////////////////////////////////////////////////////
 //Ignored Tokens
-//    blank;
-    
+///////////////////////////////////////////////////////////////////////////////
+    //comment;
+
+///////////////////////////////////////////////////////////////////////////////
 Productions
+///////////////////////////////////////////////////////////////////////////////
 
-name
-
-
-if
-fi
+    document = [entities]:entity+;
     
+    entity {-> entity} =
+            {comment}   [comment]:comment                               {-> New entity.comment(comment)}
+        |   {char}      [char]:text_char                                {-> New entity.char(char)}
+        |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)};
 
 
-sentence = [sentence]:word+
-         ;
-
-word = //{empty}
-     //| 
-     {non_empty} [word]:letter+ blank+
-     ;
-
-letter 
-       = {a} a
-       | {b} b
-       | {c} c
-       | {d} d
-       | {e} e
-       | {f} f
-       | {g} g
-       | {h} h
-       | {i} i
-       | {j} j
-       | {k} k
-       | {l} l
-       | {m} m
-       | {n} n
-       | {o} o
-       | {p} p
-       | {q} q
-       | {r} r
-       | {s} s
-       | {t} t
-       | {u} u
-       | {v} v
-       | {w} w
-       | {x} x
-       | {y} y
-       | {z} z
-       ;
-
-
+///////////////////////////////////////////////////////////////////////////////
 Abstract Syntax Tree
+///////////////////////////////////////////////////////////////////////////////
 
-   
-foreach
-    = [iter]:iterable [stmts]:statements*
- 
-
-iterable
-    = {}
-
-
+    document = [entities]:entity+;
+    
+    entity =
+            {comment}   comment
+        |   {char}      text_char
+        |   {variable}  var_expression;
