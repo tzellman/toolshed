@@ -12,11 +12,12 @@ import galoot.node.AStringInclude;
 import galoot.node.AVarExpression;
 import galoot.node.AVariableInclude;
 import galoot.node.PEntity;
+import galoot.node.PFilter;
+import galoot.node.PVarExpression;
 import galoot.node.TId;
 import galoot.node.TMember;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -40,11 +41,17 @@ public class Interpreter extends DepthFirstAdapter
         TId referent = node.getReferent();
         System.out.print("Var expression:" + referent.getText());
         LinkedList<TMember> members = node.getMembers();
-        for (Iterator iter = members.iterator(); iter.hasNext();)
+        for (TMember member : members)
         {
-            TMember member = (TMember) iter.next();
             System.out.print("." + member.getText());
         }
+
+        LinkedList<PFilter> filters = node.getFilters();
+        for (PFilter filter : filters)
+        {
+            System.out.print("|" + filter.toString());
+        }
+
         System.out.println();
     }
 
@@ -69,10 +76,10 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outALoad(ALoad node)
     {
-        LinkedList<TId> plugins = node.getPlugins();
-        for (TId id : plugins)
+        LinkedList<PVarExpression> plugins = node.getPlugins();
+        for (PVarExpression var : plugins)
         {
-            System.out.println("Asked to load plug-in: " + id.getText());
+            System.out.println("Asked to load plug-in: " + var.toString());
         }
     }
 
@@ -100,6 +107,12 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void caseAForBlock(AForBlock node)
     {
+        // TODO
+        // figure out how many times we will have to iterate
+        // for each iteration, push, then pop a new context onto the stack
+        // the context will contain some extra variables, including the
+        // loop variable, and some other "special" counter variables
+
         inAForBlock(node);
         if (node.getIterVar() != null)
         {
@@ -109,12 +122,6 @@ public class Interpreter extends DepthFirstAdapter
         {
             node.getVariable().apply(this);
         }
-
-        // TODO
-        // figure out how many times we will have to iterate
-        // for each iteration, push, then pop a new context onto the stack
-        // the context will contain some extra variables, including the
-        // loop variable, and some other "special" counter variables
 
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
@@ -129,6 +136,11 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void caseAIfBlock(AIfBlock node)
     {
+        // TODO
+        // compute the boolean result
+        // if true, execute the entities
+        // if false, and an else block exists, execute the else entities
+
         inAIfBlock(node);
         if (node.getExpr1() != null)
         {
@@ -138,14 +150,8 @@ public class Interpreter extends DepthFirstAdapter
         {
             node.getExpr2().apply(this);
         }
-        
-        //TODO
-        //compute the boolean result
-        //if true, execute the entities
-        //if false, and an else block exists, execute the else entities 
-        
         {
-            List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
+            List<PEntity> copy = new ArrayList<PEntity>(node.getIf());
             for (PEntity e : copy)
             {
                 e.apply(this);
@@ -160,5 +166,5 @@ public class Interpreter extends DepthFirstAdapter
         }
         outAIfBlock(node);
     }
-
+    
 }

@@ -16,6 +16,8 @@ Helpers
     cr              = 13;
     ws              = ht| lf | ff | cr | ' ';
     
+    no_ws_char      = [[[any_char - [ht + lf]] - [ff + cr]] - ' '];
+    
     variable_id     = (alpha | '_') (alpha_num | '_')*;
     member_id       = (alpha_num | '_')+;
     
@@ -34,22 +36,46 @@ States
 ///////////////////////////////////////////////////////////////////////////////
     default,        //the default state
     var,            //when "inside" a variable expression: e.g. {{ var }}
-    expr,           //when "inside" an expression: e.g. var.member
-    expr_member,    //used to disambiguate id and member
     var_member,     //used to disambiguate id and member
     command,        //TODO this might go away
     block_tag,      //{% block name %} stuff {% endblock %}
-    load_tag,       //{% load plugin1 plugin2 %}
     include_tag,    //{% include "file.html" %}, {% include fileFromVar %}
     comment_block,  //{% comment %} foo bar {% endcomment %}
     for_tag,        //{% for i in var %} do something {% endfor %}
-    if_tag          //{% if not var and var2 %} {% else %} {% endif %}
+    filter,         //used only so we can differentiate between different tokens
+    with_var,       //{% with obj.expensive.op as var %} {% endwith %}
+    with_member,
+    with_filter,
+    load_var,       //{% load plugin1 plugin2 %}
+    load_member,
+    load_filter,
+    if_var,         //{% if not var and var2 %} {% else %} {% endif %}
+    if_member,
+    if_filter,
+    ifeq_var,       //{% ifequal var var2 "tom" %} {% else %} {% endifequal %}
+    ifeq_member,
+    ifeq_filter
     ;
 
     
 ///////////////////////////////////////////////////////////////////////////////
 Tokens
 ///////////////////////////////////////////////////////////////////////////////
+
+    //put higher precedence keywords here
+
+    {with_var}
+        kw_as           = 'as';
+    
+    {if_var}
+        kw_not          = 'not';
+    
+    {if_var}
+        kw_and          = 'and';
+    
+    {if_var}
+        kw_or           = 'or';
+
 
     {default}
         simple_comment  = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
@@ -63,7 +89,7 @@ Tokens
     {default->block_tag}
         block_start     = '{%' ws* 'block' ws+;
     
-    {default->load_tag}
+    {default->load_var}
         load_start      = '{%' ws* 'load' ws+;
     
     {default->include_tag}
@@ -72,8 +98,17 @@ Tokens
     {default->for_tag}
         for_start       = '{%' ws* 'for' ws+;
     
-    {default->if_tag}
+    {default->if_var}
         if_start        = '{%' ws* 'if' ws+;
+    
+    {default->ifeq_var}
+        ifeq_start      = '{%' ws* 'ifequal' ws+;
+    
+    {default->var}
+        filter_start    = '{%' ws* 'filter' ws+;
+    
+    {default->with_var}
+        with_start      = '{%' ws* 'with' ws+;
     
     {default}
         else_tag        = '{%' ws* 'else' ws* '%}';
@@ -81,14 +116,23 @@ Tokens
     {default}
         if_end          = '{%' ws* 'endif' ws* '%}';
     
+    {default}
+        ifeq_end        = '{%' ws* 'endifequal' ws* '%}';
+    
     {default->comment_block}
         comment_start   = '{%' ws* 'comment' ws* '%}';
     
-    {block_tag->default, load_tag->default, include_tag->default, for_tag->default, if_tag->default}
+    {var->default, block_tag->default, load_var->default, include_tag->default, for_tag->default, if_var->default, with_var->default, ifeq_var->default}
         tag_end         = '%}';
     
     {default}
         for_end         = '{%' ws* 'endfor' ws* '%}';
+    
+    {default}
+        with_end        = '{%' ws* 'endwith' ws* '%}';
+    
+    {default}
+        filter_end      = '{%' ws* 'endfilter' ws* '%}';
     
     {default}
         block_end       = '{%' ws* 'endblock' ws* '%}';
@@ -105,36 +149,38 @@ Tokens
     {command->default}
         command_end     = '%}';
     
-    {command, include_tag}
+    {command, include_tag, ifeq_var, filter->var, with_filter->with_var, load_filter->load_var}
         string_literal  = '"' string_char* '"';
     
-    {var->var_member, expr->expr_member}
+    {var->var_member, with_var->with_member, load_var->load_member, if_var->if_member, ifeq_var->ifeq_member}
         dot             = '.';
     
     {for_tag}
         kw_in           = 'in';
     
-    {if_tag}
-        kw_not          = 'not';
-    
-    {if_tag}
-        kw_and          = 'and';
-    
-    {if_tag}
-        kw_or           = 'or';
-    
-    {var, expr, command, block_tag, load_tag, include_tag, for_tag, if_tag}
+    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_tag}
         id              = variable_id;
     
-    {expr_member->expr, var_member->var, include_tag, for_tag, if_tag}
+    {var_member->var, with_member->with_var, load_member->load_var, if_member->if_var, ifeq_member->ifeq_var, include_tag, for_tag}
         member          = member_id;
     
-    {expr, var, command, block_tag, load_tag, include_tag, for_tag, if_tag}
+    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_tag, filter, with_filter, load_filter, if_filter}
         strip_ws        = ws+;
     
     {default}
         text_char       = any_char;
     
+    {var, with_var, load_var, if_var, ifeq_var}
+        vert_pipe       = '|';
+    
+    {var, with_var, load_var, if_var, ifeq_var}
+        comma           = ',';
+    
+    {var->filter, with_var->with_filter, load_var->load_filter, if_var->if_filter, ifeq_var->ifeq_filter}
+        colon           = ':';
+    
+    {filter->var, with_filter->with_var, load_filter->load_var, if_filter->if_var, ifeq_filter->ifeq_var}
+        unquoted        = alpha_num+;
     
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -163,6 +209,9 @@ Productions
         |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
         |   {for}       [for]:for_block                                 {-> New entity.for(for)}
         |   {if}        [if]:if_block                                   {-> New entity.if(if)}
+        |   {ifequal}   [ifequal]:ifequal_block                         {-> New entity.ifequal(ifequal)}
+        |   {with}      [with]:with_block                               {-> New entity.with(with)}
+        |   {filter}    [filter]:filter_block                           {-> New entity.filter(filter)}
         ;
     
     for_block {-> for_block} =
@@ -175,6 +224,13 @@ Productions
                         if_start [expr1]:boolean_expr [expr2]:boolean_op?
                             tag_end [entities]:entity*
                             [else]:else_block? if_end                   {-> New if_block(expr1, expr2, [entities.entity], [else.entity])}
+        ;
+
+    ifequal_block {-> ifequal_block} =
+                        ifeq_start [first]:argument
+                            [remaining]:argument+
+                            tag_end [entities]:entity*
+                            [else]:else_block? ifeq_end                 {-> New ifequal_block([first.argument, remaining.argument], [entities.entity], [else.entity])}
         ;
 
     boolean_expr {-> boolean_expr} =
@@ -197,7 +253,20 @@ Productions
                             [entities]:entity* block_end                {-> New block(id, [entities.entity])}
         ;
     
-    load {-> load} =    load_start [plugins]:id+ tag_end                {-> New load([plugins])}
+    with_block {-> with_block} =
+                        with_start [expression]:var_expression
+                        kw_as [var]:id tag_end
+                        [entities]:entity* with_end                     {-> New with_block(expression, var)}
+        ;
+    
+    filter_block {-> filter_block} =
+                        filter_start [filter]:filter
+                        [filters]:var_filter* tag_end
+                        [entities]:entity* filter_end                   {-> New filter_block([filter, filters.filter], [entities.entity])}
+        ;
+    
+    
+    load {-> load} =    load_start [plugins]:var_expression+ tag_end    {-> New load([plugins])}
         ;
     
     include {-> include} =
@@ -206,7 +275,8 @@ Productions
         ;
 
     var_expression {-> var_expression} = 
-            {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression(referent, [lookup.member])}
+            {reference} [referent]:id
+                [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression(referent, [lookup.member], [filters.filter])}
         ;
 
     memberchain {-> member+} =
@@ -220,8 +290,26 @@ Productions
     
     argument {-> argument} =
             {string}    [string]:string_literal                         {-> New argument.string(string)}
+        |   {variable}  [variable]:var_expression                       {-> New argument.variable(variable)}
         ;
     
+    var_filter {-> filter} =
+                        vert_pipe [filter]:filter                       {-> filter.filter}
+        ;
+    
+    filter {-> filter} =
+                        [filter]:id [arg]:filter_arg?                   {-> New filter(filter, arg)}
+        ;
+    
+//    string_args {-> string_literal*} =
+//            {single}    [arg]:string_literal                            {-> [arg]}
+//        |   {multiple}  [arg]:string_literal comma [rest]:string_args   {-> [arg, rest.string_literal]}
+//        ;
+    
+    filter_arg {-> filter_arg} =
+            {quoted}    colon [arg]:string_literal                      {-> New filter_arg.quoted(arg)}
+        |   {unquoted}  colon [arg]:unquoted                            {-> New filter_arg.unquoted(arg)}
+        ;
 
 ///////////////////////////////////////////////////////////////////////////////
 Abstract Syntax Tree
@@ -238,27 +326,37 @@ Abstract Syntax Tree
         |   {include}   [include]:include
         |   {for}       [for]:for_block
         |   {if}        [if]:if_block
+        |   {ifequal}   [ifequal]:ifequal_block
+        |   {with}      [with]:with_block
+        |   {filter}    [filter]:filter_block
         ;
 
-    var_expression =    [referent]:id [members]:member*;
+    var_expression =    [referent]:id [members]:member* [filters]:filter*;
     
     command =           [command]:id [argument]:argument?;
     
     argument =
-            {string}    [string]:string_literal;
+            {string}    [string]:string_literal
+        |   {variable}  [variable]:var_expression;
             
     block =             [id]:id [entities]:entity*;
     
     for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
     
-    load =              [plugins]:id+;
+    with_block =        [expression]:var_expression [var]:id;
+    
+    filter_block =      [filters]:filter+ [entities]:entity*;
+    
+    load =              [plugins]:var_expression+;
     
     include =
             {string}    [string]:string_literal
         |   {variable}  [variable]:var_expression;
 
     if_block =          [expr1]:boolean_expr [expr2]:boolean_op?
-                            [entities]:entity* [else]:entity*;
+                            [if]:entity* [else]:entity*;
+    
+    ifequal_block =     [arguments]:argument+ [ifequal]:entity* [else]:entity*;
 
     boolean_expr =      [not]:kw_not? [variable]:var_expression;
 
@@ -266,3 +364,9 @@ Abstract Syntax Tree
             {and}       [not]:kw_not? [variable]:var_expression
         |   {or}        [not]:kw_not? [variable]:var_expression;
 
+
+    filter =            [filter]:id [arg]:filter_arg?;
+    
+    filter_arg =
+            {quoted}    [arg]:string_literal
+        |   {unquoted}  [arg]:unquoted;

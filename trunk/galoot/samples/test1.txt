@@ -2,13 +2,13 @@
 
 {% include myHeaderFile %}
 
-{% load myCoolFilter yourCoolFilter %}
+{% load myCoolFilter.val|title yourCoolFilter %}
 
 {# a simple comment #} some text {# yeah, another comment! #} more text
 
 {% comment %} a comment block {% endcomment %}
 
-{{ var.entry }}
+{{ var.entry|lower|slice:":2" }}
 
 more text!
 
@@ -32,19 +32,40 @@ preserved, including the newlines
 	
 {% endblock %}
 
+{% with var.obj as newVar %}
+    {{ newVar }}
+{% endwith %}
+
 
 {% for var in someArray %}
 	Var: {{ var }}
 {% endfor %}
 
 
-{% if var %} here1 {% endif %}
+{% if var|size %} here1 {% endif %}
 {% if not var %} here2 {% else %} here3 {% endif %}
 {% if var and var2 %} here4 {% endif %}
 {% if not var and var2 %} here5 {% endif %}
-{% if var or var2 %} here6 {% endif %}
+{% if var or var2|size %} here6 {% endif %}
 
+what
+{% filter lower|upper|lower %}
+    all of this text should get filtered, including this {{ zellmo }}
+{% endfilter %}
+about
+
+
+{% ifequal var var2 "tom" %}
+ print this
+{% endifequal %}
+
+
+{%ifequal "tom" "tom"%}
+ always true
+{%endifequal%}
 
 end of file.
+
+
 
 
