@@ -1,11 +1,12 @@
 #labels Featured
-Galoot is a Java templating engine, similar to the Django templating engine for Python.
+== Introduction ==
 
-= Introduction =
+Galoot is a templating engine written in Java, designed after with the Django templating engine for Python. Currently, this project is being developed for a compilers course, using SableCC to generate the lexer/parser from the language grammar.
 
-Todo...
+== Details ==
 
+Did you make it this far? Sweet!
 
-= Details =
-
-Did you make it this far?
+== FAQ ==
+  # What's up with the name?
+    The name is sort of completely random. If you remember the galoots from Ren & Stimpy, you might recall that they weren't too... uhh... bright. One of the goals for this project is to make templating so easy that even galoots can use it! It's sort of a nice way of saying that you don't need to be a genius to use it.
