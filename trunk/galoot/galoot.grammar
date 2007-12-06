@@ -9,36 +9,35 @@ Helpers
     alpha_num       = alpha | digit;
     any_char        = [0x0 .. 0xfffff];
     latin1_char     = [0x0 .. 0xff];
+    whitespace      = 13 | 10 | 9 | ' ';
     
 
 ///////////////////////////////////////////////////////////////////////////////
 States
 ///////////////////////////////////////////////////////////////////////////////
-    base, var;
+    base, var, var_member;
 
     
 ///////////////////////////////////////////////////////////////////////////////
 Tokens
 ///////////////////////////////////////////////////////////////////////////////
 
-    {base}          comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
+    {base}              comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
     
-    //variable translation tokens
-    {base->var}     var_start       = '{{';
-    {var->base}     var_end         = '}}';
-    {var}           dot             = '.';
-    {var}           id              = (alpha | '_') (alpha_num | '_')*;
-    {var}           member          = (alpha_num | '_')+;
-    {var}           var_spaces      = (13 | 10 | 9 | 20);
+    {base->var}         var_start       = '{{';
+    {var->base}         var_end         = '}}';
+    {var->var_member}   dot             = '.';
+    {var}               id              = (alpha | '_') (alpha_num | '_')*;
+    {var_member->var}   member          = (alpha_num | '_')+;
+    {var}               var_ws          = whitespace+;
     
-    {base}          text_char       = latin1_char;
+    {base}              text_char       = latin1_char;
     
 
 ///////////////////////////////////////////////////////////////////////////////
 Ignored Tokens
 ///////////////////////////////////////////////////////////////////////////////
-    //comment;
-    var_spaces;
+    var_ws;
 
 ///////////////////////////////////////////////////////////////////////////////
 Productions
@@ -53,7 +52,7 @@ Productions
         ;
 
     var_expression {-> var_expression} = 
-            {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression.reference(referent, [lookup.member])}
+            {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression(referent, [lookup.member])}
             ;
 
     memberchain {-> member+} =
@@ -73,6 +72,5 @@ Abstract Syntax Tree
         |   {char}      [char]:text_char
         |   {variable}  [expr]:var_expression;
 
-    var_expression = 
-            {reference} [referent]:id [members]:member*;
+    var_expression = [referent]:id [members]:member*;
         

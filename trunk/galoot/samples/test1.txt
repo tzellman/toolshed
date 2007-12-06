@@ -1,0 +1,11 @@
+{# a simple comment #} some text {# yeah! #} more text
+
+{{ var.entry }}
+
+more text!
+
+{{ another.var }}
+
+
+end of file.
+
