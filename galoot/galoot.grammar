@@ -8,8 +8,25 @@ Helpers
     alpha           = [['A' .. 'Z'] + ['a' .. 'z']];
     alpha_num       = alpha | digit;
     any_char        = [0x0 .. 0xfffff];
-    latin1_char     = [0x0 .. 0xff];
-    whitespace      = 13 | 10 | 9 | ' ';
+
+    //whitespace
+    ht  = 9;
+    lf  = 10;
+    ff  = 12;
+    cr  = 13;
+    whitespace      = ht| lf | ff | cr | ' ';
+    
+    variable_id     = (alpha | '_') (alpha_num | '_')*;
+    member_id       = (alpha_num | '_')+;
+    
+    //the following helpers deal with characters that are allowed in
+    //expressions, statements, etc. (program flow characters)
+    input_char      = [any_char - [cr + lf]];
+    single_char     = [input_char - [''' + '\']];
+    octal_digit     = ['0'..'7'];
+    octal_escape    = '\' (octal_digit octal_digit? | ['0'..'3'] octal_digit octal_digit);
+    escape_sequence = '\b' | '\t' | '\n' | '\f' | '\r' | '\"' | '\' ''' | '\\' | octal_escape;
+    string_char     = [input_char - ['"' + '\']] | escape_sequence;
     
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -19,7 +36,9 @@ States
     var,            //when "inside" a variable expression: e.g. {{ var }}
     expr,           //when "inside" an expression: e.g. var.member
     expr_member,    //used to disambiguate id and member
-    var_member      //used to disambiguate id and member
+    var_member,     //used to disambiguate id and member
+    tag,
+    command
     ;
 
     
@@ -36,26 +55,51 @@ Tokens
     {var->default}
         var_end         = '}}';
     
+    {default->command}
+        command_start   = '{>';
+    
+    {command->default}
+        command_end     = '<}';
+    
+    {command}
+        string_literal  = '"' string_char* '"';
+    
     {var->var_member, expr->expr_member}
         dot             = '.';
     
-    {var, expr}
-        id              = (alpha | '_') (alpha_num | '_')*;
+    {var, expr, tag, command}
+        id              = variable_id;
     
     {expr_member->expr, var_member->var}
-        member          = (alpha_num | '_')+;
+        member          = member_id;
     
-    {expr, var}
-        expr_ws         = whitespace+;
+    {expr, var, tag, command}
+        strip_ws        = whitespace+;
     
     {default}
-        text_char       = latin1_char;
+        text_char       = any_char;
+    
+//    {default->tag}
+//        tag_start       = '{%';
+    
+//    {tag->default}
+//        tag_end         = '%}';
+    
+//    {tag} kw_block      = 'block';
+//    {tag} kw_endblock   = 'endblock';
+//    
+//    {tag} kw_for        = 'for';
+//    {tag} kw_in         = 'in';
+//    {tag} kw_endfor     = 'endfor';
+//    
+    
+    
     
 
 ///////////////////////////////////////////////////////////////////////////////
 Ignored Tokens
 ///////////////////////////////////////////////////////////////////////////////
-    expr_ws, comment;
+    strip_ws, comment;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,17 +111,45 @@ Productions
     entity {-> entity} =
             {char}      [char]:text_char                                {-> New entity.char(char)}
         |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
+        |   {command}   command_start [command]:command command_end     {-> New entity.command(command)}
+//        |   {block}     tag_start [block]:tag_block                               {-> New entity.tag_block(block)}
         ;
+    
+//    block_prefix {-> block_prefix} =
+//            tag_start kw_block [block]:id tag_end;
+    
+//    block_suffix =      tag_start kw_endblock tag_end;
+    
+//    block {-> block} =
+//             [entities]:entity+;
 
     var_expression {-> var_expression} = 
             {reference} [referent]:id [lookup]:memberchain?             {-> New var_expression(referent, [lookup.member])}
-            ;
+        ;
 
     memberchain {-> member+} =
-                {single}   dot [member]:member                          {-> [member]}
-            |   {multiple} dot [member]:member [rest]:memberchain       {-> [member, rest.member]}
-            ;
-        
+            {single}    dot [member]:member                             {-> [member]}
+        |   {multiple}  dot [member]:member [rest]:memberchain          {-> [member, rest.member]}
+        ;
+    
+    command {-> command} =
+            [command]:id [argument]:argument?                           {-> New command(command, argument)}
+        ;
+    
+    argument {-> argument} =
+            {string}    [string]:string_literal                         {-> New argument.string(string)}
+        ;
+    
+    
+//    tag_block {-> tag_block} =
+//            {for_loop}  [start]:start_for [entities]:entity* end_for    {-> New tag_block.for_loop(start, [entities.entity])};
+//            
+//    start_for {-> start_for} =
+//            tag_start kw_for [local_var]:id kw_in
+//                [referent]:id [lookup]:memberchain? tag_end             {-> New start_for(local_var, referent, [lookup.member])}
+//        ;
+//    
+//    end_for =           tag_start kw_endfor tag_end;
 
 ///////////////////////////////////////////////////////////////////////////////
 Abstract Syntax Tree
@@ -87,7 +159,20 @@ Abstract Syntax Tree
     
     entity =
             {char}      [char]:text_char
-        |   {variable}  [expr]:var_expression;
+        |   {variable}  [expr]:var_expression
+        |   {command}   [command]:command;
+//        |   {tag_block} [block]:tag_block;
 
-    var_expression = [referent]:id [members]:member*;
+    var_expression =    [referent]:id [members]:member*;
+    
+    command =           [command]:id [argument]:argument?;
+    
+    argument =
+            {string}    [string]:string_literal;
+
+    
+//    start_for = [local_var]:id [referent]:id [members]:member*;
+//    
+//    tag_block =
+//            {for_loop}  [start]:start_for [entities]:entity*;
         
