@@ -1,3 +1,5 @@
+{> include "parent.txt" <}
+
 {# a simple comment #} some text {# yeah! #} more text
 
 {{ var.entry }}
@@ -9,3 +11,6 @@ more text!
 
 end of file.
 
+{% block content %}
+	some content here
+{% endblock %}

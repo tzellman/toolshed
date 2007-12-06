@@ -2,6 +2,8 @@ package galoot.interpret;
 
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.ACharEntity;
+import galoot.node.ACommand;
+import galoot.node.AStringArgument;
 import galoot.node.AVarExpression;
 import galoot.node.TId;
 import galoot.node.TMember;
@@ -35,6 +37,18 @@ public class Interpreter extends DepthFirstAdapter
             System.out.print("." + member.getText());
         }
         System.out.println();
+    }
+    
+    @Override
+    public void outACommand(ACommand node)
+    {
+        System.out.println("command: " + node.getCommand());
+    }
+    
+    @Override
+    public void inAStringArgument(AStringArgument node)
+    {
+        System.out.println("argument: " + node.getString().getText());
     }
 
 }
