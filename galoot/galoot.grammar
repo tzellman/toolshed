@@ -15,29 +15,48 @@ Helpers
 ///////////////////////////////////////////////////////////////////////////////
 States
 ///////////////////////////////////////////////////////////////////////////////
-    base, var, var_member;
+    default,        //the default state
+    var,            //when "inside" a variable expression: e.g. {{ var }}
+    expr,           //when "inside" an expression: e.g. var.member
+    expr_member,    //used to disambiguate id and member
+    var_member      //used to disambiguate id and member
+    ;
 
     
 ///////////////////////////////////////////////////////////////////////////////
 Tokens
 ///////////////////////////////////////////////////////////////////////////////
 
-    {base}              comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
+    {default}
+        comment         = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
     
-    {base->var}         var_start       = '{{';
-    {var->base}         var_end         = '}}';
-    {var->var_member}   dot             = '.';
-    {var}               id              = (alpha | '_') (alpha_num | '_')*;
-    {var_member->var}   member          = (alpha_num | '_')+;
-    {var}               var_ws          = whitespace+;
+    {default->var}
+        var_start       = '{{';
     
-    {base}              text_char       = latin1_char;
+    {var->default}
+        var_end         = '}}';
+    
+    {var->var_member, expr->expr_member}
+        dot             = '.';
+    
+    {var, expr}
+        id              = (alpha | '_') (alpha_num | '_')*;
+    
+    {expr_member->expr, var_member->var}
+        member          = (alpha_num | '_')+;
+    
+    {expr, var}
+        expr_ws         = whitespace+;
+    
+    {default}
+        text_char       = latin1_char;
     
 
 ///////////////////////////////////////////////////////////////////////////////
 Ignored Tokens
 ///////////////////////////////////////////////////////////////////////////////
-    var_ws;
+    expr_ws, comment;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 Productions
@@ -46,8 +65,7 @@ Productions
     document = [entities]:entity+;
     
     entity {-> entity} =
-            {comment}   [comment]:comment                               {-> New entity.comment(comment)}
-        |   {char}      [char]:text_char                                {-> New entity.char(char)}
+            {char}      [char]:text_char                                {-> New entity.char(char)}
         |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
         ;
 
@@ -68,8 +86,7 @@ Abstract Syntax Tree
     document = [entities]:entity+;
     
     entity =
-            {comment}   [comment]:comment
-        |   {char}      [char]:text_char
+            {char}      [char]:text_char
         |   {variable}  [expr]:var_expression;
 
     var_expression = [referent]:id [members]:member*;

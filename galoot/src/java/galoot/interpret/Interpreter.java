@@ -2,7 +2,6 @@ package galoot.interpret;
 
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.ACharEntity;
-import galoot.node.ACommentEntity;
 import galoot.node.AVarExpression;
 import galoot.node.TId;
 import galoot.node.TMember;
@@ -25,12 +24,6 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void inACommentEntity(ACommentEntity node)
-    {
-        // don't print it
-    }
-
-    @Override
     public void inAVarExpression(AVarExpression node)
     {
         TId referent = node.getReferent();
@@ -43,5 +36,5 @@ public class Interpreter extends DepthFirstAdapter
         }
         System.out.println();
     }
-    
+
 }
