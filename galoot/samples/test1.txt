@@ -6,8 +6,7 @@ some text
 Var: {{ var }}
 
 
-{% if badVar %}
-show if text
-{% else %}
-show else text
-{% endif %}
+{% if badVar %}show if text{% else %}show else text{% endif %}
+
+{% ifequal "tom" "adam" %}we are equals{% else %}i guess we aren't equals{% endifequal %}
+
