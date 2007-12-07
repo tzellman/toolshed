@@ -3,18 +3,19 @@ package galoot.interpret;
 import galoot.Context;
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.AAndBooleanOp;
-import galoot.node.ABlock;
 import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
-import galoot.node.ACommand;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
+import galoot.node.AIfequalBlock;
 import galoot.node.ALoad;
 import galoot.node.AOrBooleanOp;
+import galoot.node.AStringArgument;
 import galoot.node.AStringInclude;
 import galoot.node.AVarExpression;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
+import galoot.node.PArgument;
 import galoot.node.PEntity;
 import galoot.node.PVarExpression;
 import galoot.node.TMember;
@@ -124,15 +125,14 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void outACommand(ACommand node)
+    public void outAStringArgument(AStringArgument node)
     {
-        // System.out.println("command: " + node.getCommand());
-    }
+        String text = node.getString().getText();
+        // remove the end-quotes
+        text = text.substring(1, text.length() - 1);
 
-    @Override
-    public void outABlock(ABlock node)
-    {
-        // System.out.println("leaving block: " + node.getId().getText());
+        // just push the string argument onto the stack
+        variableStack.push(text);
     }
 
     @Override
@@ -157,13 +157,6 @@ public class Interpreter extends DepthFirstAdapter
     {
         // System.out.println("Asked to include a file from var: "
         // + node.getVariable());
-    }
-
-    @Override
-    public void inAForBlock(AForBlock node)
-    {
-        // TODO Auto-generated method stub
-        super.inAForBlock(node);
     }
 
     @Override
@@ -234,9 +227,44 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void inABooleanExpr(ABooleanExpr node)
+    public void caseAIfequalBlock(AIfequalBlock node)
     {
-        node.getVariable();
+        inAIfequalBlock(node);
+        {
+            List<PArgument> copy = new ArrayList<PArgument>(node.getArguments());
+            for (PArgument e : copy)
+            {
+                e.apply(this);
+            }
+        }
+
+        // get the objects from the stack and check to see if they are equal
+        boolean equals = true;
+        Object object = variableStack.pop();
+        int numArgs = node.getArguments().size();
+        for (int i = 1; i < numArgs && equals && object != null; i++)
+        {
+            Object nextObj = variableStack.pop();
+            equals &= (nextObj != null && object.equals(nextObj));
+        }
+
+        if (equals)
+        {
+            List<PEntity> copy = new ArrayList<PEntity>(node.getIfequal());
+            for (PEntity e : copy)
+            {
+                e.apply(this);
+            }
+        }
+        else
+        {
+            List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
+            for (PEntity e : copy)
+            {
+                e.apply(this);
+            }
+        }
+        outAIfequalBlock(node);
     }
 
     /**
