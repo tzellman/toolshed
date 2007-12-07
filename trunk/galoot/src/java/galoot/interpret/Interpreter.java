@@ -1,10 +1,14 @@
 package galoot.interpret;
 
 import galoot.Context;
+import galoot.Filter;
+import galoot.Pair;
+import galoot.TemplateUtils;
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.AAndBooleanOp;
 import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
+import galoot.node.AFilter;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
@@ -22,15 +26,11 @@ import galoot.node.TMember;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 public class Interpreter extends DepthFirstAdapter
@@ -41,11 +41,14 @@ public class Interpreter extends DepthFirstAdapter
 
     protected Stack<Object> variableStack;
 
+    protected Deque<Pair<String, String>> filterStack;
+
     public Interpreter(Context context, Writer writer)
     {
         this.context = context;
         this.writer = writer;
         variableStack = new Stack<Object>();
+        filterStack = new LinkedList<Pair<String, String>>();
     }
 
     protected void writeString(String s)
@@ -79,11 +82,35 @@ public class Interpreter extends DepthFirstAdapter
             stringMembers.add(member.getText());
 
         // evaluate the object/methods
-        object = Interpreter.evaluateObject(object, stringMembers);
+        object = TemplateUtils.evaluateObject(object, stringMembers);
 
         // TODO apply filters
+        System.out.println("HERE: " + node.toString());
+
+        Iterator<Pair<String, String>> iterator = filterStack
+                .descendingIterator();
+        while (iterator.hasNext() && object != null)
+        {
+            Pair<String, String> stringPair = (Pair<String, String>) iterator
+                    .next();
+            Filter filter = context.getFilterMap().getFilter(
+                    stringPair.getFirst());
+            if (filter == null)
+                object = null;
+            else
+                object = filter.filter(object, stringPair.getSecond());
+        }
 
         variableStack.push(object);
+    }
+
+    @Override
+    public void outAFilter(AFilter node)
+    {
+//        filterStack.push(new Pair<String, String>(node.getFilter().getText(),
+//                variableStack.pop().toString()));
+//
+//        System.out.println("Filter:" + node.getFilter().getText());
     }
 
     @Override
@@ -101,7 +128,7 @@ public class Interpreter extends DepthFirstAdapter
         Object object = variableStack.pop();
         boolean negate = node.getNot() != null;
 
-        boolean boolObj = evaluateAsBoolean(object);
+        boolean boolObj = TemplateUtils.evaluateAsBoolean(object);
         boolObj = negate ? !boolObj : boolObj;
         variableStack.push(boolObj);
     }
@@ -110,8 +137,8 @@ public class Interpreter extends DepthFirstAdapter
     public void outAAndBooleanOp(AAndBooleanOp node)
     {
         // pop the top two items off the variable stack
-        boolean result = evaluateAsBoolean(variableStack.pop())
-                && evaluateAsBoolean(variableStack.pop());
+        boolean result = TemplateUtils.evaluateAsBoolean(variableStack.pop())
+                && TemplateUtils.evaluateAsBoolean(variableStack.pop());
         variableStack.push(result);
     }
 
@@ -119,8 +146,8 @@ public class Interpreter extends DepthFirstAdapter
     public void outAOrBooleanOp(AOrBooleanOp node)
     {
         // pop the top two items off the variable stack
-        boolean result = evaluateAsBoolean(variableStack.pop())
-                || evaluateAsBoolean(variableStack.pop());
+        boolean result = TemplateUtils.evaluateAsBoolean(variableStack.pop())
+                || TemplateUtils.evaluateAsBoolean(variableStack.pop());
         variableStack.push(result);
     }
 
@@ -205,8 +232,10 @@ public class Interpreter extends DepthFirstAdapter
         }
 
         // at this point, the boolean expression result is on the var. stack
-        boolean evaluateIf = evaluateAsBoolean(variableStack.pop());
+        boolean evaluateIf = TemplateUtils.evaluateAsBoolean(variableStack
+                .pop());
 
+        // evalute the if-clause
         if (evaluateIf)
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getIf());
@@ -215,6 +244,7 @@ public class Interpreter extends DepthFirstAdapter
                 e.apply(this);
             }
         }
+        // otherwise, evaluate the else-clause
         else
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
@@ -238,6 +268,8 @@ public class Interpreter extends DepthFirstAdapter
             }
         }
 
+        // this assumes that each of the arguments has already been evaluated
+        // and added to the stack
         // get the objects from the stack and check to see if they are equal
         boolean equals = true;
         Object object = variableStack.pop();
@@ -248,6 +280,7 @@ public class Interpreter extends DepthFirstAdapter
             equals &= (nextObj != null && object.equals(nextObj));
         }
 
+        // if they are equal, we evaluate the if-clause
         if (equals)
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getIfequal());
@@ -256,6 +289,7 @@ public class Interpreter extends DepthFirstAdapter
                 e.apply(this);
             }
         }
+        // otherwise, evaluate the else clause
         else
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
@@ -267,148 +301,4 @@ public class Interpreter extends DepthFirstAdapter
         outAIfequalBlock(node);
     }
 
-    /**
-     * This function evaluates a given object and attempts to retrieve a nested
-     * sub-object
-     * 
-     * @param object
-     * @param members
-     * @return
-     */
-    protected static Object evaluateObject(Object object,
-            Iterable<String> members)
-    {
-        for (Iterator<String> it = members.iterator(); object != null
-                && it.hasNext();)
-        {
-            String memberName = (String) it.next();
-
-            boolean found = false; // used to flag if we found it
-
-            // first, check to see if it has parameters/methods with this name
-            try
-            {
-                Field field = object.getClass().getField(memberName);
-                object = field.get(object);
-                found = true;
-            }
-            catch (Exception e)
-            {
-                // ok, let's see if it has a method with that name
-                List<String> names = new ArrayList<String>();
-                names.add(memberName);
-
-                // compute the getter name and add it as a possibility
-                names.add("get" + memberName.substring(0, 1).toUpperCase()
-                        + memberName.substring(1));
-
-                for (String name : names)
-                {
-                    try
-                    {
-                        Method method = object.getClass().getMethod(memberName,
-                                null);
-                        if (method.getParameterTypes().length != 0)
-                            throw new InvalidParameterException();
-                        object = method.invoke(object, null);
-                        found = true;
-                        break;
-                    }
-                    catch (Exception e1)
-                    {
-                    }
-                }
-
-            }
-
-            // if we found it already, continue on
-            if (found)
-                continue;
-
-            // see if it is a list
-            if (object instanceof List)
-            {
-                List listObj = (List) object;
-                // try to convert the name to an index
-                try
-                {
-                    int index = Integer.parseInt(memberName);
-                    if (index < 0 || index >= listObj.size())
-                        throw new IndexOutOfBoundsException(memberName);
-                    object = listObj.get(index);
-                }
-                catch (Exception e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            // try it as a collection, maybe -- more expensive, possibly
-            else if (object instanceof Collection)
-            {
-                Collection collObj = (Collection) object;
-                // try to convert the name to an index
-                try
-                {
-                    int index = Integer.parseInt(memberName);
-                    int offset = 0;
-
-                    for (Iterator iterator = collObj.iterator(); iterator
-                            .hasNext()
-                            && !found;)
-                    {
-                        if (index == offset)
-                        {
-                            object = iterator.next();
-                            found = true;
-                        }
-                        else
-                            iterator.next();
-                        offset++;
-                    }
-                    if (!found)
-                        throw new IndexOutOfBoundsException(memberName);
-                }
-                catch (Exception e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            // it could be a member of a Map
-            else if (object instanceof Map)
-            {
-                Map mapObj = (Map) object;
-                if (mapObj.containsKey(memberName))
-                    object = mapObj.get(memberName);
-                else
-                    object = null;
-            }
-        }
-        return object;
-    }
-
-    /**
-     * Evaluates the given object, returning its "boolean-ness"
-     * 
-     * @param object
-     * @return
-     */
-    protected static boolean evaluateAsBoolean(Object object)
-    {
-        if (object == null)
-            return false;
-        if (object instanceof Boolean)
-            return (Boolean) object;
-        if (object instanceof Number)
-            return !Double.valueOf(((Number) object).doubleValue()).equals(
-                    new Double(0.0));
-        if (object instanceof String)
-            return !((String) object).isEmpty();
-        if (object instanceof List)
-            return ((List) object).size() != 0;
-        if (object instanceof Map)
-            return ((Map) object).size() != 0;
-        return true;
-    }
 }

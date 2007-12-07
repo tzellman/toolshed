@@ -35,6 +35,12 @@
             <version>1.1.1</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.3</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 
@@ -54,52 +60,51 @@
                         <showWarnings>true</showWarnings>
                     </configuration>
                 </plugin>
-            <plugin>
-               <groupId>org.codehaus.mojo</groupId>
-               <artifactId>sablecc-maven-plugin</artifactId>
-               <executions>
-                 <execution>
-                   <phase>generate-sources</phase>
-                   <goals>
-                     <goal>generate</goal>
-                   </goals>
-                 </execution>
-               </executions>
-               <configuration>
-                 <sourceDirectory>${basedir}</sourceDirectory>
-                 <outputDirectory>${basedir}/src/java</outputDirectory>
-               </configuration>
-            </plugin>
-            <plugin>
-               <artifactId>maven-clean-plugin</artifactId>
-               <configuration>
-                 <filesets>
-                   <fileset>
-                     <directory>src/java/galoot/analysis</directory>
-                     <followSymlinks>false</followSymlinks>
-                   </fileset>
-                   <fileset>
-                     <directory>src/java/galoot/lexer</directory>
-                     <followSymlinks>false</followSymlinks>
-                   </fileset>
-                   <fileset>
-                     <directory>src/java/galoot/node</directory>
-                     <followSymlinks>false</followSymlinks>
-                   </fileset>
-                   <fileset>
-                     <directory>src/java/galoot/parser</directory>
-                     <followSymlinks>false</followSymlinks>
-                   </fileset>
-                 </filesets>
-               </configuration>
-             </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>sablecc-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>generate</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <sourceDirectory>${basedir}</sourceDirectory>
+                        <outputDirectory>${basedir}/src/java</outputDirectory>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>src/java/galoot/analysis</directory>
+                                <followSymlinks>false</followSymlinks>
+                            </fileset>
+                            <fileset>
+                                <directory>src/java/galoot/lexer</directory>
+                                <followSymlinks>false</followSymlinks>
+                            </fileset>
+                            <fileset>
+                                <directory>src/java/galoot/node</directory>
+                                <followSymlinks>false</followSymlinks>
+                            </fileset>
+                            <fileset>
+                                <directory>src/java/galoot/parser</directory>
+                                <followSymlinks>false</followSymlinks>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <sourceDirectory>src/java</sourceDirectory>
         <testSourceDirectory>src/test</testSourceDirectory>
     </build>
 
-    <properties>
-    </properties>
+    <properties></properties>
 
 </project>

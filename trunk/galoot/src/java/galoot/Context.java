@@ -16,10 +16,13 @@ public class Context
 {
     protected Stack<Map<String, Object>> contextStack;
 
+    protected FilterMap filterMap;
+
     public Context()
     {
         contextStack = new Stack<Map<String, Object>>();
-        contextStack.push(new HashMap<String, Object>());
+        contextStack.push(new HashMap<String, Object>()); // initialize it
+        filterMap = new FilterMap();
     }
 
     public Context(Map<String, Object> initialItems)
@@ -85,6 +88,11 @@ public class Context
         if (map != null)
             for (String key : map.keySet())
                 put(key, map.get(key));
+    }
+
+    public FilterMap getFilterMap()
+    {
+        return filterMap;
     }
 
 }
