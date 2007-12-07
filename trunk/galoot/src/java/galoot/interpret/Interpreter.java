@@ -9,6 +9,7 @@ import galoot.node.AAndBooleanOp;
 import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
 import galoot.node.AFilter;
+import galoot.node.AFilterBlock;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
@@ -31,9 +32,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 public class Interpreter extends DepthFirstAdapter
@@ -46,15 +49,38 @@ public class Interpreter extends DepthFirstAdapter
 
     protected Deque<Pair<String, String>> filterStack;
 
+    protected Stack<StringBuffer> filterBlockData;
+
     public Interpreter(Context context, Writer writer)
     {
         this.context = context;
         this.writer = writer;
         variableStack = new Stack<Object>();
         filterStack = new LinkedList<Pair<String, String>>();
+        filterBlockData = new Stack<StringBuffer>();
     }
 
+    /**
+     * The endpoint for the string processing
+     * 
+     * @param s
+     */
     protected void writeString(String s)
+    {
+        // if we are in a filterBlock, we need to "write" the data to it
+        if (!filterBlockData.isEmpty())
+        {
+            filterBlockData.peek().append(s);
+        }
+        else
+        {
+            // write it directly
+            directWrite(s);
+        }
+    }
+
+    // write the string directly to the writer
+    private void directWrite(String s)
     {
         try
         {
@@ -91,20 +117,16 @@ public class Interpreter extends DepthFirstAdapter
         // evaluate the object/methods
         object = TemplateUtils.evaluateObject(object, stringMembers);
 
-        // TODO apply filters
-
-        Iterator<Pair<String, String>> iterator = filterStack
-                .descendingIterator();
-        while (iterator.hasNext() && object != null)
+        // apply the filters
+        for (int i = 0, size = node.getFilters().size(); i < size; ++i)
         {
-            Pair<String, String> stringPair = (Pair<String, String>) iterator
-                    .next();
+            Pair<String, String> nextFilter = filterStack.pollLast();
             Filter filter = context.getFilterMap().getFilter(
-                    stringPair.getFirst());
+                    nextFilter.getFirst());
             if (filter == null)
                 object = null;
             else
-                object = filter.filter(object, stringPair.getSecond());
+                object = filter.filter(object, nextFilter.getSecond());
         }
 
         variableStack.push(object);
@@ -129,7 +151,7 @@ public class Interpreter extends DepthFirstAdapter
     public void outAFilter(AFilter node)
     {
         String name = node.getFilter().getText();
-        //pop the filter arg off of the var stack, if it exists
+        // pop the filter arg off of the var stack, if it exists
         String arg = node.getArg() != null ? variableStack.pop().toString()
                 : "";
         filterStack.push(new Pair<String, String>(name, arg));
@@ -218,7 +240,6 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void caseAForBlock(AForBlock node)
     {
-        // TODO
         // figure out how many times we will have to iterate
         // for each iteration, push, then pop a new context onto the stack
         // the context will contain some extra variables, including the
@@ -234,13 +255,50 @@ public class Interpreter extends DepthFirstAdapter
             node.getVariable().apply(this);
         }
 
+        // this is the loop variable, which will get updated each iteration
+        String loopVar = node.getIterVar().getText();
+        Map<String, Object> extraLoopVars = new HashMap<String, Object>();
+
+        // pop the loop expression off the stack
+        Object loopObj = variableStack.pop();
+
+        int iterCount = 0;
+        // we will only support Iterable types
+        if (loopObj instanceof Iterable)
         {
-            List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
-            for (PEntity e : copy)
+            Iterable iter = (Iterable) loopObj;
+
+            for (Iterator it = iter.iterator(); it.hasNext(); ++iterCount)
             {
-                e.apply(this);
+                Object object = (Object) it.next();
+
+                // push a new context
+                context.push();
+
+                // add the vars
+                context.put(loopVar, object);
+                extraLoopVars.put("counter0", iterCount);
+                extraLoopVars.put("counter1", iterCount + 1);
+                extraLoopVars.put("first", iterCount == 0);
+                extraLoopVars.put("last", !it.hasNext());
+                context.put("forloop", extraLoopVars);
+
+                // apply to the entities
+                {
+                    List<PEntity> copy = new ArrayList<PEntity>(node
+                            .getEntities());
+                    for (PEntity e : copy)
+                    {
+                        e.apply(this);
+                    }
+                }
+
+                // pop the context
+                context.pop();
             }
+
         }
+
         outAForBlock(node);
     }
 
@@ -328,6 +386,43 @@ public class Interpreter extends DepthFirstAdapter
             }
         }
         outAIfequalBlock(node);
+    }
+
+    @Override
+    public void inAFilterBlock(AFilterBlock node)
+    {
+        // push a new StringBuffer, for this block
+        filterBlockData.push(new StringBuffer());
+    }
+
+    @Override
+    public void outAFilterBlock(AFilterBlock node)
+    {
+        StringBuffer filteredData = filterBlockData.pop();
+        Object output = filteredData.toString();
+
+        System.out.println("Filters: " + node.getFilters().size());
+
+        // apply the filters
+        for (int i = 0, size = node.getFilters().size(); i < size
+                && output != null; ++i)
+        {
+            Pair<String, String> nextFilter = filterStack.pollLast();
+            Filter filter = context.getFilterMap().getFilter(
+                    nextFilter.getFirst());
+
+            // TODO decide on what we should do if a bad filter was given
+            if (filter == null)
+                // if a bad filter, nothing gets written
+                output = null;
+            else
+            {
+                output = filter.filter(output, nextFilter.getSecond());
+            }
+        }
+
+        if (output != null)
+            writeString(output.toString());
     }
 
 }

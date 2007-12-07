@@ -1,12 +1,34 @@
 {# a simple comment #}
-some text
+some unaltered text
 
 {% comment %} a comment block {% endcomment %}
 
-Var: {{ var|upper }} length: {{ var.length }}
+Var: {{ var }}, upper:{{ var|upper }} length:{{ var.length }}
+is length == 7 ? {{ var|length_is:7|yesno:"yeppers,nope" }}
+
+
+This var won't show up if it is bad: "{{ badVar }}"
+However, we can default it: "{{ badVar|default:"ok now" }}"
 
 
 {% if badVar %}show if text{% else %}show else text{% endif %}
-
 {% ifequal "tom" "adam" %}we are equals{% else %}i guess we aren't equals{% endifequal %}
 
+
+The length of the variable: "{{var}}" is {{ var|length }}.
+Now, if it is a string or list, let's loop over it's contents:
+{% for v in var|make_list %}
+    {{ forloop.counter0 }}: {{ v }}
+{% endfor %}
+
+
+this next tag applies filters to everything in the block:
+{% filter upper %}
+    all of this text should be uppercased now...
+{% endfilter %}
+
+length of next paragraph is:
+{% filter length %}
+    just compute the length of all of these characters
+    that includes newlines, etc.
+{% endfilter %}
