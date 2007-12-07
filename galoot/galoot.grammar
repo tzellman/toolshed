@@ -15,6 +15,7 @@ Helpers
     ff              = 12;
     cr              = 13;
     ws              = ht| lf | ff | cr | ' ';
+    eol             = cr | lf | cr lf;  //end of line
     
     no_ws_char      = [[[any_char - [ht + lf]] - [ff + cr]] - ' '];
     
@@ -41,7 +42,6 @@ States
     block_tag,      //{% block name %} stuff {% endblock %}
     include_tag,    //{% include "file.html" %}, {% include fileFromVar %}
     comment_block,  //{% comment %} foo bar {% endcomment %}
-    for_tag,        //{% for i in var %} do something {% endfor %}
     filter,         //used only so we can differentiate between different tokens
     with_var,       //{% with obj.expensive.op as var %} {% endwith %}
     with_member,
@@ -54,7 +54,11 @@ States
     if_filter,
     ifeq_var,       //{% ifequal var var2 "tom" %} {% else %} {% endifequal %}
     ifeq_member,
-    ifeq_filter
+    ifeq_filter,
+    for_tag,        //{% for i in var %} do something {% endfor %}
+    for_var,
+    for_member,
+    for_filter
     ;
 
     
@@ -85,6 +89,9 @@ Tokens
     
     {var->default}
         var_end         = '}}';
+    
+    {for_tag->for_var}
+        kw_in           = 'in';
     
     {default->block_tag}
         block_start     = '{%' ws* 'block' ws+;
@@ -122,8 +129,8 @@ Tokens
     {default->comment_block}
         comment_start   = '{%' ws* 'comment' ws* '%}';
     
-    {var->default, block_tag->default, load_var->default, include_tag->default, for_tag->default, if_var->default, with_var->default, ifeq_var->default}
-        tag_end         = '%}';
+    {var->default, block_tag->default, load_var->default, include_tag->default, for_var->default, if_var->default, with_var->default, ifeq_var->default}
+        tag_end         = '%}' eol?;
     
     {default}
         for_end         = '{%' ws* 'endfor' ws* '%}';
@@ -152,34 +159,31 @@ Tokens
     {command, include_tag, ifeq_var, filter->var, with_filter->with_var, load_filter->load_var}
         string_literal  = '"' string_char* '"';
     
-    {var->var_member, with_var->with_member, load_var->load_member, if_var->if_member, ifeq_var->ifeq_member}
+    {var->var_member, with_var->with_member, load_var->load_member, if_var->if_member, ifeq_var->ifeq_member, for_var->for_member}
         dot             = '.';
     
-    {for_tag}
-        kw_in           = 'in';
-    
-    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_tag}
+    {var, with_var, load_var, if_var, ifeq_var, for_var, command, block_tag, include_tag, for_tag}
         id              = variable_id;
     
-    {var_member->var, with_member->with_var, load_member->load_var, if_member->if_var, ifeq_member->ifeq_var, include_tag, for_tag}
+    {var_member->var, with_member->with_var, load_member->load_var, if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag }
         member          = member_id;
     
-    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_tag, filter, with_filter, load_filter, if_filter}
+    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_var, for_tag, filter, with_filter, load_filter, if_filter}
         strip_ws        = ws+;
     
     {default}
         text_char       = any_char;
     
-    {var, with_var, load_var, if_var, ifeq_var}
+    {var, with_var, load_var, if_var, ifeq_var, for_var}
         vert_pipe       = '|';
     
-    {var, with_var, load_var, if_var, ifeq_var}
+    {var, with_var, load_var, if_var, ifeq_var, for_var}
         comma           = ',';
     
-    {var->filter, with_var->with_filter, load_var->load_filter, if_var->if_filter, ifeq_var->ifeq_filter}
+    {var->filter, with_var->with_filter, load_var->load_filter, if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter}
         colon           = ':';
     
-    {filter->var, with_filter->with_var, load_filter->load_var, if_filter->if_var, ifeq_filter->ifeq_var}
+    {filter->var, with_filter->with_var, load_filter->load_var, if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var}
         unquoted        = alpha_num+;
     
 
