@@ -2,15 +2,10 @@
 
 package galoot;
 
-import galoot.interpret.Interpreter;
-import galoot.lexer.Lexer;
-import galoot.node.Start;
-import galoot.parser.Parser;
-
 import java.io.File;
-import java.io.FileReader;
-import java.io.OutputStreamWriter;
-import java.io.PushbackReader;
+import java.util.List;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
 
 public class TestMain
 {
@@ -21,18 +16,18 @@ public class TestMain
             try
             {
                 Template template = new Template(new File(args[0]));
-                
-                //fill up a context with some sample data
+
+                // fill up a context with some sample data
                 Context context = new Context();
                 context.put("var", "a string");
                 context.put("var2", 42);
-                
+
                 String output = template.render(context);
                 System.out.print(output);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
-                System.out.println(e.getMessage());
+                System.out.println(ExceptionUtils.getStackTrace(e));
             }
         }
         else
