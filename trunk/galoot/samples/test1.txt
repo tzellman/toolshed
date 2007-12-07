@@ -3,7 +3,7 @@ some text
 
 {% comment %} a comment block {% endcomment %}
 
-Var: {{ var|lower|length }} length: {{ var.length }}
+Var: {{ var|upper }} length: {{ var.length }}
 
 
 {% if badVar %}show if text{% else %}show else text{% endif %}
