@@ -1,71 +1,13 @@
-{% include "parent.txt" %}
-
-{% include myHeaderFile %}
-
-{% load myCoolFilter.val|title yourCoolFilter %}
-
-{# a simple comment #} some text {# yeah, another comment! #} more text
+{# a simple comment #}
+some text
 
 {% comment %} a comment block {% endcomment %}
 
-{{ var.entry|lower|slice:":2" }}
-
-more text!
-
-{{ another.var.adam }}
-
-	indented text.
-
-{% block content %}
-	some content here
-	
-	{% block inner %}
-		inner content
-	{% endblock %}
-	
-	{% comment %}
-This is a comment, which should not be transformed.
-However, be careful because everything outside of the comment tags is
-preserved, including the newlines
-{% endcomment %}
-	
-	
-{% endblock %}
-
-{% with var.obj as newVar %}
-    {{ newVar }}
-{% endwith %}
+Var: {{ var }}
 
 
-{% for var in someArray %}
-	Var: {{ var }}
-{% endfor %}
-
-
-{% if var|size %} here1 {% endif %}
-{% if not var %} here2 {% else %} here3 {% endif %}
-{% if var and var2 %} here4 {% endif %}
-{% if not var and var2 %} here5 {% endif %}
-{% if var or var2|size %} here6 {% endif %}
-
-what
-{% filter lower|upper|lower %}
-    all of this text should get filtered, including this {{ zellmo }}
-{% endfilter %}
-about
-
-
-{% ifequal var var2 "tom" %}
- print this
-{% endifequal %}
-
-
-{%ifequal "tom" "tom"%}
- always true
-{%endifequal%}
-
-end of file.
-
-
-
-
+{% if badVar %}
+show if text
+{% else %}
+show else text
+{% endif %}

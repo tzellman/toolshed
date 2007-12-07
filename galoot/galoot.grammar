@@ -243,8 +243,8 @@ Productions
 
                         
     boolean_op {-> boolean_op} =
-            {and}   kw_and [not]:kw_not? [variable]:var_expression      {-> New boolean_op.and(not, variable)}
-        |   {or}    kw_or [not]:kw_not? [variable]:var_expression       {-> New boolean_op.or(not, variable)}
+            {and}   kw_and [expression]:boolean_expr                    {-> New boolean_op.and(expression)}
+        |   {or}    kw_or [expression]:boolean_expr                     {-> New boolean_op.or(expression)}
         ;
     
     
@@ -361,8 +361,8 @@ Abstract Syntax Tree
     boolean_expr =      [not]:kw_not? [variable]:var_expression;
 
     boolean_op =
-            {and}       [not]:kw_not? [variable]:var_expression
-        |   {or}        [not]:kw_not? [variable]:var_expression;
+            {and}       [expression]:boolean_expr
+        |   {or}        [expression]:boolean_expr;
 
 
     filter =            [filter]:id [arg]:filter_arg?;

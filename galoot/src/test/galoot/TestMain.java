@@ -7,7 +7,9 @@ import galoot.lexer.Lexer;
 import galoot.node.Start;
 import galoot.parser.Parser;
 
+import java.io.File;
 import java.io.FileReader;
+import java.io.OutputStreamWriter;
 import java.io.PushbackReader;
 
 public class TestMain
@@ -18,14 +20,15 @@ public class TestMain
         {
             try
             {
-                Lexer lexer = new Lexer(new PushbackReader(new FileReader(
-                        args[0]), 1024));
-                Parser parser = new Parser(lexer);
-                Start ast = parser.parse();
-
-                Interpreter interp = new Interpreter();
-
-                ast.apply(interp);
+                Template template = new Template(new File(args[0]));
+                
+                //fill up a context with some sample data
+                Context context = new Context();
+                context.put("var", "a string");
+                context.put("var2", 42);
+                
+                String output = template.render(context);
+                System.out.print(output);
             }
             catch (Exception e)
             {

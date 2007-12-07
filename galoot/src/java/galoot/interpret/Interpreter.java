@@ -1,76 +1,138 @@
 package galoot.interpret;
 
+import galoot.Context;
 import galoot.analysis.DepthFirstAdapter;
+import galoot.node.AAndBooleanOp;
 import galoot.node.ABlock;
+import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
 import galoot.node.ACommand;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.ALoad;
-import galoot.node.AStringArgument;
+import galoot.node.AOrBooleanOp;
 import galoot.node.AStringInclude;
 import galoot.node.AVarExpression;
+import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
 import galoot.node.PEntity;
-import galoot.node.PFilter;
 import galoot.node.PVarExpression;
-import galoot.node.TId;
 import galoot.node.TMember;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 public class Interpreter extends DepthFirstAdapter
 {
+    protected Writer writer;
 
-    public Interpreter()
+    protected Context context;
+
+    protected Stack<Object> variableStack;
+
+    public Interpreter(Context context, Writer writer)
     {
-        // TODO Auto-generated constructor stub
+        this.context = context;
+        this.writer = writer;
+        variableStack = new Stack<Object>();
+    }
+
+    protected void writeString(String s)
+    {
+        try
+        {
+            writer.write(s);
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public void inACharEntity(ACharEntity node)
+    public void outACharEntity(ACharEntity node)
     {
-        System.out.print(node.getChar().getText());
+        writeString(node.getChar().getText());
     }
 
     @Override
-    public void inAVarExpression(AVarExpression node)
+    public void outAVarExpression(AVarExpression node)
     {
-        TId referent = node.getReferent();
-        System.out.print("Var expression:" + referent.getText());
+        Object object = context.get(node.getReferent().getText());
         LinkedList<TMember> members = node.getMembers();
+
+        // turn the members into a String list
+        List<String> stringMembers = new ArrayList<String>(members.size());
         for (TMember member : members)
-        {
-            System.out.print("." + member.getText());
-        }
+            stringMembers.add(member.getText());
 
-        LinkedList<PFilter> filters = node.getFilters();
-        for (PFilter filter : filters)
-        {
-            System.out.print("|" + filter.toString());
-        }
+        // evaluate the object/methods
+        object = Interpreter.evaluateObject(object, stringMembers);
 
-        System.out.println();
+        // TODO apply filters
+
+        variableStack.push(object);
+    }
+
+    @Override
+    public void outAVariableEntity(AVariableEntity node)
+    {
+        Object object = variableStack.pop();
+        if (object != null)
+            writeString(object.toString());
+    }
+
+    @Override
+    public void outABooleanExpr(ABooleanExpr node)
+    {
+        // pop the variable (evaluated expression) off the stack
+        Object object = variableStack.pop();
+        boolean negate = node.getNot() != null;
+
+        boolean boolObj = evaluateAsBoolean(object);
+        boolObj = negate ? !boolObj : boolObj;
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outAAndBooleanOp(AAndBooleanOp node)
+    {
+        // pop the top two items off the variable stack
+        boolean result = evaluateAsBoolean(variableStack.pop())
+                && evaluateAsBoolean(variableStack.pop());
+        variableStack.push(result);
+    }
+
+    @Override
+    public void outAOrBooleanOp(AOrBooleanOp node)
+    {
+        // pop the top two items off the variable stack
+        boolean result = evaluateAsBoolean(variableStack.pop())
+                || evaluateAsBoolean(variableStack.pop());
+        variableStack.push(result);
     }
 
     @Override
     public void outACommand(ACommand node)
     {
-        System.out.println("command: " + node.getCommand());
-    }
-
-    @Override
-    public void inAStringArgument(AStringArgument node)
-    {
-        System.out.println("argument: " + node.getString().getText());
+        // System.out.println("command: " + node.getCommand());
     }
 
     @Override
     public void outABlock(ABlock node)
     {
-        System.out.println("leaving block: " + node.getId().getText());
+        // System.out.println("leaving block: " + node.getId().getText());
     }
 
     @Override
@@ -79,22 +141,22 @@ public class Interpreter extends DepthFirstAdapter
         LinkedList<PVarExpression> plugins = node.getPlugins();
         for (PVarExpression var : plugins)
         {
-            System.out.println("Asked to load plug-in: " + var.toString());
+            // System.out.println("Asked to load plug-in: " + var.toString());
         }
     }
 
     @Override
     public void outAStringInclude(AStringInclude node)
     {
-        System.out.println("Asked to include file: "
-                + node.getString().getText());
+        // System.out.println("Asked to include file: "
+        // + node.getString().getText());
     }
 
     @Override
     public void outAVariableInclude(AVariableInclude node)
     {
-        System.out.println("Asked to include a file from var: "
-                + node.getVariable());
+        // System.out.println("Asked to include a file from var: "
+        // + node.getVariable());
     }
 
     @Override
@@ -136,8 +198,6 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void caseAIfBlock(AIfBlock node)
     {
-        // TODO
-        // compute the boolean result
         // if true, execute the entities
         // if false, and an else block exists, execute the else entities
 
@@ -150,6 +210,11 @@ public class Interpreter extends DepthFirstAdapter
         {
             node.getExpr2().apply(this);
         }
+
+        // at this point, the boolean expression result is on the var. stack
+        boolean evaluateIf = evaluateAsBoolean(variableStack.pop());
+
+        if (evaluateIf)
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getIf());
             for (PEntity e : copy)
@@ -157,6 +222,7 @@ public class Interpreter extends DepthFirstAdapter
                 e.apply(this);
             }
         }
+        else
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
             for (PEntity e : copy)
@@ -166,5 +232,155 @@ public class Interpreter extends DepthFirstAdapter
         }
         outAIfBlock(node);
     }
-    
+
+    @Override
+    public void inABooleanExpr(ABooleanExpr node)
+    {
+        node.getVariable();
+    }
+
+    /**
+     * This function evaluates a given object and attempts to retrieve a nested
+     * sub-object
+     * 
+     * @param object
+     * @param members
+     * @return
+     */
+    protected static Object evaluateObject(Object object,
+            Iterable<String> members)
+    {
+        for (Iterator<String> it = members.iterator(); object != null
+                && it.hasNext();)
+        {
+            String memberName = (String) it.next();
+
+            boolean found = false; // used to flag if we found it
+
+            // first, check to see if it has parameters/methods with this name
+            try
+            {
+                Field field = object.getClass().getField(memberName);
+                object = field.get(object);
+                found = true;
+            }
+            catch (Exception e)
+            {
+                // ok, let's see if it has a method with that name
+                List<String> names = new ArrayList<String>();
+                names.add(memberName);
+
+                // compute the getter name and add it as a possibility
+                names.add("get" + memberName.substring(0, 1).toUpperCase()
+                        + memberName.substring(1));
+
+                for (String name : names)
+                {
+                    try
+                    {
+                        Method method = object.getClass().getMethod(memberName,
+                                null);
+                        if (method.getParameterTypes().length != 0)
+                            throw new InvalidParameterException();
+                        object = method.invoke(object, null);
+                        found = true;
+                        break;
+                    }
+                    catch (Exception e1)
+                    {
+                    }
+                }
+
+            }
+
+            // if we found it already, continue on
+            if (found)
+                continue;
+
+            // see if it is a list
+            if (object instanceof List)
+            {
+                List listObj = (List) object;
+                // try to convert the name to an index
+                try
+                {
+                    int index = Integer.parseInt(memberName);
+                    if (index < 0 || index >= listObj.size())
+                        throw new IndexOutOfBoundsException(memberName);
+                    object = listObj.get(index);
+                }
+                catch (Exception e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            // try it as a collection, maybe -- more expensive, possibly
+            else if (object instanceof Collection)
+            {
+                Collection collObj = (Collection) object;
+                // try to convert the name to an index
+                try
+                {
+                    int index = Integer.parseInt(memberName);
+                    int offset = 0;
+
+                    for (Iterator iterator = collObj.iterator(); iterator
+                            .hasNext()
+                            && !found;)
+                    {
+                        if (index == offset)
+                        {
+                            object = iterator.next();
+                            found = true;
+                        }
+                        else
+                            iterator.next();
+                        offset++;
+                    }
+                    if (!found)
+                        throw new IndexOutOfBoundsException(memberName);
+                }
+                catch (Exception e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            // it could be a member of a Map
+            else if (object instanceof Map)
+            {
+                Map mapObj = (Map) object;
+                if (mapObj.containsKey(memberName))
+                    object = mapObj.get(memberName);
+                else
+                    object = null;
+            }
+        }
+        return object;
+    }
+
+    /**
+     * Evaluates the given object, returning its "boolean-ness"
+     * 
+     * @param object
+     * @return
+     */
+    protected static boolean evaluateAsBoolean(Object object)
+    {
+        if (object == null)
+            return false;
+        if (object instanceof Boolean)
+            return (Boolean) object;
+        if (object instanceof Number)
+            return !Double.valueOf(((Number) object).doubleValue()).equals(
+                    new Double(0.0));
+        if (object instanceof String)
+            return !((String) object).isEmpty();
+        if (object instanceof List)
+            return ((List) object).size() != 0;
+        if (object instanceof Map)
+            return ((Map) object).size() != 0;
+        return true;
+    }
 }
