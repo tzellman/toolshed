@@ -14,9 +14,12 @@ import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
 import galoot.node.ALoad;
 import galoot.node.AOrBooleanOp;
+import galoot.node.AQuotedFilterArg;
 import galoot.node.AStringArgument;
 import galoot.node.AStringInclude;
+import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarExpression;
+import galoot.node.AVariableArgument;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
 import galoot.node.PArgument;
@@ -73,6 +76,10 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAVarExpression(AVarExpression node)
     {
+        // whenver we come across a variable expression, we evaluate it, then
+        // push it onto an expression stack. This way, the operations that use
+        // the expressions can just pop off the stack
+
         Object object = context.get(node.getReferent().getText());
         LinkedList<TMember> members = node.getMembers();
 
@@ -85,7 +92,6 @@ public class Interpreter extends DepthFirstAdapter
         object = TemplateUtils.evaluateObject(object, stringMembers);
 
         // TODO apply filters
-        System.out.println("HERE: " + node.toString());
 
         Iterator<Pair<String, String>> iterator = filterStack
                 .descendingIterator();
@@ -105,12 +111,28 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
+    public void outAQuotedFilterArg(AQuotedFilterArg node)
+    {
+        // strip the quotes and push it on the stack
+        String arg = node.getArg().getText();
+        arg = arg.substring(1, arg.length() - 1);
+        variableStack.push(arg);
+    }
+
+    @Override
+    public void outAUnquotedFilterArg(AUnquotedFilterArg node)
+    {
+        variableStack.push(node.getArg().getText());
+    }
+
+    @Override
     public void outAFilter(AFilter node)
     {
-//        filterStack.push(new Pair<String, String>(node.getFilter().getText(),
-//                variableStack.pop().toString()));
-//
-//        System.out.println("Filter:" + node.getFilter().getText());
+        String name = node.getFilter().getText();
+        //pop the filter arg off of the var stack, if it exists
+        String arg = node.getArg() != null ? variableStack.pop().toString()
+                : "";
+        filterStack.push(new Pair<String, String>(name, arg));
     }
 
     @Override
@@ -160,6 +182,13 @@ public class Interpreter extends DepthFirstAdapter
 
         // just push the string argument onto the stack
         variableStack.push(text);
+    }
+
+    @Override
+    public void outAVariableArgument(AVariableArgument node)
+    {
+        // nothing to do here, since the expression will get evaluated inside of
+        // outAVarExpression
     }
 
     @Override
