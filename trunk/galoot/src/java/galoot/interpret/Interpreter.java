@@ -8,6 +8,8 @@ import galoot.analysis.DepthFirstAdapter;
 import galoot.node.AAndBooleanOp;
 import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
+import galoot.node.ADocument;
+import galoot.node.AExtends;
 import galoot.node.AFilter;
 import galoot.node.AFilterBlock;
 import galoot.node.AForBlock;
@@ -28,6 +30,7 @@ import galoot.node.PEntity;
 import galoot.node.PVarExpression;
 import galoot.node.TMember;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -92,6 +95,27 @@ public class Interpreter extends DepthFirstAdapter
             e.printStackTrace();
         }
     }
+    
+    @Override
+    public void inADocument(ADocument node)
+    {
+    }
+    
+    @Override
+    public void inAExtends(AExtends node)
+    {
+        //TODO move all of this code somewhere else
+        String parent = node.getParentName().getText();
+        System.out.println("Parent doc is: " + parent);
+        
+        File file = new File(parent);
+        if (file.exists())
+        {
+//            Template template = template
+        }
+        
+    }
+    
 
     @Override
     public void outACharEntity(ACharEntity node)
