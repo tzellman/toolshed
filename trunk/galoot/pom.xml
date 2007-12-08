@@ -21,6 +21,16 @@
         </developer>
     </developers>
 
+    <!-- By default, http://repo1.maven.org/maven2/ is used, but some jars 
+        aren't available there, so we add the local lib path where we have some
+        jars under version control -->
+    <repositories>
+        <repository>
+            <id>local</id>
+            <name>local</name>
+            <url>file://${basedir}/libs</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -42,14 +52,14 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-                <groupId>org.codehaus.jettison</groupId>
-                <artifactId>jettison</artifactId>
-                <version>1.0-RC1</version>
-        </dependency>	
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <version>1.0-RC1</version>
+        </dependency>
         <dependency>
-                <groupId>stax</groupId>
-                <artifactId>stax-api</artifactId>
-                <version>1.0.1</version>
+            <groupId>stax</groupId>
+            <artifactId>stax-api</artifactId>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>sablecc</groupId>
