@@ -269,7 +269,7 @@ Productions
     with_block {-> with_block} =
                         with_start [expression]:var_expression
                         kw_as [var]:id tag_end
-                        [entities]:entity* with_end                     {-> New with_block(expression, var)}
+                        [entities]:entity* with_end                     {-> New with_block(expression, var, [entities])}
         ;
     
     filter_block {-> filter_block} =
@@ -358,7 +358,7 @@ Abstract Syntax Tree
     
     for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
     
-    with_block =        [expression]:var_expression [var]:id;
+    with_block =        [expression]:var_expression [var]:id [entities]:entity*;
     
     filter_block =      [filters]:filter+ [entities]:entity*;
     
