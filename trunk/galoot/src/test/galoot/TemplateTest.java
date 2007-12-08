@@ -1,5 +1,6 @@
 package galoot;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,10 +8,15 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class TemplateTest extends TestCase
 {
+    private static Log log = LogFactory.getLog(TemplateTest.class);
+
     protected ContextStack context;
 
     int[] intArray = { 7, 13, 15, 26, 42 };
@@ -114,6 +120,60 @@ public class TemplateTest extends TestCase
         }
         catch (IOException e)
         {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testInclude()
+    {
+        // includes
+        File f = null;
+        try
+        {
+            // bad template
+            Template t = new Template("{% include \"garp\" %}");
+            String output = t.render(context);
+            assertEquals(output, "");
+
+            // existing template
+            String include = "tmp.fake";
+            f = new File(include);
+            FileUtils.writeStringToFile(f,
+                    "{% with name|upper as bar %}{{ bar }}{% endwith %}",
+                    "UTF-8");
+
+            log.debug("creating tmp file: " + f.getAbsolutePath());
+
+            t = new Template("{% include \"" + f.getAbsolutePath() + "\" %}");
+            output = t.render(context);
+            assertEquals("TOM", output);
+
+            // validate the case where the file is in the registry
+            // add the file path to the registry
+            PluginRegistry.getInstance().addIncludePath(f.getParent());
+            t = new Template("{% include \"" + include + "\" %}");
+            output = t.render(context);
+            assertEquals("TOM", output);
+            
+            context.put("mypath", include);
+            
+            t = new Template("{% include mypath %}");
+            output = t.render(context);
+            assertEquals("TOM", output);
+
+            FileUtils.forceDelete(f);
+        }
+        catch (IOException e)
+        {
+            if (f != null)
+                try
+                {
+                    FileUtils.forceDelete(f);
+                }
+                catch (IOException e1)
+                {
+                    // couldn't delete the file
+                }
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
