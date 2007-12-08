@@ -1,0 +1,6 @@
+This is the base document.
+
+Let's declare a section which can be overriden:
+{% block content %}
+   This could be overriden...
+{% endblock %}

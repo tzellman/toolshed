@@ -55,12 +55,12 @@ public class Template
         Interpreter interp = new Interpreter(context, writer);
         templateAST.apply(interp);
     }
-
+    
     public String render(Context context)
     {
         StringWriter stringWriter = new StringWriter();
         render(context, stringWriter);
         return stringWriter.getBuffer().toString();
     }
-
+    
 }

@@ -1,0 +1,10 @@
+{% extends "samples/baseDoc.txt" %}
+
+{% block content %}
+sub document
+    {% block anotherBlock %}
+       inner block
+    {% endblock %}
+
+
+{% endblock %}
