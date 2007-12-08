@@ -1,0 +1,3 @@
+Normally we don't like to version control jar files.
+However, for the few in this directory, either these are newer than the ones
+posted on the public maven2 repositories, or they just don't exist publicly.
