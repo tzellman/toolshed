@@ -1,30 +1,13 @@
 #
 
-
-- load (a plugin)
-    - load to the top level context
-    - change load syntax to be comma delimited
-        - aliasing
-
-- implement include functionality
-    - how to specify template directories
-        - template root
-
-- remove command from grammar
 - documentation
 - examples
 - test cases
 
-#- with block
-#    - new context
-#    - setting variable etc.
+Possible additions/mods:
+
+- make loaded plug-ins only available within the current context's scope
 
 - future work
     - extends capability
     - custom tags
-
-
-
-
-
-
