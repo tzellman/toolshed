@@ -1,6 +1,6 @@
 package galoot.interpret;
 
-import galoot.Context;
+import galoot.ContextStack;
 import galoot.Filter;
 import galoot.Pair;
 import galoot.TemplateUtils;
@@ -46,7 +46,7 @@ public class Interpreter extends DepthFirstAdapter
 {
     protected Writer writer;
 
-    protected Context context;
+    protected ContextStack context;
 
     protected Stack<Object> variableStack;
 
@@ -54,7 +54,7 @@ public class Interpreter extends DepthFirstAdapter
 
     protected Stack<StringBuffer> filterBlockData;
 
-    public Interpreter(Context context, Writer writer)
+    public Interpreter(ContextStack context, Writer writer)
     {
         this.context = context;
         this.writer = writer;
@@ -239,11 +239,11 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outALoad(ALoad node)
     {
-        LinkedList<PVarExpression> plugins = node.getPlugins();
-        for (PVarExpression var : plugins)
-        {
-            // System.out.println("Asked to load plug-in: " + var.toString());
-        }
+        // LinkedList<PVarExpression> plugins = node.getPlugins();
+        // for (PVarExpression var : plugins)
+        // {
+        // // System.out.println("Asked to load plug-in: " + var.toString());
+        // }
     }
 
     @Override
