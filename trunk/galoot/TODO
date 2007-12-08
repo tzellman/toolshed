@@ -1,0 +1,29 @@
+#
+
+- load (a plugin)
+    - load to the top level context
+    - change load syntax to be comma delimited
+        - aliasing
+
+#- with block
+#    - new context
+#    - setting variable etc.
+
+- implement include functionality
+    - how to specify template directories
+        - template root
+
+- remove command from grammar
+- documentation
+- examples
+- test cases
+
+- future work
+    - extends capability
+    - custom tags
+
+
+
+
+
+

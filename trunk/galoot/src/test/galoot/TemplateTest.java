@@ -11,7 +11,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 
 public class TemplateTest extends TestCase
 {
-    protected Context context;
+    protected ContextStack context;
 
     int[] intArray = { 7, 13, 15, 26, 42 };
 
@@ -21,7 +21,7 @@ public class TemplateTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        context = new Context();
+        context = new ContextStack();
 
         // add some variables to the context
         List<String> randomStrings = new ArrayList<String>();
@@ -35,7 +35,7 @@ public class TemplateTest extends TestCase
             for (int j = 0; j < stringSize; ++j)
             {
                 int charId = minChar + random.nextInt(maxChar - minChar);
-                buf.append((char) charId);
+                buf.trueappend((char) charId);
             }
             randomStrings.add(buf.toString());
         }
@@ -111,6 +111,22 @@ public class TemplateTest extends TestCase
             output = t.render(context);
             assertEquals(output, "true");
 
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+    
+    public void testWithStatement()
+    {
+        // nested ifs
+        try
+        {
+            Template t = new Template(
+                    "{% with name|upper as bar %}{{ bar }}{% endwith %}");
+            String output = t.render(context);
+            assertEquals(output, "TOM");
         }
         catch (IOException e)
         {
