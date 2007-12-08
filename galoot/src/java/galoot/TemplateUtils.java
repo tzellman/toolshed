@@ -173,14 +173,54 @@ public final class TemplateUtils
      */
     public static boolean isArrayType(Object object)
     {
-        return object != null
-                && ((object instanceof Object[]) || (object instanceof int[])
-                        || (object instanceof long[])
-                        || (object instanceof float[])
-                        || (object instanceof double[])
-                        || (object instanceof boolean[])
-                        || (object instanceof byte[])
-                        || (object instanceof short[]) || (object instanceof char[]));
+        return object.getClass().isArray();
+        // return object != null
+        // && ((object instanceof Object[]) || (object instanceof int[])
+        // || (object instanceof long[])
+        // || (object instanceof float[])
+        // || (object instanceof double[])
+        // || (object instanceof boolean[])
+        // || (object instanceof byte[])
+        // || (object instanceof short[]) || (object instanceof char[]));
+    }
+
+    /**
+     * Returns the length of the object, if it is a known object with a
+     * size/length-like attribute. For example, lists, arrays, strings.
+     * 
+     * @param object
+     * @return the length of the object, or null
+     */
+    public static Integer getObjectLength(Object object)
+    {
+        if (object instanceof List)
+            return ((List) object).size();
+        else if (object instanceof String)
+            return ((String) object).length();
+        else if (object instanceof Map)
+            return ((Map) object).size();
+        else if (isArrayType(object))
+        {
+            if (object instanceof Object[])
+                return ((Object[]) object).length;
+            if (object instanceof int[])
+                return ((int[]) object).length;
+            if (object instanceof long[])
+                return ((long[]) object).length;
+            if (object instanceof float[])
+                return ((float[]) object).length;
+            if (object instanceof double[])
+                return ((double[]) object).length;
+            if (object instanceof boolean[])
+                return ((boolean[]) object).length;
+            if (object instanceof byte[])
+                return ((byte[]) object).length;
+            if (object instanceof short[])
+                return ((short[]) object).length;
+            if (object instanceof char[])
+                return ((char[]) object).length;
+        }
+        return null;
     }
 
     /**

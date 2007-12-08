@@ -433,8 +433,6 @@ public class Interpreter extends DepthFirstAdapter
         StringBuffer filteredData = filterBlockData.pop();
         Object output = filteredData.toString();
 
-        System.out.println("Filters: " + node.getFilters().size());
-
         // apply the filters
         for (int i = 0, size = node.getFilters().size(); i < size
                 && output != null; ++i)
