@@ -3,6 +3,8 @@ package galoot.interpret;
 import galoot.ContextStack;
 import galoot.Filter;
 import galoot.Pair;
+import galoot.PluginRegistry;
+import galoot.Template;
 import galoot.TemplateUtils;
 import galoot.analysis.DepthFirstAdapter;
 import galoot.node.AAndBooleanOp;
@@ -15,6 +17,7 @@ import galoot.node.AFilterBlock;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
+import galoot.node.AIncludeEntity;
 import galoot.node.ALoad;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
@@ -43,8 +46,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class Interpreter extends DepthFirstAdapter
 {
+    private static Log log = LogFactory.getLog(Interpreter.class);
+
     protected Writer writer;
 
     protected ContextStack context;
@@ -250,15 +259,77 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAStringInclude(AStringInclude node)
     {
-        // System.out.println("Asked to include file: "
-        // + node.getString().getText());
+        log.debug("Asked to include file: " + node.getString().getText());
+        doInclude(node.getString().getText());
     }
 
     @Override
     public void outAVariableInclude(AVariableInclude node)
     {
-        // System.out.println("Asked to include a file from var: "
-        // + node.getVariable());
+        log.debug("Asked to include a file from var: " + node.getVariable());
+        Object pop = variableStack.pop();
+        doInclude(pop.toString());
+    }
+
+    /**
+     * Lookup and render the filename if it is found in the include directories
+     * 
+     * @param filename
+     */
+    private void doInclude(String filename)
+    {
+        context.push();
+        File file = null;
+
+        String okFilename = (filename.endsWith("\"")) ? filename.substring(1,
+                filename.length() - 1) : filename;
+
+        // 1. test to see if the file exists
+        file = new File(okFilename);
+        if (!file.exists())
+        {
+            // look in the registry for the paths where include files can
+            // be found.
+            Iterable<String> includePaths = PluginRegistry.getInstance()
+                    .getIncludePaths();
+            boolean found = false;
+            File tf = null;
+
+            // loop over the paths to see if the file exists
+            for (String path : includePaths)
+            {
+                tf = new File(path + File.separator + filename);
+                if (tf.exists())
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                file = null;
+        }
+
+        if (file != null)
+        {
+            try
+            {
+                String rendered = new Template(file).render(context);
+                writeString(rendered);
+            }
+            catch (IOException e)
+            {
+                // don't cause the world to end because of this
+                log.error("Error reading file " + file.getPath() + ": "
+                        + ExceptionUtils.getFullStackTrace(e));
+            }
+        }
+        else
+        {
+            // don't cause the world to end because of this
+            log.warn("template: " + filename + " could not be found.");
+        }
+
+        context.pop();
     }
 
     @Override

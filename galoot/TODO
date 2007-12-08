@@ -1,13 +1,10 @@
 #
 
+
 - load (a plugin)
     - load to the top level context
     - change load syntax to be comma delimited
         - aliasing
-
-#- with block
-#    - new context
-#    - setting variable etc.
 
 - implement include functionality
     - how to specify template directories
@@ -17,6 +14,10 @@
 - documentation
 - examples
 - test cases
+
+#- with block
+#    - new context
+#    - setting variable etc.
 
 - future work
     - extends capability
