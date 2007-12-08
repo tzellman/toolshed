@@ -12,7 +12,7 @@ public class FilterTest extends TestCase
         super.setUp();
         filters = new FilterMap();
 
-        filters.registerFilter(new Filter()
+        filters.addFilter(new Filter()
         {
             public Object filter(Object object, String args)
             {

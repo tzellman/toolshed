@@ -17,21 +17,23 @@ import galoot.node.AFilterBlock;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
-import galoot.node.AIncludeEntity;
 import galoot.node.ALoad;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
 import galoot.node.AStringArgument;
+import galoot.node.AStringAsPlugin;
 import galoot.node.AStringInclude;
+import galoot.node.AStringPlugin;
 import galoot.node.AUnquotedFilterArg;
+import galoot.node.AVarAsPlugin;
 import galoot.node.AVarExpression;
+import galoot.node.AVarPlugin;
 import galoot.node.AVariableArgument;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
 import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
-import galoot.node.PVarExpression;
 import galoot.node.TMember;
 
 import java.io.File;
@@ -246,9 +248,60 @@ public class Interpreter extends DepthFirstAdapter
         // outAVarExpression
     }
 
+    private void loadFilterPlugin(String pluginName, String alias)
+    {
+        if (alias == null)
+            alias = pluginName;
+        Filter filter = PluginRegistry.getInstance().getFilter(pluginName);
+        if (filter == null)
+        {
+            // TODO log here
+        }
+        else
+        {
+            // add the filter to the context's filter map
+            context.getFilterMap().addFilter(filter, alias);
+        }
+    }
+
+    @Override
+    public void outAStringPlugin(AStringPlugin node)
+    {
+        String name = node.getString().getText();
+        // strip the quotes
+        name = name.substring(1, name.length() - 1);
+        loadFilterPlugin(name, null);
+    }
+
+    @Override
+    public void outAStringAsPlugin(AStringAsPlugin node)
+    {
+        String name = node.getString().getText();
+        // strip the quotes
+        name = name.substring(1, name.length() - 1);
+        loadFilterPlugin(name, node.getAlias().getText());
+    }
+
+    @Override
+    public void outAVarPlugin(AVarPlugin node)
+    {
+        // pop the var off the stack
+        Object var = variableStack.pop();
+        loadFilterPlugin(var.toString(), null);
+    }
+
+    @Override
+    public void outAVarAsPlugin(AVarAsPlugin node)
+    {
+        // pop the var off the stack
+        Object var = variableStack.pop();
+        loadFilterPlugin(var.toString(), node.getAlias().getText());
+    }
+
     @Override
     public void outALoad(ALoad node)
     {
+        int numPlugins = node.getPlugins().size();
         // LinkedList<PVarExpression> plugins = node.getPlugins();
         // for (PVarExpression var : plugins)
         // {

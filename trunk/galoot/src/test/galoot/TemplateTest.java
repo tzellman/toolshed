@@ -234,4 +234,55 @@ public class TemplateTest extends TestCase
         }
     }
 
+    public void testLoad()
+    {
+        // make an anonymous filter which returns "true" if the object is null,
+        // "false" otherwise
+        Filter filter = new Filter()
+        {
+            public Object filter(Object object, String args)
+            {
+                return object == null ? "true" : "false";
+            }
+
+            public String getName()
+            {
+                return "is_null";
+            }
+        };
+
+        // add the filter to the global registry
+        PluginRegistry.getInstance().registerFilter(filter);
+
+        try
+        {
+            // this should return nothing, since we don't know about the filter
+            Template t = new Template("{{ bad_var|is_null }}");
+            String output = t.render(context);
+            assertTrue(output.isEmpty());
+
+            // now, we'll load the plug-in we created into the context
+            t = new Template("{% load \"is_null\" %}{{ bad_var|is_null }}");
+            output = t.render(context);
+            assertEquals(output, "true");
+
+            // let's remove the plugin from the context to force another load
+            context.getFilterMap().removeFilter(filter.getName());
+
+            // now, let's test the alias op
+            t = new Template(
+                    "{% load \"is_null\" as isNull %}{{ bad_var|isNull }}");
+            output = t.render(context);
+            assertEquals(output, "true");
+
+            // cleanup for other tests
+            context.getFilterMap().removeFilter(filter.getName());
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+
+    }
+
 }

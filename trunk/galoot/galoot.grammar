@@ -133,7 +133,9 @@ Tokens
     {default->comment_block}
         comment_start   = '{%' ws* 'comment' ws* '%}';
     
-    {var->default, block_tag->default, load_var->default, include_tag->default, for_var->default, if_var->default, with_var->default, ifeq_var->default, extends_tag->default}
+    {var->default, block_tag->default, load_var->default, include_tag->default,
+    for_var->default, if_var->default, with_var->default, ifeq_var->default,
+    extends_tag->default, load_as->default}
         tag_end         = '%}' eol?;
     
     {default}
@@ -154,19 +156,23 @@ Tokens
     {comment_block}
         comment_text    = any_char;
     
-    {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var, load_filter->load_var, load_var->load_as}
+    {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
+    load_filter->load_var, load_var->load_as}
         string_literal  = '"' string_char* '"';
     
-    {var->var_member, with_var->with_member, load_var->load_member, if_var->if_member, ifeq_var->ifeq_member, for_var->for_member}
+    {var->var_member, with_var->with_member, load_var->load_member,
+    if_var->if_member, ifeq_var->ifeq_member, for_var->for_member}
         dot             = '.';
     
     {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag, include_tag, for_tag}
         id              = variable_id;
     
-    {var_member->var, with_member->with_var, load_member->load_var, if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag }
+    {var_member->var, with_member->with_var, load_member->load_var,
+    if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag }
         member          = member_id;
     
-    {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var, for_tag, filter, with_filter, load_filter, if_filter, extends_tag}
+    {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var,
+    for_tag, filter, with_filter, load_filter, if_filter, extends_tag, load_as}
         strip_ws        = ws+;
     
     {default}
@@ -178,10 +184,12 @@ Tokens
     {var, with_var, load_var, if_var, ifeq_var, for_var}
         comma           = ',';
     
-    {var->filter, with_var->with_filter, load_var->load_filter, if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter}
+    {var->filter, with_var->with_filter, load_var->load_filter,
+    if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter}
         colon           = ':';
     
-    {filter->var, with_filter->with_var, load_filter->load_var, if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var}
+    {filter->var, with_filter->with_var, load_filter->load_var,
+    if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var}
         unquoted        = alpha_num+;
     
 
