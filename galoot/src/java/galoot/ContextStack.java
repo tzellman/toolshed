@@ -7,16 +7,16 @@ import java.util.Map;
  * stack, which corresponds to the context depth.
  * 
  */
-public class Context extends MapStack<String, Object>
+public class ContextStack extends MapStack<String, Object>
 {
     protected FilterRegistry filterMap;
 
-    public Context()
+    public ContextStack()
     {
         filterMap = new FilterRegistry();
     }
 
-    public Context(Map<String, Object> initialItems)
+    public ContextStack(Map<String, Object> initialItems)
     {
         super(initialItems);
     }

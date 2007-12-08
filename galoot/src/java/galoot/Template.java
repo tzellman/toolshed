@@ -50,13 +50,13 @@ public class Template
         }
     }
 
-    public void render(Context context, Writer writer)
+    public void render(ContextStack context, Writer writer)
     {
         Interpreter interp = new Interpreter(context, writer);
         templateAST.apply(interp);
     }
     
-    public String render(Context context)
+    public String render(ContextStack context)
     {
         StringWriter stringWriter = new StringWriter();
         render(context, stringWriter);

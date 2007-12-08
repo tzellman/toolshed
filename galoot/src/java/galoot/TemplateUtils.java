@@ -173,7 +173,7 @@ public final class TemplateUtils
      */
     public static boolean isArrayType(Object object)
     {
-        return object.getClass().isArray();
+        return object != null && object.getClass().isArray();
         // return object != null
         // && ((object instanceof Object[]) || (object instanceof int[])
         // || (object instanceof long[])
