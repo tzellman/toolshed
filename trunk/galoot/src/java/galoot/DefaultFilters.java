@@ -93,14 +93,7 @@ public final class DefaultFilters
     {
         public Object filter(Object object, String args)
         {
-            if (object instanceof List)
-                return ((List) object).size();
-            else if (object instanceof String)
-                return ((String) object).length();
-            else if (object instanceof Map)
-                return ((Map) object).size();
-            // return null because length doesn't apply to anything else
-            return null;
+            return TemplateUtils.getObjectLength(object);
         }
     }
 
@@ -148,6 +141,9 @@ public final class DefaultFilters
         {
             if (object instanceof List)
                 return object;
+            
+            if (TemplateUtils.isArrayType(object))
+                return TemplateUtils.objectToCollection(object);
 
             // convert some numbers to Strings
             if (object instanceof Number)

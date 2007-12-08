@@ -13,6 +13,10 @@ public class TemplateTest extends TestCase
 {
     protected Context context;
 
+    int[] intArray = { 7, 13, 15, 26, 42 };
+
+    double[] doubleArray = { 0.0, 3.1415, Math.PI, Math.E };
+
     @Override
     protected void setUp() throws Exception
     {
@@ -20,10 +24,6 @@ public class TemplateTest extends TestCase
         context = new Context();
 
         // add some variables to the context
-
-        int[] intArray = { 7, 13, 15, 26, 42 };
-        double[] doubleArray = { 0.0, 3.1415, Math.PI, Math.E };
-
         List<String> randomStrings = new ArrayList<String>();
         Random random = new Random();
         for (int i = 0, num = random.nextInt(100); i < num; ++i)
@@ -43,11 +43,11 @@ public class TemplateTest extends TestCase
         context.put("name", "Tom");
         context.put("randomStrings", randomStrings);
         context.put("intArray", intArray);
+        context.put("intList", TemplateUtils.objectToCollection(intArray));
         context.put("doubleArray", doubleArray);
         context
                 .put("doubleList", TemplateUtils
                         .objectToCollection(doubleArray));
-
     }
 
     public void testVarExpression()
@@ -58,35 +58,104 @@ public class TemplateTest extends TestCase
             String output = t.render(context);
             assertEquals(output, "Tom");
 
-            t = new Template("{% for var in intArray %}{{ var }},{% endfor %}");
+            t = new Template("{{ name.length }}");
             output = t.render(context);
-            System.out.println(output);
-            
-            //this time, don't print an ending comma
-            t = new Template("{% for var in intArray %}{{ var }}{% if not forloop.last %},{% endif %}{% endfor %}");
-            output = t.render(context);
-            System.out.println(output);
+            assertEquals(Integer.parseInt(output), "Tom".length());
 
-            t = new Template("{{ randomStrings }}");
+            t = new Template("{{ intList.size }}");
             output = t.render(context);
-            System.out.println(output);
+            assertEquals(Integer.parseInt(output), intArray.length);
 
+            // shouldn't render any output since the var doesn't exist
+            t = new Template("{{ doesnt_exist }}");
+            output = t.render(context);
+            assertTrue(output.isEmpty());
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testIfStatement()
+    {
+        try
+        {
+            Template t = new Template("{% if name %}true{% endif %}");
+            String output = t.render(context);
+            assertEquals(output, "true");
+
+            t = new Template("{% if not name %}false{% endif %}");
+            output = t.render(context);
+            assertTrue(output.isEmpty());
+
+            t = new Template("{% if bad_var %}false{% endif %}");
+            output = t.render(context);
+            assertTrue(output.isEmpty());
+
+            t = new Template("{% if name %}true{% else %}false{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "true");
+
+            t = new Template("{% if not name %}true{% else %}false{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "false");
+
+            t = new Template("{% if bad_var %}false{% else %}else{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "else");
+
+            // nested ifs
             t = new Template(
-                    "{% for var in doubleArray %}{{ var }},{% endfor %}");
+                    "{% if name %}{% if intArray %}true{% endif %}{% endif %}");
             output = t.render(context);
-            System.out.println(output);
-
-            t = new Template(
-                    "{% for var in doubleList %}{{ var }},{% endfor %}");
-            output = t.render(context);
-            System.out.println(output);
+            assertEquals(output, "true");
 
         }
         catch (IOException e)
         {
             fail(ExceptionUtils.getStackTrace(e));
         }
+    }
 
+    public void testDefaultFilters()
+    {
+        try
+        {
+            Template t = new Template("{{ name|length }}");
+            String output = t.render(context);
+            assertEquals(Integer.parseInt(output), "Tom".length());
+
+            t = new Template("{{ name|upper }}");
+            output = t.render(context);
+            assertEquals(output, "Tom".toUpperCase());
+
+            t = new Template("{{ name|lower }}");
+            output = t.render(context);
+            assertEquals(output, "Tom".toLowerCase());
+
+            t = new Template("{{ intArray|make_list|length }}");
+            output = t.render(context);
+            assertEquals(Integer.parseInt(output), intArray.length);
+
+            t = new Template("{{ intArray|make_list }}");
+            output = t.render(context);
+            assertEquals(output, ((List<Integer>) context.get("intList"))
+                    .toString());
+
+            t = new Template("{{ intArray|length }}");
+            output = t.render(context);
+            assertEquals(Integer.parseInt(output), intArray.length);
+            
+            t = new Template("{{ name|make_list|length }}");
+            output = t.render(context);
+            assertEquals(Integer.parseInt(output), "Tom".length());
+
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
     }
 
 }
