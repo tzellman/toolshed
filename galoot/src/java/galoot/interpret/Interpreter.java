@@ -25,6 +25,7 @@ import galoot.node.AVarExpression;
 import galoot.node.AVariableArgument;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
+import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
 import galoot.node.PVarExpression;
@@ -453,6 +454,41 @@ public class Interpreter extends DepthFirstAdapter
 
         if (output != null)
             writeString(output.toString());
+    }
+
+    @Override
+    public void caseAWithBlock(AWithBlock node)
+    {
+        inAWithBlock(node);
+        if (node.getExpression() != null)
+        {
+            node.getExpression().apply(this);
+        }
+        if (node.getVar() != null)
+        {
+            node.getVar().apply(this);
+        }
+
+        // this is the loop variable, which will get updated each iteration
+        String withVar = node.getVar().getText();
+
+        // pop the loop expression off the stack
+        Object withObj = variableStack.pop();
+
+        // push a new context
+        context.push();
+        // add the vars
+        context.put(withVar, withObj);
+        {
+            List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
+            for (PEntity e : copy)
+            {
+                e.apply(this);
+            }
+        }
+        // pop the context
+        context.pop();
+        outAWithBlock(node);
     }
 
 }

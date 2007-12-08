@@ -17,7 +17,7 @@ public class Main
                 Template template = new Template(new File(args[0]));
 
                 // fill up a context with some sample data
-                Context context = new Context();
+                ContextStack context = new ContextStack();
                 context.put("var", "a string");
                 context.put("var2", 42);
 
