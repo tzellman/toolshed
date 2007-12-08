@@ -69,7 +69,7 @@ public final class DefaultFilters
         return filterMap.containsKey(name);
     }
 
-    static class Lower implements Filter
+    static class Lower extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -79,7 +79,7 @@ public final class DefaultFilters
         }
     }
 
-    static class Upper implements Filter
+    static class Upper extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -89,7 +89,7 @@ public final class DefaultFilters
         }
     }
 
-    static class Length implements Filter
+    static class Length extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -108,7 +108,7 @@ public final class DefaultFilters
      * Returns a random item from a list or string.
      * 
      */
-    static class Random implements Filter
+    static class Random extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -142,7 +142,7 @@ public final class DefaultFilters
      * digits. For a string, it’s a list of characters.
      * 
      */
-    static class Make_List implements Filter
+    static class Make_List extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -171,7 +171,7 @@ public final class DefaultFilters
     /**
      * If value is unavailable, use given default.
      */
-    static class Default implements Filter
+    static class Default extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -184,7 +184,7 @@ public final class DefaultFilters
      * returns one of those strings according to the value.
      * 
      */
-    static class YesNo implements Filter
+    static class YesNo extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
@@ -206,11 +206,11 @@ public final class DefaultFilters
      * Returns a boolean of whether the value’s length is the argument.
      * 
      */
-    static class Length_Is implements Filter
+    static class Length_Is extends AbstractFilter
     {
         public Object filter(Object object, String args)
         {
-            //just use the Length filter to get the length
+            // just use the Length filter to get the length
             Object lenObj = new Length().filter(object, null);
             if (lenObj != null && args != null && lenObj instanceof Number)
             {
