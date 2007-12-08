@@ -35,7 +35,7 @@ public class TemplateTest extends TestCase
             for (int j = 0; j < stringSize; ++j)
             {
                 int charId = minChar + random.nextInt(maxChar - minChar);
-                buf.trueappend((char) charId);
+                buf.append((char) charId);
             }
             randomStrings.add(buf.toString());
         }
@@ -117,7 +117,7 @@ public class TemplateTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
-    
+
     public void testWithStatement()
     {
         // nested ifs
@@ -162,7 +162,7 @@ public class TemplateTest extends TestCase
             t = new Template("{{ intArray|length }}");
             output = t.render(context);
             assertEquals(Integer.parseInt(output), intArray.length);
-            
+
             t = new Template("{{ name|make_list|length }}");
             output = t.render(context);
             assertEquals(Integer.parseInt(output), "Tom".length());
