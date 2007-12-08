@@ -7,8 +7,32 @@
     <artifactId>galoot</artifactId>
     <packaging>jar</packaging>
     <version>1.0</version>
+    <inceptionYear>2007</inceptionYear>
     <name>Galoot Template Engine</name>
-    <!--url>http://code.google.com/g/ogdl4j/</url-->
+    <url>http://code.google.com/p/toolshed/</url>
+
+    <description>
+        Galoot is a templating engine for processing text files (html, xml,
+        etc.) as templates. The syntax of Galoot is designed after the Django
+        templating system for Python. Galoot uses SableCC to generate a parser
+        for the language.
+    </description>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 3</name>
+            <url>http://www.gnu.org/licenses/lgpl.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>
+            svcm:svn:http://toolshed.googlecode.com/svn/trunk/galoot/
+        </connection>
+        <url>http://code.google.com/p/toolshed/source</url>
+    </scm>
+
 
     <developers>
         <developer>
@@ -31,6 +55,14 @@
             <url>file://${basedir}/libs</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>local</id>
+            <name>local</name>
+            <url>file://${basedir}/libs</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencies>
         <dependency>
@@ -60,11 +92,6 @@
             <groupId>stax</groupId>
             <artifactId>stax-api</artifactId>
             <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>sablecc</groupId>
-            <artifactId>sablecc</artifactId>
-            <version>3.2</version>
         </dependency>
     </dependencies>
 
@@ -100,6 +127,14 @@
                         <sourceDirectory>${basedir}</sourceDirectory>
                         <outputDirectory>${basedir}/src/java</outputDirectory>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>sablecc</groupId>
+                            <artifactId>sablecc</artifactId>
+                            <version>3.2</version>
+                        </dependency>
+                    </dependencies>
+
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
@@ -123,6 +158,13 @@
                             </fileset>
                         </filesets>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>sablecc</groupId>
+                            <artifactId>sablecc</artifactId>
+                            <version>3.2</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
