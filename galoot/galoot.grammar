@@ -38,7 +38,6 @@ States
     default,        //the default state
     var,            //when "inside" a variable expression: e.g. {{ var }}
     var_member,     //used to disambiguate id and member
-    command,        //TODO this might go away
     block_tag,      //{% block name %} stuff {% endblock %}
     include_tag,    //{% include "file.html" %}, {% include fileFromVar %}
     comment_block,  //{% comment %} foo bar {% endcomment %}
@@ -47,6 +46,7 @@ States
     with_member,
     with_filter,
     load_var,       //{% load plugin1 plugin2 %}
+    load_as,
     load_member,
     load_filter,
     if_var,         //{% if not var and var2 %} {% else %} {% endif %}
@@ -69,7 +69,7 @@ Tokens
 
     //put higher precedence keywords here
 
-    {with_var}
+    {with_var, load_as->load_var}
         kw_as           = 'as';
     
     {if_var}
@@ -154,25 +154,19 @@ Tokens
     {comment_block}
         comment_text    = any_char;
     
-    {default->command}
-        command_start   = '{%';
-    
-    {command->default}
-        command_end     = '%}';
-    
-    {command, include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var, load_filter->load_var}
+    {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var, load_filter->load_var, load_var->load_as}
         string_literal  = '"' string_char* '"';
     
     {var->var_member, with_var->with_member, load_var->load_member, if_var->if_member, ifeq_var->ifeq_member, for_var->for_member}
         dot             = '.';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var, command, block_tag, include_tag, for_tag}
+    {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag, include_tag, for_tag}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var, if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag }
         member          = member_id;
     
-    {var, with_var, load_var, if_var, ifeq_var, command, block_tag, include_tag, for_var, for_tag, filter, with_filter, load_filter, if_filter, extends_tag}
+    {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var, for_tag, filter, with_filter, load_filter, if_filter, extends_tag}
         strip_ws        = ws+;
     
     {default}
@@ -211,7 +205,6 @@ Productions
     entity {-> entity} =
             {char}      [char]:text_char                                {-> New entity.char(char)}
         |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
-        |   {command}   command_start [command]:command command_end     {-> New entity.command(command)}
         |   {block}     [block]:block                                   {-> New entity.block(block)}
         |   {load}      [load]:load                                     {-> New entity.load(load)}
         |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
@@ -279,8 +272,21 @@ Productions
         ;
     
     
-    load {-> load} =    load_start [plugins]:var_expression+ tag_end    {-> New load([plugins])}
+    load {-> load} =    load_start [plugins]:plugin+ tag_end    {-> New load([plugins])}
         ;
+    
+    plugin {-> plugin} =
+            {string}    [string]:string_literal                         {-> New plugin.string(string)}
+        |   {string_as} [string]:string_literal kw_as [alias]:id        {-> New plugin.string_as(string, alias)}
+        |   {var}       [var]:var_expression                            {-> New plugin.var(var)}
+        |   {var_as}    [var]:var_expression kw_as [alias]:id           {-> New plugin.var_as(var, alias)}
+        ;
+    
+    plugin_list {-> plugin+} =
+            {single}    [plugin]:plugin                                 {-> [plugin]}
+        |   {multiple}  [plugin]:plugin comma [rest]:plugin_list        {-> [plugin, rest.plugin]}
+        ;
+    
     
     include {-> include} =
             {string}    [string]:string_literal                         {-> New include.string(string)}
@@ -297,10 +303,6 @@ Productions
         |   {multiple}  dot [member]:member [rest]:memberchain          {-> [member, rest.member]}
         ;
     
-    command {-> command} =
-            [command]:id [argument]:argument?                           {-> New command(command, argument)}
-        ;
-    
     argument {-> argument} =
             {string}    [string]:string_literal                         {-> New argument.string(string)}
         |   {variable}  [variable]:var_expression                       {-> New argument.variable(variable)}
@@ -313,11 +315,6 @@ Productions
     filter {-> filter} =
                         [filter]:id [arg]:filter_arg?                   {-> New filter(filter, arg)}
         ;
-    
-//    string_args {-> string_literal*} =
-//            {single}    [arg]:string_literal                            {-> [arg]}
-//        |   {multiple}  [arg]:string_literal comma [rest]:string_args   {-> [arg, rest.string_literal]}
-//        ;
     
     filter_arg {-> filter_arg} =
             {quoted}    colon [arg]:string_literal                      {-> New filter_arg.quoted(arg)}
@@ -333,7 +330,6 @@ Abstract Syntax Tree
     entity =
             {char}      [char]:text_char
         |   {variable}  [expr]:var_expression
-        |   {command}   [command]:command
         |   {block}     [block]:block
         |   {load}      [load]:load
         |   {include}   [include]:include
@@ -348,8 +344,6 @@ Abstract Syntax Tree
     
     var_expression =    [referent]:id [members]:member* [filters]:filter*;
     
-    command =           [command]:id [argument]:argument?;
-    
     argument =
             {string}    [string]:string_literal
         |   {variable}  [variable]:var_expression;
@@ -362,7 +356,14 @@ Abstract Syntax Tree
     
     filter_block =      [filters]:filter+ [entities]:entity*;
     
-    load =              [plugins]:var_expression+;
+    load =              [plugins]:plugin+;
+    
+    plugin =
+            {string}    [string]:string_literal
+        |   {string_as} [string]:string_literal [alias]:id
+        |   {var}       [var]:var_expression
+        |   {var_as}    [var]:var_expression [alias]:id
+        ;
     
     include =
             {string}    [string]:string_literal

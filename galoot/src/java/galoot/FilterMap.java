@@ -3,11 +3,11 @@ package galoot;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class FilterRegistry
+public class FilterMap
 {
     private Map<String, Filter> filterMap;
 
-    public FilterRegistry()
+    public FilterMap()
     {
         filterMap = new LinkedHashMap<String, Filter>();
     }
@@ -34,5 +34,10 @@ public class FilterRegistry
     {
         return filterMap.containsKey(name)
                 || DefaultFilters.getInstance().hasFilter(name);
+    }
+
+    public Iterable<String> getFilterNames()
+    {
+        return filterMap.keySet();
     }
 }

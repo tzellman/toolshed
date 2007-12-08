@@ -9,11 +9,11 @@ import java.util.Map;
  */
 public class ContextStack extends MapStack<String, Object>
 {
-    protected FilterRegistry filterMap;
+    protected FilterMap filterMap;
 
     public ContextStack()
     {
-        filterMap = new FilterRegistry();
+        filterMap = new FilterMap();
     }
 
     public ContextStack(Map<String, Object> initialItems)
@@ -21,7 +21,7 @@ public class ContextStack extends MapStack<String, Object>
         super(initialItems);
     }
 
-    public FilterRegistry getFilterMap()
+    public FilterMap getFilterMap()
     {
         return filterMap;
     }

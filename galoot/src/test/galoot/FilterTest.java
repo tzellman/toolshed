@@ -5,12 +5,12 @@ import junit.framework.TestCase;
 public class FilterTest extends TestCase
 {
 
-    protected FilterRegistry filters;
+    protected FilterMap filters;
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        filters = new FilterRegistry();
+        filters = new FilterMap();
 
         filters.registerFilter(new Filter()
         {
