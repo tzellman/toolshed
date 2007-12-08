@@ -95,27 +95,26 @@ public class Interpreter extends DepthFirstAdapter
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public void inADocument(ADocument node)
     {
     }
-    
+
     @Override
     public void inAExtends(AExtends node)
     {
-        //TODO move all of this code somewhere else
+        // TODO move all of this code somewhere else
         String parent = node.getParentName().getText();
         System.out.println("Parent doc is: " + parent);
-        
+
         File file = new File(parent);
         if (file.exists())
         {
-//            Template template = template
+            // Template template = template
         }
-        
+
     }
-    
 
     @Override
     public void outACharEntity(ACharEntity node)
@@ -281,49 +280,58 @@ public class Interpreter extends DepthFirstAdapter
 
         // this is the loop variable, which will get updated each iteration
         String loopVar = node.getIterVar().getText();
-        Map<String, Object> extraLoopVars = new HashMap<String, Object>();
 
         // pop the loop expression off the stack
         Object loopObj = variableStack.pop();
 
-        int iterCount = 0;
         // we will only support Iterable types
+
+        // first, see if we can convert the type to an iterable type
+        if (TemplateUtils.isArrayType(loopObj))
+            loopObj = TemplateUtils.objectToCollection(loopObj);
+
         if (loopObj instanceof Iterable)
         {
             Iterable iter = (Iterable) loopObj;
 
+            int iterCount = 0;
             for (Iterator it = iter.iterator(); it.hasNext(); ++iterCount)
             {
                 Object object = (Object) it.next();
-
-                // push a new context
-                context.push();
-
-                // add the vars
-                context.put(loopVar, object);
-                extraLoopVars.put("counter0", iterCount);
-                extraLoopVars.put("counter1", iterCount + 1);
-                extraLoopVars.put("first", iterCount == 0);
-                extraLoopVars.put("last", !it.hasNext());
-                context.put("forloop", extraLoopVars);
-
-                // apply to the entities
-                {
-                    List<PEntity> copy = new ArrayList<PEntity>(node
-                            .getEntities());
-                    for (PEntity e : copy)
-                    {
-                        e.apply(this);
-                    }
-                }
-
-                // pop the context
-                context.pop();
+                List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
+                doForLoopIteration(loopVar, object, iterCount, copy, !it
+                        .hasNext());
             }
-
         }
 
         outAForBlock(node);
+    }
+
+    private void doForLoopIteration(String loopVar, Object loopObj,
+            int iterCount, Iterable<PEntity> entities, boolean isLast)
+    {
+        // push a new context
+        context.push();
+
+        Map<String, Object> extraLoopVars = new HashMap<String, Object>();
+
+        // add the vars
+        context.put(loopVar, loopObj);
+        extraLoopVars.put("counter0", iterCount);
+        extraLoopVars.put("counter1", iterCount + 1);
+        extraLoopVars.put("first", iterCount == 0);
+        extraLoopVars.put("last", isLast);
+        context.put("forloop", extraLoopVars);
+
+        // apply to the entities
+        for (PEntity e : entities)
+        {
+            e.apply(this);
+        }
+
+        // pop the context
+        context.pop();
+
     }
 
     @Override

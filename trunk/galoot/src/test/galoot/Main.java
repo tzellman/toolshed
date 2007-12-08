@@ -3,11 +3,10 @@
 package galoot;
 
 import java.io.File;
-import java.util.List;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-public class TestMain
+public class Main
 {
     public static void main(String[] args)
     {

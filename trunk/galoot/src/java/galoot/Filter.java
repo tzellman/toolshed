@@ -17,4 +17,11 @@ public interface Filter
      * @return the resultant object
      */
     public Object filter(Object object, String args);
+
+    /**
+     * Return the name of this filter. Filter names are case-sensitive.
+     * 
+     * @return the name of the filter
+     */
+    public String getName();
 }

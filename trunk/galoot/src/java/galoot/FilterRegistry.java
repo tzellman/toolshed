@@ -14,9 +14,7 @@ public class FilterRegistry
 
     public void registerFilter(Filter filter)
     {
-        //we map the lower case name of the class -> filter instance
-        String filterName = filter.getClass().getSimpleName().toLowerCase();
-        filterMap.put(filterName, filter);
+        filterMap.put(filter.getName(), filter);
     }
 
     public Filter getFilter(String name)

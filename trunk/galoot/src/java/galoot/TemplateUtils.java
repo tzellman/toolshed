@@ -19,20 +19,17 @@ public final class TemplateUtils
      * This function evaluates a given object and attempts to retrieve a nested
      * sub-object. Sort of like OGNL.
      * 
-     * Example:
-     * Object object = new String("some text");
-     * list.add("toString"); //not necessary, but showing how we can chain them
-     * list.add("length"); 
+     * Example: Object object = new String("some text"); list.add("toString");
+     * //not necessary, but showing how we can chain them list.add("length");
      * Object obj = evaluateObject(object, list);
      * System.out.println(obj.toString()); // will print the length
-     *  
+     * 
      * 
      * @param object
      * @param members
      * @return
      */
-    public static Object evaluateObject(Object object,
-            Iterable<String> members)
+    public static Object evaluateObject(Object object, Iterable<String> members)
     {
         for (Iterator<String> it = members.iterator(); object != null
                 && it.hasNext();)
@@ -166,6 +163,119 @@ public final class TemplateUtils
         if (object instanceof Map)
             return ((Map) object).size() != 0;
         return true;
+    }
+
+    /**
+     * Decides if the passed-in object is a basic array [] type.
+     * 
+     * @param object
+     * @return
+     */
+    public static boolean isArrayType(Object object)
+    {
+        return object != null
+                && ((object instanceof Object[]) || (object instanceof int[])
+                        || (object instanceof long[])
+                        || (object instanceof float[])
+                        || (object instanceof double[])
+                        || (object instanceof boolean[])
+                        || (object instanceof byte[])
+                        || (object instanceof short[]) || (object instanceof char[]));
+    }
+
+    /**
+     * Returns a collection which contains the items of the given object, if it
+     * is an array[] type.
+     * 
+     * @param a
+     * @return Collection, or null if it is not an array[] object
+     */
+    public static Collection<?> objectToCollection(Object a)
+    {
+        if (!isArrayType(a))
+            return null;
+
+        if (a instanceof Object[])
+            return arrayToCollection((Object[]) a);
+        if (a instanceof int[])
+        {
+            int[] arr = (int[]) a;
+            Collection<Integer> c = new ArrayList<Integer>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof long[])
+        {
+            long[] arr = (long[]) a;
+            Collection<Long> c = new ArrayList<Long>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof float[])
+        {
+            float[] arr = (float[]) a;
+            Collection<Float> c = new ArrayList<Float>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof double[])
+        {
+            double[] arr = (double[]) a;
+            Collection<Double> c = new ArrayList<Double>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof boolean[])
+        {
+            boolean[] arr = (boolean[]) a;
+            Collection<Boolean> c = new ArrayList<Boolean>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof byte[])
+        {
+            byte[] arr = (byte[]) a;
+            Collection<Byte> c = new ArrayList<Byte>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof short[])
+        {
+            short[] arr = (short[]) a;
+            Collection<Short> c = new ArrayList<Short>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+        if (a instanceof char[])
+        {
+            char[] arr = (char[]) a;
+            Collection<Character> c = new ArrayList<Character>(arr.length);
+            for (int i = 0, size = arr.length; i < size; ++i)
+                c.add(arr[i]);
+            return c;
+        }
+
+        return null;
+    }
+
+    public static <T> void arrayToCollection(T[] a, Collection<T> c)
+    {
+        for (T o : a)
+            c.add(o);
+    }
+
+    public static <T> Collection<T> arrayToCollection(T[] a)
+    {
+        Collection<T> c = new ArrayList<T>(a.length);
+        arrayToCollection(a, c);
+        return c;
     }
 
 }
