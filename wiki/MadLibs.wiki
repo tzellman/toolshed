@@ -1,6 +1,25 @@
 #labels Example,Featured,Galoot
+==Introduction==
+
 To show a quick and simple example of how the [Galoot] template engine could be used, we have written a Mad Lib generator. The example application fills in a [Galoot] template with randomly chosen words from a dictionary configuration file.
 
-The configuration file consists of lists of various words split up into various classifications from the specific (names, liquids, places) to the general (parts of speech: nouns, verbs, adjectives, etc.) to 
+The configuration file consists of lists of various words split up into various classifications from the specific (names, liquids, places) to the general (parts of speech: nouns, verbs, adjectives, etc.)
 
-More info to come...
+==Madlib.galoot==
+
+{{{
+{% load "underline" %}
+{% include "header.galoot" %}
+{% include "body.galoot" %}
+{% include "footer.galoot" %}
+}}}
+
+As Galoot reads this file, the load directive tells the framework to make the "underline" filter available. What this means will become clearer as we progress.
+
+The include directive tells Galoot to look into a special set of paths (configurable by the user of the framework) for the each of the listed .galoot template files. These files will be loaded and parsed by the framework. Any galoot directives encountered therein will  in turn be parsed and evaluated in the same fashion.
+
+Note that templates can be any text file.
+
+
+==body.galoot==
+
