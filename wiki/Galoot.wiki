@@ -9,14 +9,14 @@ In the most abstract sense, a template is any form of input (text) which contain
 == Useful Information ==
 Below are some useful notes on definitions or circumstantial behaviors.
 
-=== Silently Ignoring Variables ===
+==== Silently Ignoring Variables ====
 If a variable expression ever evaluates to "null", then the variable is not transformed to the output.
 Example:
 {{{
 This should be empty in the output: "{{ badVar }}"
 }}}
 
-=== Boolean-ness ===
+==== Boolean-ness ====
 When evaluating variables the following cases result in "false":
   * null object
   * boolean false
@@ -25,7 +25,7 @@ When evaluating variables the following cases result in "false":
 
 == Built-in Tags ==
 
-=== block ===
+==== block ====
 The block tag deals with template inheritance. It is used to fragment the document into sections which can be overridden by sub-documents.
 Example:
 {{{
@@ -34,7 +34,7 @@ Example:
 {% endblock %}
 }}}
 
-=== comment ===
+==== comment ====
 Place a comment in the file, which will be ignored during processing. There are two ways to comment, one being far less verbose.
 Example:
 {{{
@@ -43,7 +43,7 @@ Example:
 {# the more concise comment #}
 }}}
 
-=== filter ===
+==== filter ====
 Apply filters to a block of data.
 
 Examples:
@@ -59,7 +59,7 @@ Examples:
 {% endfilter %}
 }}}
 
-=== for ===
+==== for ====
 Loop over a variable (List, Iterable, array, String).
 
 Example:
@@ -69,7 +69,7 @@ Example:
 {% endfor %}
 }}}
 
-=== if ===
+==== if ====
 Conditionally evaluate a block of data. 
 
 Examples:
@@ -94,7 +94,7 @@ Examples:
 
 }}}
 
-=== ifequal ===
+==== ifequal ====
 Conditionally evaluate a block if two variables/strings are equal. The arguments can be variable expressions or strings.
 
 Examples:
@@ -114,7 +114,7 @@ Examples:
 {% endifequal %}
 }}}
 
-=== include ===
+==== include ====
 Include a file at the specified location in the document. The included document will be rendered using the current context (all variables/filters/tags will be available to it).
 
 Example:
@@ -127,7 +127,7 @@ Example:
 {% endfor %}
 }}}
 
-=== load ===
+==== load ====
 The load tag loads a list of filter plug-ins into the current context. Currently, once loaded, the filters are available globally to the document being evaluated. This may change in the future to be available only in the current context (and sub-contexts) to which it is declared. All plug-ins must be registered with the PluginRegistry, otherwise they will not be loaded. Optionally, filter plug-ins can be aliased using the "as" keyword.
 
 Examples:
@@ -155,10 +155,9 @@ Examples:
     apply the dynamically loaded filter plug-in to this block
 {% endfilter %}
 
-
 }}}
 
-=== with ===
+==== with ====
 Set a variable in the context of the containing block. This is useful for "expensive" operations, to cache a variable.
 
 Example:
