@@ -108,7 +108,7 @@ Examples:
 {% ifequal "tom" "adam" %}
     we are equals!
 {% else %}
-    we aren't equals...
+    we are not equals...
 {% endifequal %}
 
 {% ifequal user.name "admin" %}
