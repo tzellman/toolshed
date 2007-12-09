@@ -3,8 +3,10 @@
 
 Galoot is a templating engine written in Java, designed after the [http://www.djangoproject.com/documentation/templates/ Django templating engine] for Python. Currently, this project is being developed for a compilers course and is considered to be in an early stage of development. The project uses [http://sablecc.org/ SableCC] to generate the lexer/parser from the language grammar.
 
+
 == Templates ==
 In the most abstract sense, a template is any form of input (text) which contains special (optional) processing tags. The text (usually represented in the form of a file) is interpreted, resulting in output text.
+
 
 == Useful Information ==
 Below are some useful notes on definitions or circumstantial behaviors.
@@ -28,6 +30,36 @@ Evaluates to false if the list is empty: {% if empty_list %}list was not empty!{
 
 Is the list empty? {{ empty_list|yesno:"no it is not,yes it is" }}
 }}}
+
+
+== Template Inheritance ==
+One of the greatest features of Galoot is the fact that you are able to inherit templates. In the following examples we will discuss a common use case for template inheritance.
+
+=== HTML Example ===
+So you've decided to create the world's greatest online, Web 3.0 pet store. (Yes, 3.0 because you're just that good!) You have to start somewhere, and, yes we might be biased, Galoot is the best place to start. You want to design your application so that you can maximize code reuse. So, you decide to start with a top-level base HTML page which will serve as the root/parent of all of your templates. Here is an example:
+
+{{{
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <link rel="stylesheet" href="site.css" />
+    <title>{% block title %}Pets R Us{% endblock %}</title>
+    {% block extrahead %}{% endblock %}
+</head>
+
+<body>
+    <div id="header">{% block header %}{% endblock %}</div>
+    <div id="main"
+        {% block main %}
+            {{ content }}
+        {% endblock %}
+    </div>
+    <div id="footer">{% block footer %}{% endblock %}</div>
+</body>
+</html>
+}}}
+
 
 == Built-in Tags ==
 
@@ -80,7 +112,6 @@ Examples:
     First, lower case this block, then evaluate the length of the data...
 {% endfilter %}
 }}}
-
 
 ==== firstof ====
 Returns the first non-false value from a list of arguments. (See the boolean-ness note above.) The arguments can be variable expressions (including filters), or strings. This is useful if you want to provide a default value.
@@ -203,35 +234,6 @@ Example:
 
 {% endfor %}
 }}}
-
-== Template Inheritance ==
-One of the greatest features of Galoot is the fact that you are able to inherit templates. In the following examples we will discuss a common use case for template inheritance.
-
-=== HTML Example ===
-So you've decided to create the world's greatest online, Web 3.0 pet store. (Yes, 3.0 because you're just that good!) You have to start somewhere, and, yes we might be biased, Galoot is the best place to start. You want to design your application so that you can maximize code reuse. So, you decide to start with a top-level base HTML page which will serve as the root/parent of all of your templates. Here is an example:
-
-{{{
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-    <link rel="stylesheet" href="site.css" />
-    <title>{% block title %}Pets R Us{% endblock %}</title>
-    {% block extrahead %}{% endblock %}
-</head>
-
-<body>
-    <div id="header">{% block header %}{% endblock %}</div>
-    <div id="main"
-        {% block main %}
-            {{ content }}
-        {% endblock %}
-    </div>
-    <div id="footer">{% block footer %}{% endblock %}</div>
-</body>
-</html>
-}}}
-
 
 
 
