@@ -105,8 +105,7 @@ public final class DefaultFilters
     {
         public Object filter(Object object, String args)
         {
-            java.util.Random rand = new java.util.Random(System
-                    .currentTimeMillis());
+            java.util.Random rand = new java.util.Random();
             if (object instanceof List)
             {
                 List listObj = (List) object;
@@ -114,6 +113,32 @@ public final class DefaultFilters
                     return null;
                 int index = rand.nextInt(listObj.size());
                 return listObj.get(index);
+            }
+            else if (TemplateUtils.isArrayType(object))
+            {
+                int size = TemplateUtils.getObjectLength(object);
+                if (size > 0)
+                {
+                    int index = rand.nextInt(size);
+                    if (object instanceof Object[])
+                        return ((Object[]) object)[index];
+                    if (object instanceof int[])
+                        return ((int[]) object)[index];
+                    if (object instanceof long[])
+                        return ((long[]) object)[index];
+                    if (object instanceof float[])
+                        return ((float[]) object)[index];
+                    if (object instanceof double[])
+                        return ((double[]) object)[index];
+                    if (object instanceof boolean[])
+                        return ((boolean[]) object)[index];
+                    if (object instanceof byte[])
+                        return ((byte[]) object)[index];
+                    if (object instanceof short[])
+                        return ((short[]) object)[index];
+                    if (object instanceof char[])
+                        return ((char[]) object)[index];
+                }
             }
             else if (object instanceof String)
             {
@@ -123,7 +148,7 @@ public final class DefaultFilters
                 int index = rand.nextInt(stringObj.length());
                 return String.valueOf(stringObj.charAt(index));
             }
-            // return null because length doesn't apply to anything else
+            // return null because random doesn't apply to anything else
             return null;
         }
     }
@@ -141,7 +166,7 @@ public final class DefaultFilters
         {
             if (object instanceof List)
                 return object;
-            
+
             if (TemplateUtils.isArrayType(object))
                 return TemplateUtils.objectToCollection(object);
 
