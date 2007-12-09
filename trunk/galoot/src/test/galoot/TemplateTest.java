@@ -144,19 +144,22 @@ public class TemplateTest extends TestCase
 
             log.debug("creating tmp file: " + f.getAbsolutePath());
 
-            t = new Template("{% include \"" + f.getAbsolutePath() + "\" %}");
+            // add the path to the pluginregistry
+            PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
+
+            t = new Template("{% include \"" + f.getName() + "\" %}");
             output = t.render(context);
             assertEquals("TOM", output);
 
             // validate the case where the file is in the registry
             // add the file path to the registry
-            PluginRegistry.getInstance().addIncludePath(f.getParent());
+            PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
             t = new Template("{% include \"" + include + "\" %}");
             output = t.render(context);
             assertEquals("TOM", output);
-            
+
             context.put("mypath", include);
-            
+
             t = new Template("{% include mypath %}");
             output = t.render(context);
             assertEquals("TOM", output);

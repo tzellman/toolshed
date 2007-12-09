@@ -1,5 +1,7 @@
 #
 
+- check for and disallow cyclic includes/extends
+
 - documentation
 - examples
 - test cases
@@ -9,5 +11,5 @@ Possible additions/mods:
 - make loaded plug-ins only available within the current context's scope
 
 - future work
-    - extends capability
+#    - extends capability
     - custom tags

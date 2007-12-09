@@ -1,0 +1,47 @@
+
+some top-level document text
+
+keep in mind that whitespace counts as text!
+
+
+
+{% block firstBlock %}
+    text inside the first block
+    
+    {% block firstInner %}
+        text inside first inner block
+    {% endblock %}
+    
+    more text inside first block
+    
+    {% block firstInner2 %}
+        text inside second inner block
+    {% endblock %}
+    
+{% endblock %}
+
+
+
+more top-level text, after the first block
+
+
+
+
+{% block secondBlock %}
+    text inside the second block
+    
+    {% block secondInner %}
+        text inside second inner block
+        
+        {% block secondInnerNested %}
+            text nested inside second inner block
+        {% endblock %}
+        
+    {% endblock %}
+    
+    more text inside second block
+    
+{% endblock %}
+
+
+end of document text, at the top-level

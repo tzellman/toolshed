@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-public class BlockFragment implements DocumentFragment
+public final class BlockFragment implements DocumentFragment
 {
     private Deque<DocumentFragment> contents;
 
@@ -71,14 +71,74 @@ public class BlockFragment implements DocumentFragment
      */
     public boolean hasBlock(String name)
     {
+        return getBlock(name) != null;
+    }
+
+    /**
+     * Returns the block with the given name, or null if it doesn't exist
+     * 
+     * @param name
+     * @return
+     */
+    public BlockFragment getBlock(String name)
+    {
         if (blocks.containsKey(name))
-            return true;
+            return blocks.get(name);
         for (BlockFragment block : blocks.values())
         {
-            if (block.hasBlock(name))
-                return true;
+            BlockFragment b = block.getBlock(name);
+            if (b != null)
+                return b;
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * Manually set the contents of fragment
+     */
+    protected void setContent(Collection<DocumentFragment> content)
+    {
+        this.contents.clear();
+        for (DocumentFragment fragment : content)
+            this.contents.addLast(fragment);
+    }
+
+    /**
+     * Replace the block with the same name as the newBlock with the contents of
+     * the newBlock, and return the BlockFragments that will now not be
+     * available.
+     * 
+     * @param newBlock
+     * @return true iff the block was replaced
+     */
+    public boolean replaceBlock(BlockFragment newBlock)
+    {
+        BlockFragment oldBlock = getBlock(newBlock.getName());
+        if (oldBlock == null)
+            return false;
+
+        oldBlock.setContent((Collection<DocumentFragment>) newBlock
+                .getContents());
+        return true;
+    }
+
+    /**
+     * Evaluates the fragment (and all child fragments) recursively, returning
+     * the String contents.
+     * 
+     * @return
+     */
+    public String evaluateAsString()
+    {
+        StringBuffer buf = new StringBuffer();
+        for (DocumentFragment fragment : contents)
+        {
+            if (fragment instanceof BlockFragment)
+                buf.append(((BlockFragment) fragment).evaluateAsString());
+            else if (fragment instanceof TextFragment)
+                buf.append((String) ((TextFragment) fragment).getContents());
+        }
+        return buf.toString();
     }
 
 }

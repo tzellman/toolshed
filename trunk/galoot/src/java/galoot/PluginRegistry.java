@@ -20,12 +20,13 @@ public final class PluginRegistry
 
     FilterMap filterMap;
 
-    private List<String> includePaths;
+    private List<String> templateIncludePaths;
 
     protected PluginRegistry()
     {
         filterMap = new FilterMap();
-        includePaths = Collections.synchronizedList(new LinkedList<String>());
+        templateIncludePaths = Collections
+                .synchronizedList(new LinkedList<String>());
     }
 
     public static PluginRegistry getInstance()
@@ -76,14 +77,14 @@ public final class PluginRegistry
         return filterMap.removeFilter(name);
     }
 
-    public void addIncludePath(String includePath)
+    public void addTemplateIncludePath(String includePath)
     {
-        includePaths.add(includePath);
+        templateIncludePaths.add(includePath);
     }
 
-    public Iterable<String> getIncludePaths()
+    public Iterable<String> getTemplateIncludePaths()
     {
-        return includePaths;
+        return templateIncludePaths;
     }
-
+    
 }

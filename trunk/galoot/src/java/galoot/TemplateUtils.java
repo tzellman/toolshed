@@ -220,6 +220,13 @@ public final class TemplateUtils
             if (object instanceof char[])
                 return ((char[]) object).length;
         }
+        else if (object instanceof Iterable)
+        {
+            int c = 0;
+            for (Object obj : (Iterable)object)
+                ++c;
+            return c;
+        }
         return null;
     }
 
