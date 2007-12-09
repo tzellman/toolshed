@@ -127,6 +127,8 @@ Now back to our originally scheduled main method:
 {{{
         InputAdapter madlibInputAdapter = new MadlibInputAdapter(MADLIB_CONFIG);
 }}}
+The next step is to actually read in some data to populate our madlib template. We do this use an implementation of the `InputAdapter` interface. Implementors of this interface are used to wrap a new data source in an object that can generate input usable by [Galoot]. This interface defines a single method `getContextStackInput` that returns a Map of String/Object pairs. In this case, we use a custom MadlibInputAdapter to read in the dictionary of words that we will use to populate our madlib.
+
 {{{
         ContextStack contextStack = new ContextStack(madlibInputAdapter
                 .getContextStackInput());
