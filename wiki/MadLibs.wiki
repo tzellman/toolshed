@@ -23,3 +23,6 @@ Note that templates can be any text file.
 
 ==body.galoot==
 
+==header.galoot and footer.galoot==
+
+The header and footer galoot templates are (very) simple text files that create the header and footer (who'd have guessed?) of an html document. They contain no special galoot directives, and are thus pasted verbatim into Madlib.galoot as it is evaluated.
