@@ -33,7 +33,7 @@ Example:
     block text
 {% endblock %}
 }}}
-<hr/>
+
 === comment ===
 Place a comment in the file, which will be ignored during processing. There are two ways to comment, one being far less verbose.
 Example:
