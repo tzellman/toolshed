@@ -1,8 +1,8 @@
 package galoot;
 
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,13 +20,13 @@ public final class PluginRegistry
 
     FilterMap filterMap;
 
-    private List<String> templateIncludePaths;
+    private Map<String, String> templateIncludePaths;
 
     protected PluginRegistry()
     {
         filterMap = new FilterMap();
         templateIncludePaths = Collections
-                .synchronizedList(new LinkedList<String>());
+                .synchronizedMap(new LinkedHashMap<String, String>());
     }
 
     public static PluginRegistry getInstance()
@@ -79,12 +79,17 @@ public final class PluginRegistry
 
     public void addTemplateIncludePath(String includePath)
     {
-        templateIncludePaths.add(includePath);
+        templateIncludePaths.put(includePath, includePath);
     }
 
     public Iterable<String> getTemplateIncludePaths()
     {
-        return templateIncludePaths;
+        return templateIncludePaths.keySet();
     }
-    
+
+    public void removeTemplateIncludePath(String path)
+    {
+        templateIncludePaths.remove(path);
+    }
+
 }

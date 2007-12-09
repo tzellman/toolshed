@@ -153,7 +153,6 @@ public class TemplateTest extends TestCase
 
             // validate the case where the file is in the registry
             // add the file path to the registry
-            PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
             t = new Template("{% include \"" + include + "\" %}");
             output = t.render(context);
             assertEquals("TOM", output);
@@ -163,6 +162,10 @@ public class TemplateTest extends TestCase
             t = new Template("{% include mypath %}");
             output = t.render(context);
             assertEquals("TOM", output);
+
+            // remove the parent from the global include paths
+            PluginRegistry.getInstance().removeTemplateIncludePath(
+                    f.getParent());
 
             FileUtils.forceDelete(f);
         }
@@ -288,4 +291,111 @@ public class TemplateTest extends TestCase
 
     }
 
+    public void testExtends()
+    {
+        try
+        {
+            // create some templates, as files
+            // existing template
+
+            File parentFile = File.createTempFile("parent", "txt");
+            File childFile1 = File.createTempFile("child1", "txt");
+            File childFile2 = File.createTempFile("child2", "txt");
+            File childFile3 = File.createTempFile("child3", "txt");
+            File childFile4 = File.createTempFile("child4", "txt");
+            File childFile5 = File.createTempFile("child5", "txt");
+
+            // create the parent document
+            FileUtils.writeStringToFile(parentFile,
+                    "parent_start {% block block1 %}"
+                            + "parent_block1 {% block block2 %}"
+                            + "parent_block2" + "{% endblock %}"
+                            + "{% endblock %}" + " parent_end");
+
+            // create a direct child of the parent, overriding block1
+            FileUtils.writeStringToFile(childFile1, "{% extends \""
+                    + parentFile.getName() + "\" %}"
+                    + "child_start{% block block1 %}"
+                    + "child_block1{% endblock %}child_end");
+
+            // create a direct child of the parent, overriding block2
+            FileUtils.writeStringToFile(childFile2, "{% extends \""
+                    + parentFile.getName() + "\" %}"
+                    + "child_start{% block block2 %}"
+                    + "child_block2{% endblock %}child_end");
+
+            // create a sub-child of child2 (3-deep now), but overriding block1
+            // in the top parent file
+            FileUtils.writeStringToFile(childFile3, "{% extends \""
+                    + childFile2.getName() + "\" %}"
+                    + "child_start{% block block1 %}"
+                    + "child_block1{% endblock %}child_end");
+
+            // create a sub-child of child3 (4-deep now), overriding block1
+            // in the parent, and including the super block
+            FileUtils.writeStringToFile(childFile4, "{% extends \""
+                    + childFile3.getName() + "\" %}"
+                    + "child_start{% block block1 %}"
+                    + "sub_child_block1 {{ block.super }}"
+                    + "{% endblock %}child_end");
+
+            // create a sub-child of child4 (5-deep now), overriding block1
+            // in the parent, and including the super block
+            FileUtils.writeStringToFile(childFile5, "{% extends \""
+                    + childFile4.getName() + "\" %}"
+                    + "child_start{% block block1 %}"
+                    + "sub_child_block1 {{ block.super }}"
+                    + "{% endblock %}child_end");
+
+            // set up the expected strings
+            String parentExpected = "parent_start parent_block1 parent_block2 parent_end";
+            String child1Expected = "parent_start child_block1 parent_end";
+            String child2Expected = "parent_start parent_block1 child_block2 parent_end";
+            String child3Expected = "parent_start child_block1 parent_end";
+            String child4Expected = "parent_start sub_child_block1 child_block1 parent_end";
+            String child5Expected = "parent_start sub_child_block1 sub_child_block1 child_block1 parent_end";
+
+            // add the temp directory to the include path
+            PluginRegistry.getInstance().addTemplateIncludePath(
+                    parentFile.getParent());
+
+            // now, process the templates
+            Template t = new Template(parentFile);
+            String output = t.render(context);
+            assertEquals(output, parentExpected);
+
+            t = new Template(childFile1);
+            output = t.render(context);
+            assertEquals(output, child1Expected);
+
+            t = new Template(childFile2);
+            output = t.render(context);
+            assertEquals(output, child2Expected);
+
+            t = new Template(childFile3);
+            output = t.render(context);
+            assertEquals(output, child3Expected);
+
+            t = new Template(childFile4);
+            output = t.render(context);
+            assertEquals(output, child4Expected);
+
+            t = new Template(childFile5);
+            output = t.render(context);
+            assertEquals(output, child5Expected);
+
+            // cleanup
+            FileUtils.forceDelete(parentFile);
+            FileUtils.forceDelete(childFile1);
+            FileUtils.forceDelete(childFile2);
+            FileUtils.forceDelete(childFile3);
+            FileUtils.forceDelete(childFile4);
+            FileUtils.forceDelete(childFile5);
+
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 }
