@@ -1,17 +1,18 @@
 package galoot.types;
 
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Stack;
 
 public class MapStack<K, V>
 {
-    protected Stack<Map<K, V>> mapStack;
+    protected Deque<Map<K, V>> mapStack;
 
     public MapStack()
     {
-        mapStack = new Stack<Map<K, V>>();
+        mapStack = new LinkedList<Map<K, V>>();
         mapStack.push(new HashMap<K, V>()); // initialize it
     }
 
@@ -22,10 +23,12 @@ public class MapStack<K, V>
     }
 
     /**
-     * Returns the variable with the given key
+     * Returns the object with the given key. The object can reside in any of
+     * the maps in the stack, searching backwards from map on the top of the
+     * stack.
      * 
      * @param name
-     * @return the variable or null if not found
+     * @return the object or null if not found
      */
     public Object get(K key)
     {
@@ -62,9 +65,12 @@ public class MapStack<K, V>
      * @param key
      * @param val
      */
-    public void put(K key, V val)
+    public boolean put(K key, V val)
     {
+        if (mapStack.isEmpty())
+            return false;
         mapStack.peek().put(key, val);
+        return true;
     }
 
     /**
@@ -77,6 +83,21 @@ public class MapStack<K, V>
         if (map != null)
             for (K key : map.keySet())
                 put(key, map.get(key));
+    }
+
+    /**
+     * Removes the object with the specified key, only if it exists in the map
+     * on the top of the stack. There is an enforcement that you can not remove
+     * a value from a map lower on the stack.
+     * 
+     * @param key
+     * @return
+     */
+    public Object remove(K key)
+    {
+        if (mapStack.isEmpty() || !mapStack.peek().containsKey(key))
+            return null;
+        return mapStack.peek().remove(key);
     }
 
 }

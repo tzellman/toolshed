@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
 
 public class TemplateTest extends TestCase
 {
-    private static Log log = LogFactory.getLog(TemplateTest.class);
+    private static final Log log = LogFactory.getLog(TemplateTest.class);
 
     protected ContextStack context;
 
@@ -28,7 +28,7 @@ public class TemplateTest extends TestCase
     {
         super.setUp();
         context = new ContextStack();
-
+        
         // add some variables to the context
         List<String> randomStrings = new ArrayList<String>();
         Random random = new Random();
@@ -117,6 +117,80 @@ public class TemplateTest extends TestCase
             output = t.render(context);
             assertEquals(output, "true");
 
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testForStatement()
+    {
+        try
+        {
+            Template t = new Template(
+                    "{% for var in intArray %}{{ var }}, {% endfor %}");
+            String output = t.render(context);
+            String expected = "";
+            for (int i = 0; i < intArray.length; i++)
+                expected += String.valueOf(intArray[i]) + ", ";
+            assertEquals(output, expected);
+
+            // test counter0
+            t = new Template(
+                    "{% for var in intArray %}{{ forloop.counter0 }}:{{ var }}, {% endfor %}");
+            output = t.render(context);
+            expected = "";
+            for (int i = 0; i < intArray.length; i++)
+                expected += String.valueOf(i) + ":"
+                        + String.valueOf(intArray[i]) + ", ";
+            assertEquals(output, expected);
+
+            // make sure nested loops work
+            t = new Template(
+                    "{% for var in intArray %}{% for var in intArray %}c{% endfor %}{% endfor %}");
+            output = t.render(context);
+            expected = "";
+            for (int i = 0; i < intArray.length; i++)
+                for (int j = 0; j < intArray.length; j++)
+                    expected += "c";
+            assertEquals(output, expected);
+
+            // make sure the parent shows up in the child loop
+            t = new Template(
+                    "{% for var in intArray %}{% for var in intArray %}"
+                            + "{% if forloop.parent %}c{% endif %}"
+                            + "{% endfor %}{% endfor %}");
+            output = t.render(context);
+            expected = "";
+            for (int i = 0; i < intArray.length; i++)
+                for (int j = 0; j < intArray.length; j++)
+                    expected += "c";
+            assertEquals(output, expected);
+
+            // print a matrix of data
+            t = new Template(
+                    "{% for i in intArray %} == row {{ forloop.counter0 }} ==\n"
+                            + "{% for j in intArray %}"
+                            + "[{{ forloop.parent.counter0 }}]"
+                            + "[{{ forloop.counter0 }}]: {{ i }}, {% endfor %}"
+                            + "\n{% endfor %}");
+            output = t.render(context);
+            log.info("output matrix:\n" + output);
+            expected = "";
+            for (int i = 0; i < intArray.length; i++)
+            {
+                expected += " == row " + String.valueOf(i) + " ==\n";
+                for (int j = 0; j < intArray.length; j++)
+                {
+                    expected += "[" + String.valueOf(i) + "]["
+                            + String.valueOf(j) + "]: "
+                            + String.valueOf(intArray[i]) + ", ";
+                }
+                expected += "\n";
+            }
+            log.info("expected matrix:\n" + expected);
+            assertEquals(output, expected);
         }
         catch (IOException e)
         {
