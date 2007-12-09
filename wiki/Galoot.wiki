@@ -22,6 +22,12 @@ When evaluating variables the following cases result in "false":
   * boolean false
   * number == 0
   * empty List/Map/String
+Example:
+{{{
+Evaluates to false if the list is empty: {% if empty_list %}list wasn't empty!{% endif %}
+
+Is the list empty? {{ empty_list|yesno:"no it's not,yes it is" }}
+}}}
 
 == Built-in Tags ==
 
