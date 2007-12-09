@@ -43,6 +43,22 @@ Example:
 {# the more concise comment #}
 }}}
 
+=== filter ===
+Apply filters to a block of data.
+
+Examples:
+{{{
+{% filter lower %}
+    Make this block ALL lower text, Including variables, etc.: {{ var }}
+{% endfilter %}
+
+{# we can chain filters together too #}
+
+{% filter lower|count %}
+    First, lower case this block, then evaluate the length of the data...
+{% endfilter %}
+}}}
+
 === for ===
 Loop over a variable (List, Iterable, array, String).
 
