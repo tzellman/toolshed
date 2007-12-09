@@ -146,4 +146,4 @@ In this step, we create a new `ContextStack`. The `ContextStack` is the object t
 
 Finally, we create a new `Template` object, and use it to render the data into the `File` passed into it as an argument. In the call to `render()`, the file used in the constructor will be fed into a template parser (generated with SableCC), and populated with the data contained in the context. We dump the data to file, and pat ourselves on the back for a job well done.
 
-NB: Note that templates can be created using instances of `Reader` as well.
+NB: Templates can be created using instances of `Reader` as well.
