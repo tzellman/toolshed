@@ -2,7 +2,6 @@ package galoot.interpret;
 
 import galoot.ContextStack;
 import galoot.Filter;
-import galoot.Pair;
 import galoot.PluginRegistry;
 import galoot.Template;
 import galoot.TemplateUtils;
@@ -35,6 +34,7 @@ import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
 import galoot.node.TMember;
+import galoot.types.Pair;
 
 import java.io.File;
 import java.io.IOException;

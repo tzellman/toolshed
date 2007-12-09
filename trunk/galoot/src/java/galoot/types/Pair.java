@@ -1,4 +1,4 @@
-package galoot;
+package galoot.types;
 
 public class Pair<I1, I2>
 {

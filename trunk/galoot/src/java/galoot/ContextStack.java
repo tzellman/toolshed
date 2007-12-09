@@ -1,5 +1,7 @@
 package galoot;
 
+import galoot.types.MapStack;
+
 import java.util.Map;
 
 /**
