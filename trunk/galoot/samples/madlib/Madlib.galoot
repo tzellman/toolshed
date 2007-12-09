@@ -1,0 +1,7 @@
+
+{% load "underline" %}
+{% include "header.galoot" %}
+{% include "body.galoot" %}
+{% include "footer.galoot" %}
+
+

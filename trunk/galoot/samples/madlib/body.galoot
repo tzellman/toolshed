@@ -1,0 +1,23 @@
+
+<h1>A day at the amusement park with {{ person|random|underline }}</h1>
+
+<p>
+An amusement park is always fun to visit on a hot summer
+{{ noun|random|underline }}. When you get there, you can rent a
+{{ noun|random|underline }} and go for a swim. And there are lots of
+{{ adjective|random|underline }} things to eat. You can start off with a hot dog on
+a/an {{ noun|random|underline }} with mustard, relish, and {{ plnoun|random|underline }}
+on it. Then you can have a buttered ear of {{ noun|random|underline }} with a
+nice {{ adjective|random|underline }} slice of watermelon and a big bottle of
+cold {{ liquid|random|underline }}. When you are full, it's time to go on the
+roller coaster, which should settle your {{ noun|random|underline }}.
+Other amusement park rides are the Dodge-Em which has little
+{{ plnoun|random|underline }}, that you drive and run into other {{ plnoun|random|underline }},
+and the Merry-Go-Round where you can sit on a big {{ noun|random|underline }}
+and try to grab the gold {{ noun|random|underline }} as you ride past.
+</p>
+
+
+
+
+
