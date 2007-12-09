@@ -136,20 +136,33 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAVarExpression(AVarExpression node)
     {
-        // whenver we come across a variable expression, we evaluate it, then
+        // whenever we come across a variable expression, we evaluate it, then
         // push it onto an expression stack. This way, the operations that use
         // the expressions can just pop off the stack
 
-        Object object = context.get(node.getReferent().getText());
-        LinkedList<TMember> members = node.getMembers();
+        String referent = node.getReferent().getText();
 
         // turn the members into a String list
+        LinkedList<TMember> members = node.getMembers();
         List<String> stringMembers = new ArrayList<String>(members.size());
+        String fullDotExpression = referent; // construct a full expression
         for (TMember member : members)
-            stringMembers.add(member.getText());
+        {
+            String memberText = member.getText();
+            stringMembers.add(memberText);
+            fullDotExpression += "." + memberText;
+        }
 
-        // evaluate the object/methods
-        object = TemplateUtils.evaluateObject(object, stringMembers);
+        // first things first, see if the full "dot" expression is in the map
+        Object object = context.get(fullDotExpression);
+        if (object == null)
+        {
+            // try to get just the base object then
+            object = context.get(referent);
+
+            // evaluate the object/methods
+            object = TemplateUtils.evaluateObject(object, stringMembers);
+        }
 
         // apply the filters
         for (int i = 0, size = node.getFilters().size(); i < size; ++i)
@@ -325,7 +338,7 @@ public class Interpreter extends DepthFirstAdapter
             // look in the registry for the paths where include files can
             // be found.
             Iterable<String> includePaths = PluginRegistry.getInstance()
-                    .getIncludePaths();
+                    .getTemplateIncludePaths();
             boolean found = false;
             File tf = null;
 
