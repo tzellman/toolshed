@@ -1,7 +1,7 @@
 #labels Featured
 == Introduction ==
 
-Galoot is a templating engine written in Java, designed after the Django templating engine for Python. Currently, this project is being developed for a compilers course and is considered to be quite alpha. The project uses SableCC to generate the lexer/parser from the language grammar.
+Galoot is a templating engine written in Java, designed after the [http://www.djangoproject.com/documentation/templates/ Django templating engine] for Python. Currently, this project is being developed for a compilers course and is considered to be in an early stage of development. The project uses [http://sablecc.org/ SableCC] to generate the lexer/parser from the language grammar.
 
 == Details ==
 
@@ -9,4 +9,4 @@ Did you make it this far? Sweet!
 
 == FAQ ==
   # What's up with the name?
-    The name is sort of random, but not completely. Galoots Are Lovers Of Old Tools, but we think that even old dogs would love to learn a few new tricks with this library.  Also, if you remember the galoots from Ren & Stimpy, you might recall that they weren't too bright upstairs. One of the goals for this project is to make templating so easy that even galoots can use it. It's sort of a nice way of saying that you don't need to be a genius to look like one.
+    The name is sort of random, but not completely. Galoots Are Lovers Of Old Tools, but we think that even old dogs would love to learn a few new tricks with this library. So, if you happen to be a galoot (not the big ogre kind, but the lover of old tools kind), then we think you might want to give Galoot a chance. You might break out of your galoot-ness (for the moment) and use a NEW tool. Then, you'll become a galoot once again after you start loving Galoot. In addition, the word galoot sounds similar to the phrase "glue it", which is partially what this library lets you do: glue documents, text, and variables together!
