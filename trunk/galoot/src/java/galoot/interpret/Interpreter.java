@@ -14,6 +14,7 @@ import galoot.node.ACharEntity;
 import galoot.node.AExtends;
 import galoot.node.AFilter;
 import galoot.node.AFilterBlock;
+import galoot.node.AFirstOfEntity;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
@@ -114,6 +115,26 @@ public class Interpreter extends DepthFirstAdapter
         super.inStart(node);
     }
 
+    /**
+     * Call finishString when the evaluated string is completely finished being
+     * processed.
+     * 
+     * @param s
+     */
+    private void finishString(String s)
+    {
+        // if we are in a filterBlock, we need to "write" the data to it
+        if (!filterBlockData.isEmpty())
+        {
+            filterBlockData.peek().append(s);
+        }
+        else
+        {
+            // add the text to the document
+            document.addContent(s.toString());
+        }
+    }
+
     @Override
     public void outAVarExpression(AVarExpression node)
     {
@@ -190,8 +211,7 @@ public class Interpreter extends DepthFirstAdapter
         Object object = variableStack.pop();
         if (object != null)
         {
-            // add the text to the document
-            document.addContent(object.toString());
+            finishString(object.toString());
         }
     }
 
@@ -270,7 +290,12 @@ public class Interpreter extends DepthFirstAdapter
     {
         // pop the var off the stack
         Object var = variableStack.pop();
-        loadFilterPlugin(var.toString(), null);
+        if (var != null)
+            loadFilterPlugin(var.toString(), null);
+        else
+            log
+                    .warn("plug-in expression evaluated to null: "
+                            + node.toString());
     }
 
     @Override
@@ -294,7 +319,11 @@ public class Interpreter extends DepthFirstAdapter
     public void outAVariableInclude(AVariableInclude node)
     {
         Object pop = variableStack.pop();
-        processIncludedFile(pop.toString());
+        if (pop != null)
+            processIncludedFile(pop.toString());
+        else
+            log.warn("include expression evaluated to null: "
+                    + node.getVariable().toString());
     }
 
     /**
@@ -310,8 +339,7 @@ public class Interpreter extends DepthFirstAdapter
             Document doc = loadDocument(filename);
             if (doc == null)
                 throw new Exception();
-            // add the text to the document
-            document.addContent(doc.evaluateAsString());
+            finishString(doc.evaluateAsString());
         }
         catch (Throwable e)
         {
@@ -542,10 +570,7 @@ public class Interpreter extends DepthFirstAdapter
         }
 
         if (output != null)
-        {
-            // add the text to the document
-            document.addContent(output.toString());
-        }
+            finishString(output.toString());
     }
 
     @Override
@@ -643,8 +668,7 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outACharEntity(ACharEntity node)
     {
-        // add the text to the document
-        document.addContent(node.getChar().getText());
+        finishString(node.getChar().getText());
     }
 
     @Override
@@ -727,6 +751,26 @@ public class Interpreter extends DepthFirstAdapter
                 parentDocument.replaceBlock(newBlock);
             }
         }
+    }
+
+    @Override
+    public void outAFirstOfEntity(AFirstOfEntity node)
+    {
+        int numArgs = node.getArgs().size();
+
+        /*
+         * since the args are pushed on the expression stack in order, we have
+         * to use reverse logic here
+         */
+        Object obj = null;
+        for (int i = 0; i < numArgs; ++i)
+        {
+            Object var = variableStack.pop();
+            if (TemplateUtils.evaluateAsBoolean(var))
+                obj = var;
+        }
+        if (obj != null)
+            finishString(obj.toString());
     }
 
     /**

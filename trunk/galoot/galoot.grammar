@@ -59,7 +59,12 @@ States
     for_var,
     for_member,
     for_filter,
-    extends_tag
+    extends_tag,
+    firstof_var,    //{% firstof var1 var2 var3 "default" %}
+    firstof_member,
+    firstof_filter,
+    filter_var,
+    filter_filter
     ;
 
     
@@ -103,6 +108,9 @@ Tokens
     {default->include_tag}
         include_start   = '{%' ws* 'include' ws+;
     
+    {default->firstof_var}
+        firstof_start   = '{%' ws* 'firstof' ws+;
+    
     {default->for_tag}
         for_start       = '{%' ws* 'for' ws+;
     
@@ -112,7 +120,7 @@ Tokens
     {default->ifeq_var}
         ifeq_start      = '{%' ws* 'ifequal' ws+;
     
-    {default->var}
+    {default->filter_var}
         filter_start    = '{%' ws* 'filter' ws+;
     
     {default->with_var}
@@ -122,7 +130,7 @@ Tokens
         extends_start   = '{%' ws* 'extends' ws+;
     
     {default}
-        else_tag        = '{%' ws* 'else' ws* '%}';
+        else_tag        = '{%' ws* 'else' ws* '%}' eol?;
     
     {default}
         if_end          = '{%' ws* 'endif' ws* '%}';
@@ -133,10 +141,13 @@ Tokens
     {default->comment_block}
         comment_start   = '{%' ws* 'comment' ws* '%}';
     
-    {var->default, block_tag->default, load_var->default, include_tag->default,
-    for_var->default, if_var->default, with_var->default, ifeq_var->default,
-    extends_tag->default, load_as->default}
-        tag_end         = '%}' eol?;
+    {var->default, load_var->default, include_tag->default,
+    extends_tag->default, load_as->default, firstof_var->default}
+        tag_end         = '%}';
+    
+    {for_var->default, block_tag->default, filter_var->default,
+    if_var->default, with_var->default, ifeq_var->default}
+    tag_end_eol         = '%}' eol?;
     
     {default}
         for_end         = '{%' ws* 'endfor' ws* '%}';
@@ -157,39 +168,47 @@ Tokens
         comment_text    = any_char;
     
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
-    load_filter->load_var, load_var->load_as}
+    load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
+    firstof_var, filter_filter->filter_var}
         string_literal  = '"' string_char* '"';
     
     {var->var_member, with_var->with_member, load_var->load_member,
-    if_var->if_member, ifeq_var->ifeq_member, for_var->for_member}
+    if_var->if_member, ifeq_var->ifeq_member, for_var->for_member,
+    firstof_var->firstof_member}
         dot             = '.';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag, include_tag, for_tag}
+    {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag,
+    include_tag, for_tag, firstof_var, filter_var}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
-    if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag }
+    if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag,
+    firstof_member->firstof_var }
         member          = member_id;
     
     {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var,
-    for_tag, filter, with_filter, load_filter, if_filter, extends_tag, load_as}
+    for_tag, filter, with_filter, load_filter, if_filter, extends_tag, load_as,
+    firstof_var, filter_var}
         strip_ws        = ws+;
     
     {default}
         text_char       = any_char;
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var}
+    {var, with_var, load_var, if_var, ifeq_var, for_var,
+    firstof_var, filter_var}
         vert_pipe       = '|';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var}
+    {var, with_var, load_var, if_var, ifeq_var, for_var, firstof_var}
         comma           = ',';
     
     {var->filter, with_var->with_filter, load_var->load_filter,
-    if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter}
+    if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter,
+    firstof_var->firstof_filter, filter_var->filter_filter}
         colon           = ':';
     
     {filter->var, with_filter->with_var, load_filter->load_var,
-    if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var}
+    if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var,
+    firstof_filter->firstof_var, filter_filter->filter_var}
         unquoted        = alpha_num+;
     
 
@@ -216,6 +235,7 @@ Productions
         |   {block}     [block]:block                                   {-> New entity.block(block)}
         |   {load}      [load]:load                                     {-> New entity.load(load)}
         |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
+        |   {first_of}  firstof_start [args]:argument+ tag_end          {-> New entity.first_of([args.argument])}
         |   {for}       [for]:for_block                                 {-> New entity.for(for)}
         |   {if}        [if]:if_block                                   {-> New entity.if(if)}
         |   {ifequal}   [ifequal]:ifequal_block                         {-> New entity.ifequal(ifequal)}
@@ -230,20 +250,20 @@ Productions
     
     for_block {-> for_block} =
                         for_start [iter_var]:id kw_in
-                            [variable]:var_expression tag_end
+                            [variable]:var_expression tag_end_eol
                             [entities]:entity* for_end                  {-> New for_block(iter_var, variable, [entities.entity])}
         ;
     
     if_block {-> if_block} =
                         if_start [expr1]:boolean_expr [expr2]:boolean_op?
-                            tag_end [entities]:entity*
+                            tag_end_eol [entities]:entity*
                             [else]:else_block? if_end                   {-> New if_block(expr1, expr2, [entities.entity], [else.entity])}
         ;
 
     ifequal_block {-> ifequal_block} =
                         ifeq_start [first]:argument
                             [remaining]:argument+
-                            tag_end [entities]:entity*
+                            tag_end_eol [entities]:entity*
                             [else]:else_block? ifeq_end                 {-> New ifequal_block([first.argument, remaining.argument], [entities.entity], [else.entity])}
         ;
 
@@ -263,19 +283,19 @@ Productions
     
     
     block {-> block} =
-                        block_start [id]:id tag_end
+                        block_start [id]:id tag_end_eol
                             [entities]:entity* block_end                {-> New block(id, [entities.entity])}
         ;
     
     with_block {-> with_block} =
                         with_start [expression]:var_expression
-                        kw_as [var]:id tag_end
+                        kw_as [var]:id tag_end_eol
                         [entities]:entity* with_end                     {-> New with_block(expression, var, [entities])}
         ;
     
     filter_block {-> filter_block} =
                         filter_start [filter]:filter
-                        [filters]:var_filter* tag_end
+                        [filters]:var_filter* tag_end_eol
                         [entities]:entity* filter_end                   {-> New filter_block([filter, filters.filter], [entities.entity])}
         ;
     
@@ -341,6 +361,7 @@ Abstract Syntax Tree
         |   {block}     [block]:block
         |   {load}      [load]:load
         |   {include}   [include]:include
+        |   {first_of}  [args]:argument+
         |   {for}       [for]:for_block
         |   {if}        [if]:if_block
         |   {ifequal}   [ifequal]:ifequal_block
