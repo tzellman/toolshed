@@ -57,8 +57,7 @@ How many plural nouns are there? Answer: '{{ plnoun.length }}'
 ===What's a filter?===
 Filters are an idea borrowed from the Django framework, who were no doubt inspired by the ability to create pipelines of commands in many Unix shells. Here we are piping the 'output' of a variable to the input of one or more special function objects that will 
 
-In our example, we make use of two filters: "random" and "underline". 'random' is a built-in filter provided with the [Galoot] framework. It takes an object as input, if the object is not a list already, it attempts to turn the object 
-
+In our example, we make use of two filters: 'random' and 'underline'. 'random' is a built-in filter provided with the [Galoot] framework. It takes a list-like object, and picks a random element from it. 'underline' is an example of a user-defined filter. It will wrap the the string representation of the object piped to it in special formatting tags that will cause it to render with an underline when viewed in a web browser.
 
 Filters are a special type of object in the galoot framework that allow
 
