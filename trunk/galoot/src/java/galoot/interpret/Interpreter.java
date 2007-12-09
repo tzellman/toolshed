@@ -16,7 +16,6 @@ import galoot.node.AFilterBlock;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
-import galoot.node.ALoad;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
 import galoot.node.AStringArgument;
@@ -171,9 +170,8 @@ public class Interpreter extends DepthFirstAdapter
     public void outAQuotedFilterArg(AQuotedFilterArg node)
     {
         // strip the quotes and push it on the stack
-        String arg = node.getArg().getText();
-        arg = arg.substring(1, arg.length() - 1);
-        variableStack.push(arg);
+        variableStack.push(TemplateUtils.stripEncasedString(node.getArg()
+                .getText(), '"'));
     }
 
     @Override
@@ -233,12 +231,9 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAStringArgument(AStringArgument node)
     {
-        String text = node.getString().getText();
-        // remove the end-quotes
-        text = text.substring(1, text.length() - 1);
-
-        // just push the string argument onto the stack
-        variableStack.push(text);
+        // remove the end-quotes and push the string argument onto the stack
+        variableStack.push(TemplateUtils.stripEncasedString(node.getString()
+                .getText(), '"'));
     }
 
     @Override
@@ -267,19 +262,17 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAStringPlugin(AStringPlugin node)
     {
-        String name = node.getString().getText();
         // strip the quotes
-        name = name.substring(1, name.length() - 1);
-        loadFilterPlugin(name, null);
+        loadFilterPlugin(TemplateUtils.stripEncasedString(node.getString()
+                .getText(), '"'), null);
     }
 
     @Override
     public void outAStringAsPlugin(AStringAsPlugin node)
     {
-        String name = node.getString().getText();
         // strip the quotes
-        name = name.substring(1, name.length() - 1);
-        loadFilterPlugin(name, node.getAlias().getText());
+        loadFilterPlugin(TemplateUtils.stripEncasedString(node.getString()
+                .getText(), '"'), node.getAlias().getText());
     }
 
     @Override
@@ -296,17 +289,6 @@ public class Interpreter extends DepthFirstAdapter
         // pop the var off the stack
         Object var = variableStack.pop();
         loadFilterPlugin(var.toString(), node.getAlias().getText());
-    }
-
-    @Override
-    public void outALoad(ALoad node)
-    {
-        int numPlugins = node.getPlugins().size();
-        // LinkedList<PVarExpression> plugins = node.getPlugins();
-        // for (PVarExpression var : plugins)
-        // {
-        // // System.out.println("Asked to load plug-in: " + var.toString());
-        // }
     }
 
     @Override
@@ -334,11 +316,10 @@ public class Interpreter extends DepthFirstAdapter
         context.push();
         File file = null;
 
-        String okFilename = (filename.endsWith("\"")) ? filename.substring(1,
-                filename.length() - 1) : filename;
+        String strippedName = TemplateUtils.stripEncasedString(filename, '"');
 
         // 1. test to see if the file exists
-        file = new File(okFilename);
+        file = new File(strippedName);
         if (!file.exists())
         {
             // look in the registry for the paths where include files can
@@ -351,7 +332,7 @@ public class Interpreter extends DepthFirstAdapter
             // loop over the paths to see if the file exists
             for (String path : includePaths)
             {
-                tf = new File(path + File.separator + okFilename);
+                tf = new File(path + File.separator + strippedName);
                 if (tf.exists())
                 {
                     found = true;

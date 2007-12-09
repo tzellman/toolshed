@@ -318,4 +318,28 @@ public final class TemplateUtils
         return c;
     }
 
+    /**
+     * Strips the "encasing" character from a string, if it is encased with the
+     * input character.
+     * 
+     * For example, a string in quotes ("'") can be stripped of its encased
+     * quotes.
+     * 
+     * @param s
+     *            the string to strip
+     * @param c
+     *            the encasing character, for example '"'
+     * @return the original string if not encased by the given character, or the
+     *         stripped string
+     */
+    public static String stripEncasedString(String s, char c)
+    {
+        int sLen = s == null ? 0 : s.length();
+        if (sLen <= 1)
+            return s;
+        if (s.charAt(0) == c && s.charAt(sLen - 1) == c)
+            return s.substring(1, sLen - 1);
+        return s;
+    }
+
 }
