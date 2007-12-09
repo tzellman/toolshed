@@ -1,4 +1,6 @@
 #labels Example,Featured,Galoot
-To show a quick and simple example of how the [Galoot] template engine could be used, we have written a Mad Lib generator. The example application generates Mad Libs from lists of input nouns, verbs, adjectives, etc.
+To show a quick and simple example of how the [Galoot] template engine could be used, we have written a Mad Lib generator. The example application fills in a [Galoot] template with randomly chosen words from a dictionary configuration file.
+
+The configuration file consists of lists of various words split up into various classifications from the specific (names, liquids, places) to the general (parts of speech: nouns, verbs, adjectives, etc.) to 
 
 More info to come...
