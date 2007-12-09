@@ -351,15 +351,14 @@ public class Interpreter extends DepthFirstAdapter
             // loop over the paths to see if the file exists
             for (String path : includePaths)
             {
-                tf = new File(path + File.separator + filename);
+                tf = new File(path + File.separator + okFilename);
                 if (tf.exists())
                 {
                     found = true;
                     break;
                 }
             }
-            if (!found)
-                file = null;
+            file = (found) ? tf : null;
         }
 
         if (file != null)
