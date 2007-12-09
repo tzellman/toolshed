@@ -1,4 +1,4 @@
-package galoot;
+package galoot.types;
 
 import java.util.HashMap;
 import java.util.Iterator;
