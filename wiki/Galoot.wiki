@@ -49,6 +49,22 @@ Example:
 {# the more concise comment #}
 }}}
 
+==== extends ====
+The extends tag signifies that the template extends a parent template. The extends tag, if being used, must occur as the very first tag in the document. Read the section on Template Inheritance to learn more.
+
+Examples:
+Extend a template, by file name:
+{{{
+{% extends "base.html" %}
+{% block content %} sub-content {% endblock %}
+}}}
+
+Extend a template by evaluating a variable:
+{{{
+{% extends parentTemplate|lower %}
+{% block content %} sub-content {% endblock %}
+}}}
+
 ==== filter ====
 Apply filters to a block of data.
 
@@ -63,6 +79,17 @@ Examples:
 {% filter lower|count %}
     First, lower case this block, then evaluate the length of the data...
 {% endfilter %}
+}}}
+
+
+==== firstof ====
+Returns the first non-false value from a list of arguments. (See the boolean-ness note above.) The arguments can be variable expressions (including filters), or strings. This is useful if you want to provide a default value.
+
+Examples:
+{{{
+{% firstof var1 var2 var3 "nothing" %}
+    
+Welcome {% firstof user.name "New User" %}!
 }}}
 
 ==== for ====
@@ -176,6 +203,36 @@ Example:
 
 {% endfor %}
 }}}
+
+== Template Inheritance ==
+One of the greatest features of Galoot is the fact that you are able to inherit templates. In the following examples we will discuss a common use case for template inheritance.
+
+=== HTML Example ===
+So you've decided to create the world's greatest online, Web 3.0 pet store. (Yes, 3.0 because you're just that good!) You have to start somewhere, and, yes we might be biased, Galoot is the best place to start. You want to design your application so that you can maximize code reuse. So, you decide to start with a top-level base HTML page which will serve as the root/parent of all of your templates. Here is an example:
+
+{{{
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <link rel="stylesheet" href="site.css" />
+    <title>{% block title %}Pets R Us{% endblock %}</title>
+    {% block extrahead %}{% endblock %}
+</head>
+
+<body>
+    <div id="header">{% block header %}{% endblock %}</div>
+    <div id="main"
+        {% block main %}
+            {{ content }}
+        {% endblock %}
+    </div>
+    <div id="footer">{% block footer %}{% endblock %}</div>
+</body>
+</html>
+}}}
+
+
 
 
 == FAQ ==
