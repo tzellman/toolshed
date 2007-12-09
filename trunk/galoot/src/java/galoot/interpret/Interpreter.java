@@ -614,8 +614,7 @@ public class Interpreter extends DepthFirstAdapter
         if (templateFile != null)
             return new Template(templateFile).renderDocument(context);
         else
-            log.warn("Document could not be located in include paths: "
-                    + filename);
+            log.warn("File could not be located in include paths: " + filename);
         return null;
     }
 

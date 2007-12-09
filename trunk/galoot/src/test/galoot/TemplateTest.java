@@ -136,29 +136,31 @@ public class TemplateTest extends TestCase
             assertEquals(output, "");
 
             // existing template
-            String include = "tmp.fake";
-            f = new File(include);
+            f = File.createTempFile("tmp", "fake");
             FileUtils.writeStringToFile(f,
                     "{% with name|upper as bar %}{{ bar }}{% endwith %}",
                     "UTF-8");
-
             log.debug("creating tmp file: " + f.getAbsolutePath());
+
+            // remove path from registry, in case it already was there
+            PluginRegistry.getInstance().removeTemplateIncludePath(
+                    f.getParent());
+
+            // test that it doesn't work
+            t = new Template("{% include \"" + f.getName() + "\" %}");
+            output = t.render(context);
+            assertTrue(output.isEmpty());
 
             // add the path to the pluginregistry
             PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
 
+            // test case where file is specified by name
             t = new Template("{% include \"" + f.getName() + "\" %}");
             output = t.render(context);
             assertEquals("TOM", output);
 
-            // validate the case where the file is in the registry
-            // add the file path to the registry
-            t = new Template("{% include \"" + include + "\" %}");
-            output = t.render(context);
-            assertEquals("TOM", output);
-
-            context.put("mypath", include);
-
+            // now test case where file is specified by variable
+            context.put("mypath", f.getName());
             t = new Template("{% include mypath %}");
             output = t.render(context);
             assertEquals("TOM", output);
@@ -172,6 +174,7 @@ public class TemplateTest extends TestCase
         catch (IOException e)
         {
             if (f != null)
+            {
                 try
                 {
                     FileUtils.forceDelete(f);
@@ -180,6 +183,7 @@ public class TemplateTest extends TestCase
                 {
                     // couldn't delete the file
                 }
+            }
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
