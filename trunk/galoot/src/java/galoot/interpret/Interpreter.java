@@ -32,6 +32,7 @@ import galoot.node.AVariableInclude;
 import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
+import galoot.node.Start;
 import galoot.node.TMember;
 import galoot.parser.ParserException;
 import galoot.types.BlockFragment;
@@ -57,28 +58,60 @@ public class Interpreter extends DepthFirstAdapter
 {
     private static Log log = LogFactory.getLog(Interpreter.class);
 
-    private Document document;
+    // ! The document that contains all of the fragments
+    private Document document = null;
 
+    // ! If the document is an extension of another, the parent document
     private Document parentDocument = null;
 
+    // ! the context stack
     private ContextStack context;
 
+    // ! stack used to keep track of variable expressions as they evaluated
     private Stack<Object> variableStack;
 
+    // ! stack used to keep track of filter expressions, as they are evaluated
     private Deque<Pair<String, String>> filterStack;
 
+    /**
+     * stack of actual {% filter %} blocks, which needs to do post-processing on
+     * the block of data
+     */
     private Stack<StringBuffer> filterBlockData;
 
+    // ! keeps track of for loops vars, so we can refer to parent loop
+    // counter(s)
     private Stack<Map<String, Object>> forLoopStack;
 
+    /**
+     * Creates a new Interpreter, using the given context stack as the initial
+     * values available to any processed templates
+     * 
+     * @param context
+     */
     public Interpreter(ContextStack context)
     {
         this.context = context;
+    }
+
+    /**
+     * Initialize the instance vars used in processing
+     */
+    private void init()
+    {
         document = new Document();
         variableStack = new Stack<Object>();
         filterStack = new LinkedList<Pair<String, String>>();
         filterBlockData = new Stack<StringBuffer>();
         forLoopStack = new Stack<Map<String, Object>>();
+    }
+
+    @Override
+    public void inStart(Start node)
+    {
+        // when in the start production, we initialize everything
+        init();
+        super.inStart(node);
     }
 
     @Override
@@ -711,4 +744,5 @@ public class Interpreter extends DepthFirstAdapter
          */
         return parentDocument != null ? parentDocument : document;
     }
+
 }
