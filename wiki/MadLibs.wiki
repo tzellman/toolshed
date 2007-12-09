@@ -1,3 +1,3 @@
-To show a quick and simple example of how the Galoot template engine could be used, we have written a Mad Lib generator. The example application generates Mad Libs from lists of input nouns, verbs, adjectives, etc.
+To show a quick and simple example of how the [Galoot] template engine could be used, we have written a Mad Lib generator. The example application generates Mad Libs from lists of input nouns, verbs, adjectives, etc.
 
 More info to come...
