@@ -65,6 +65,40 @@ Remember when we issued a `{{ load "underline"}}` back in Madlib.galoot? That di
 
 The header and footer galoot templates are (very) simple text files that create the header and footer (who'd have guessed?) of an html document. They contain no special galoot directives, and are thus pasted verbatim into Madlib.galoot as it is evaluated.
 
-==Where do variables come from?==
+==How do I actually use this?!==
 
-All of the above is well and good, but how do we actually populate data into the template?
+All of the above is well and good, but how do we actually populate data into the template? for this we need to delve into the Java programming layer of [Galoot].
+
+{{{
+public class MadlibExample
+{
+    ...
+    public static void main(String[] args) throws ConfigurationException,
+            FileNotFoundException, IOException
+    {
+        ...
+        PluginRegistry.getInstance().registerFilter(new Underline());    
+}}}
+
+back to main
+
+{{{
+        PluginRegistry.getInstance().addTemplateIncludePath(
+                System.getProperty("user.dir") + "/samples/madlib/");
+}}}
+
+{{{
+        InputAdapter madlibInputAdapter = new MadlibInputAdapter(MADLIB_CONFIG);
+}}}
+{{{
+        ContextStack contextStack = new ContextStack(madlibInputAdapter
+                .getContextStackInput());
+}}}
+
+{{{
+        Template template = new Template(new File(args[0]));
+        String filledInMadlibs = template.render(contextStack);
+        FileUtils.writeStringToFile(new File("madlib.html"), filledInMadlibs,
+                "UTF-8");
+    }
+}}}
