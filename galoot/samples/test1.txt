@@ -12,7 +12,11 @@ However, we can default it: "{{ badVar|default:"ok now" }}"
 
 
 {% if badVar %}show if text{% else %}show else text{% endif %}
-{% ifequal "tom" "adam" %}we are equals{% else %}i guess we aren't equals{% endifequal %}
+{% ifequal "tom" "adam" %}
+    we are equals
+{% else %}
+    i guess we aren't equals
+{% endifequal %}
 
 
 The length of the variable: "{{var}}" is {{ var|length }}.
@@ -32,3 +36,6 @@ length of next paragraph is:
     just compute the length of all of these characters
     that includes newlines, etc.
 {% endfilter %}
+
+{% firstof badVar anotherBad "default" %}
+{% firstof badVar var "default" %}
