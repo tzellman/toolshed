@@ -65,4 +65,6 @@ Remember when we issued a `{{ load "underline"}}` back in Madlib.galoot? That di
 
 The header and footer galoot templates are (very) simple text files that create the header and footer (who'd have guessed?) of an html document. They contain no special galoot directives, and are thus pasted verbatim into Madlib.galoot as it is evaluated.
 
-==
+==Where do variables come from?==
+
+All of the above is well and good, but how do we actually populate data into the template?
