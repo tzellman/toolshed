@@ -15,7 +15,7 @@ public class ContextStack extends MapStack<String, Object>
 
     public ContextStack()
     {
-        filterMap = new FilterMap();
+        this(null);
     }
 
     public ContextStack(Map<String, Object> initialItems)
