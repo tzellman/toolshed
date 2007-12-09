@@ -1,10 +1,10 @@
 {% extends "samples/baseDoc.txt" %}
 
 {% block content %}
-sub document
+    sub document
     {% block anotherBlock %}
-       inner block
+       inner block, Var: {{ var }}
     {% endblock %}
-
-
+    now, let's add the super block data
+    {{ block.super }}
 {% endblock %}

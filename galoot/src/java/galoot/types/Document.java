@@ -41,6 +41,16 @@ public class Document implements DocumentFragment
      */
     public Object getContents()
     {
+        return getDocumentBlock();
+    }
+
+    /**
+     * Returns the top-level "block", which is a BlockFragment.
+     * 
+     * @return
+     */
+    public BlockFragment getDocumentBlock()
+    {
         return documentBlock;
     }
 
@@ -52,6 +62,53 @@ public class Document implements DocumentFragment
     {
         if (!blockStack.isEmpty())
             blockStack.pop();
+    }
+
+    /**
+     * @see BlockFragment#hasBlock(String)
+     */
+    public boolean hasBlock(String name)
+    {
+        return documentBlock.hasBlock(name);
+    }
+
+    /**
+     * Returns the depth at which the current block is
+     * 
+     * @return
+     */
+    public int getBlockDepth()
+    {
+        return blockStack.size();
+    }
+
+    /**
+     * @return
+     * @see galoot.types.BlockFragment#evaluateAsString()
+     */
+    public String evaluateAsString()
+    {
+        return documentBlock.evaluateAsString();
+    }
+
+    /**
+     * @param name
+     * @return
+     * @see galoot.types.BlockFragment#getBlock(java.lang.String)
+     */
+    public BlockFragment getBlock(String name)
+    {
+        return documentBlock.getBlock(name);
+    }
+
+    /**
+     * @param newBlock
+     * @return
+     * @see galoot.types.BlockFragment#replaceBlock(galoot.types.BlockFragment)
+     */
+    public boolean replaceBlock(BlockFragment newBlock)
+    {
+        return documentBlock.replaceBlock(newBlock);
     }
 
 }

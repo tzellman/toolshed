@@ -1,6 +1,6 @@
-This is the base document.
+This is the base document. Var: {{ var }}
 
 Let's declare a section which can be overriden:
 {% block content %}
-   This could be overriden...
+   This could be overriden...  Name: {{ name }}
 {% endblock %}

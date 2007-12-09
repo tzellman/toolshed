@@ -6,10 +6,11 @@ import galoot.PluginRegistry;
 import galoot.Template;
 import galoot.TemplateUtils;
 import galoot.analysis.DepthFirstAdapter;
+import galoot.lexer.LexerException;
 import galoot.node.AAndBooleanOp;
+import galoot.node.ABlock;
 import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
-import galoot.node.ADocument;
 import galoot.node.AExtends;
 import galoot.node.AFilter;
 import galoot.node.AFilterBlock;
@@ -26,18 +27,19 @@ import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarAsPlugin;
 import galoot.node.AVarExpression;
 import galoot.node.AVarPlugin;
-import galoot.node.AVariableArgument;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
 import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
 import galoot.node.TMember;
+import galoot.parser.ParserException;
+import galoot.types.BlockFragment;
+import galoot.types.Document;
 import galoot.types.Pair;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -55,82 +57,28 @@ public class Interpreter extends DepthFirstAdapter
 {
     private static Log log = LogFactory.getLog(Interpreter.class);
 
-    protected Writer writer;
+    private Document document;
 
-    protected ContextStack context;
+    private Document parentDocument = null;
 
-    protected Stack<Object> variableStack;
+    private ContextStack context;
 
-    protected Deque<Pair<String, String>> filterStack;
+    private Stack<Object> variableStack;
 
-    protected Stack<StringBuffer> filterBlockData;
+    private Deque<Pair<String, String>> filterStack;
 
-    public Interpreter(ContextStack context, Writer writer)
+    private Stack<StringBuffer> filterBlockData;
+
+    private Stack<Map<String, Object>> forLoopStack;
+
+    public Interpreter(ContextStack context)
     {
         this.context = context;
-        this.writer = writer;
+        document = new Document();
         variableStack = new Stack<Object>();
         filterStack = new LinkedList<Pair<String, String>>();
         filterBlockData = new Stack<StringBuffer>();
-    }
-
-    /**
-     * The endpoint for the string processing
-     * 
-     * @param s
-     */
-    protected void writeString(String s)
-    {
-        // if we are in a filterBlock, we need to "write" the data to it
-        if (!filterBlockData.isEmpty())
-        {
-            filterBlockData.peek().append(s);
-        }
-        else
-        {
-            // write it directly
-            directWrite(s);
-        }
-    }
-
-    // write the string directly to the writer
-    private void directWrite(String s)
-    {
-        try
-        {
-            writer.write(s);
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void inADocument(ADocument node)
-    {
-    }
-
-    @Override
-    public void inAExtends(AExtends node)
-    {
-        // TODO move all of this code somewhere else
-        String parent = node.getParentName().getText();
-        System.out.println("Parent doc is: " + parent);
-
-        File file = new File(parent);
-        if (file.exists())
-        {
-            // Template template = template
-        }
-
-    }
-
-    @Override
-    public void outACharEntity(ACharEntity node)
-    {
-        writeString(node.getChar().getText());
+        forLoopStack = new Stack<Map<String, Object>>();
     }
 
     @Override
@@ -208,7 +156,10 @@ public class Interpreter extends DepthFirstAdapter
     {
         Object object = variableStack.pop();
         if (object != null)
-            writeString(object.toString());
+        {
+            // add the text to the document
+            document.addContent(object.toString());
+        }
     }
 
     @Override
@@ -247,13 +198,6 @@ public class Interpreter extends DepthFirstAdapter
         // remove the end-quotes and push the string argument onto the stack
         variableStack.push(TemplateUtils.stripEncasedString(node.getString()
                 .getText(), '"'));
-    }
-
-    @Override
-    public void outAVariableArgument(AVariableArgument node)
-    {
-        // nothing to do here, since the expression will get evaluated inside of
-        // outAVarExpression
     }
 
     private void loadFilterPlugin(String pluginName, String alias)
@@ -307,16 +251,17 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAStringInclude(AStringInclude node)
     {
-        log.debug("Asked to include file: " + node.getString().getText());
-        doInclude(node.getString().getText());
+        String filename = TemplateUtils.stripEncasedString(node.getString()
+                .getText(), '"');
+
+        processIncludedFile(filename);
     }
 
     @Override
     public void outAVariableInclude(AVariableInclude node)
     {
-        log.debug("Asked to include a file from var: " + node.getVariable());
         Object pop = variableStack.pop();
-        doInclude(pop.toString());
+        processIncludedFile(pop.toString());
     }
 
     /**
@@ -324,58 +269,26 @@ public class Interpreter extends DepthFirstAdapter
      * 
      * @param filename
      */
-    private void doInclude(String filename)
+    private void processIncludedFile(String filename)
     {
         context.push();
-        File file = null;
-
-        String strippedName = TemplateUtils.stripEncasedString(filename, '"');
-
-        // 1. test to see if the file exists
-        file = new File(strippedName);
-        if (!file.exists())
+        try
         {
-            // look in the registry for the paths where include files can
-            // be found.
-            Iterable<String> includePaths = PluginRegistry.getInstance()
-                    .getTemplateIncludePaths();
-            boolean found = false;
-            File tf = null;
-
-            // loop over the paths to see if the file exists
-            for (String path : includePaths)
-            {
-                tf = new File(path + File.separator + strippedName);
-                if (tf.exists())
-                {
-                    found = true;
-                    break;
-                }
-            }
-            file = (found) ? tf : null;
+            Document doc = loadDocument(filename);
+            if (doc == null)
+                throw new Exception();
+            // add the text to the document
+            document.addContent(doc.evaluateAsString());
         }
-
-        if (file != null)
+        catch (Throwable e)
         {
-            try
-            {
-                String rendered = new Template(file).render(context);
-                writeString(rendered);
-            }
-            catch (IOException e)
-            {
-                // don't cause the world to end because of this
-                log.error("Error reading file " + file.getPath() + ": "
-                        + ExceptionUtils.getFullStackTrace(e));
-            }
+            log.warn("File could not be included: " + filename);
+            // ignore the problem for now
         }
-        else
+        finally
         {
-            // don't cause the world to end because of this
-            log.warn("template: " + filename + " could not be found.");
+            context.pop();
         }
-
-        context.pop();
     }
 
     @Override
@@ -403,6 +316,7 @@ public class Interpreter extends DepthFirstAdapter
         Object loopObj = variableStack.pop();
 
         // we will only support Iterable types
+        Integer objectSize = TemplateUtils.getObjectLength(loopObj);
 
         // first, see if we can convert the type to an iterable type
         if (TemplateUtils.isArrayType(loopObj))
@@ -417,16 +331,31 @@ public class Interpreter extends DepthFirstAdapter
             {
                 Object object = (Object) it.next();
                 List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
-                doForLoopIteration(loopVar, object, iterCount, copy, !it
-                        .hasNext());
+                processForLoopIteration(loopVar, object, iterCount, copy, !it
+                        .hasNext(), objectSize);
             }
         }
 
         outAForBlock(node);
     }
 
-    private void doForLoopIteration(String loopVar, Object loopObj,
-            int iterCount, Iterable<PEntity> entities, boolean isLast)
+    /**
+     * Process one iteration of a forloop.
+     * 
+     * @param loopVar
+     *            the loop variable name
+     * @param loopObj
+     *            the loop object, already fully evaluated
+     * @param iterCount
+     *            the current count of the iteration, zero based
+     * @param entities
+     *            the entities to process
+     * @param isLast
+     *            true if this iteration is the last in the loop
+     */
+    private void processForLoopIteration(String loopVar, Object loopObj,
+            int iterCount, Iterable<PEntity> entities, boolean isLast,
+            int totalLoops)
     {
         // push a new context
         context.push();
@@ -439,7 +368,15 @@ public class Interpreter extends DepthFirstAdapter
         extraLoopVars.put("counter1", iterCount + 1);
         extraLoopVars.put("first", iterCount == 0);
         extraLoopVars.put("last", isLast);
+        int revCounter = totalLoops - iterCount;
+        extraLoopVars.put("revcounter", revCounter);
+        extraLoopVars.put("revcounter0", revCounter - 1);
+        if (!forLoopStack.isEmpty())
+            extraLoopVars.put("parent", forLoopStack.peek());
         context.put("forloop", extraLoopVars);
+
+        // push the loop vars onto the stack, so sub-for loops can access it
+        forLoopStack.push(extraLoopVars);
 
         // apply to the entities
         for (PEntity e : entities)
@@ -450,6 +387,8 @@ public class Interpreter extends DepthFirstAdapter
         // pop the context
         context.pop();
 
+        // pop the extra vars off the forloop stack
+        forLoopStack.pop();
     }
 
     @Override
@@ -570,7 +509,10 @@ public class Interpreter extends DepthFirstAdapter
         }
 
         if (output != null)
-            writeString(output.toString());
+        {
+            // add the text to the document
+            document.addContent(output.toString());
+        }
     }
 
     @Override
@@ -608,4 +550,165 @@ public class Interpreter extends DepthFirstAdapter
         outAWithBlock(node);
     }
 
+    /**
+     * This method probably should be propagated to a higher level somewhere. It
+     * searches for the given filename within the template include paths
+     * specified in the PluginRegistry.
+     * 
+     * @param filename
+     * @return
+     * @throws ParserException
+     * @throws LexerException
+     * @throws IOException
+     */
+    private Document loadDocument(String filename) throws ParserException,
+            LexerException, IOException
+    {
+        // look in the registry for the paths where include files can be found.
+        Iterable<String> includePaths = PluginRegistry.getInstance()
+                .getTemplateIncludePaths();
+        File templateFile = null;
+        // loop over the paths to see if the file exists
+        for (String path : includePaths)
+        {
+            File file = new File(path, filename);
+            if (file.exists())
+            {
+                templateFile = file;
+                break;
+            }
+        }
+        if (templateFile != null)
+            return new Template(templateFile).renderDocument(context);
+        else
+            log.warn("Document could not be located in include paths: "
+                    + filename);
+        return null;
+    }
+
+    @Override
+    public void inAExtends(AExtends node)
+    {
+        // if we are in here, then this document extends another one
+        String parentDoc = TemplateUtils.stripEncasedString(node
+                .getParentName().getText(), '"');
+
+        try
+        {
+            // try to load the doc.
+            parentDocument = loadDocument(parentDoc);
+            if (parentDoc == null)
+                throw new Exception("Unable to load parent document: "
+                        + parentDoc);
+        }
+        catch (Throwable e)
+        {
+            log.warn(ExceptionUtils.getStackTrace(e));
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void outACharEntity(ACharEntity node)
+    {
+        // add the text to the document
+        document.addContent(node.getChar().getText());
+    }
+
+    @Override
+    public void caseABlock(ABlock node)
+    {
+        boolean evaluate = false, existsInParent = false;
+        int curBlockDepth = document.getBlockDepth();
+
+        String blockName = node.getId().getText();
+
+        /*
+         * We only render the block if one of the following is true: (1) if the
+         * document has a parent doc AND ((this block is a top-level block of
+         * this document AND exists in the parent) OR (this block is NOT a
+         * top-level block and does NOT exist in the parent)), or if (2) the
+         * document does NOT have a parent doc. AND the block name has not
+         * already been used in the current document.
+         */
+
+        if (parentDocument != null)
+        {
+            BlockFragment parentBlock = parentDocument.getDocumentBlock();
+            existsInParent = parentBlock.hasBlock(blockName);
+
+            if ((curBlockDepth == 0 && existsInParent)
+                    || (curBlockDepth > 0 && !existsInParent))
+                evaluate = true;
+        }
+        else if (document.hasBlock(blockName))
+            throw new RuntimeException("Block already exists with name: "
+                    + blockName);
+        else
+            evaluate = true;
+
+        if (evaluate)
+        {
+            // push on a new context
+            context.push();
+
+            // add a new BlockFragment to the document
+            BlockFragment newBlock = new BlockFragment(blockName);
+            document.addContent(newBlock);
+
+            /*
+             * If it existed in the parent, and top-level, we add a special
+             * variable to the context, which is essentially a "super" lookup.
+             * Note that the data in the super block has already been evaluated.
+             */
+            if (curBlockDepth == 0 && existsInParent)
+            {
+                String superBlock = parentDocument.getDocumentBlock().getBlock(
+                        blockName).evaluateAsString();
+                context.put("block.super", superBlock);
+            }
+
+            inABlock(node);
+            if (node.getId() != null)
+            {
+                node.getId().apply(this);
+            }
+
+            {
+                List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
+                for (PEntity e : copy)
+                {
+                    e.apply(this);
+                }
+            }
+            outABlock(node);
+
+            // tell the document we are done with the block
+            document.popBlock();
+
+            // pop the context
+            context.pop();
+
+            // now, replace the "super" fragment, if one existed
+            if (curBlockDepth == 0 && existsInParent)
+            {
+                parentDocument.replaceBlock(newBlock);
+            }
+        }
+    }
+
+    /**
+     * Get the fully qualified document which results after applying the
+     * interpreter to an AST.
+     * 
+     * @return
+     */
+    public Document getDocument()
+    {
+        /*
+         * if we have a parent (via extends keyword) return it, since everything
+         * was added to it anyway. Otherwise, return our own document.
+         */
+        return parentDocument != null ? parentDocument : document;
+    }
 }
