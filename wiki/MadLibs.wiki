@@ -54,8 +54,13 @@ This is an example of a _variable expression_. A variable expression consists of
 How many plural nouns are there? Answer: '{{ plnoun.length }}'
 }}}
 
-==What's a filter?==
-Filters are a special type of object in the galoot framework that 
+===What's a filter?===
+Filters are an idea borrowed from the Django framework, who were no doubt inspired by the ability to create pipelines of commands in many Unix shells. Here we are piping the 'output' of a variable to the input of one or more special function objects that will 
+
+In our example, we make use of two filters: "random" and "underline". 'random' is a built-in filter provided with the [Galoot] framework. It takes an object as input, if the object is not a list already, it attempts to turn the object 
+
+
+Filters are a special type of object in the galoot framework that allow
 
 Remember when we issued a `{{ load "underline"}}` back in Madlib.galoot?
 
