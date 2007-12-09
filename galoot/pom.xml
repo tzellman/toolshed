@@ -98,7 +98,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.1</version>
+            <version>4.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -167,10 +167,43 @@
                         </filesets>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>unpack</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <includes>**/*.class</includes>
+                        <excludes>**/*.properties</excludes>
+                        <outputDirectory>alternateLocation</outputDirectory>
+                        <overWriteReleases>false</overWriteReleases>
+                        <overWriteSnapshots>true</overWriteSnapshots>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <sourceDirectory>src/java</sourceDirectory>
         <testSourceDirectory>src/test</testSourceDirectory>
+
+        <resources>
+            <resource>
+                <!-- Include the lexer.dat file -->
+                <directory>${basedir}/src/java</directory>
+                <includes>
+                    <include>**/*.dat</include>
+                </includes>
+            </resource>
+            <resource>
+                <targetPath>samples/madlib</targetPath>
+                <directory>${basedir}/samples/madlib</directory>
+            </resource>
+        </resources>
     </build>
 
     <properties></properties>
