@@ -69,6 +69,7 @@ The header and footer galoot templates are (very) simple text files that create 
 
 All of the above is well and good, but how do we actually populate data into the template? for this we need to delve into the Java programming layer of [Galoot].
 
+We start off in in `main`, where all of the action starts in our example. Our first step is to configure the `PluginRegistry`:
 {{{
 public class MadlibExample
 {
@@ -78,14 +79,41 @@ public class MadlibExample
     {
         ...
         PluginRegistry.getInstance().registerFilter(new Underline());    
-}}}
-
-back to main
-
-{{{
         PluginRegistry.getInstance().addTemplateIncludePath(
                 System.getProperty("user.dir") + "/samples/madlib/");
 }}}
+
+The `PluginRegistry` is a singleton class that is used to configure the framework. Setup of template paths and registering of filter objects are two of this class's responsibilities.
+
+===Underline?===
+
+We take a detour from `main` to look at a simple example of how to create a user defined filter:
+{{{
+    private static final class Underline extends AbstractFilter
+    {
+        public Object filter(Object object, String args)
+        {
+            if (object != null)
+            {
+                return "<span style=\"text-decoration: underline\">"
+                        + object.toString() + "</span>";
+            }
+            else
+            {
+                log.debug("null object passed for argument");
+                return "";
+            }
+        }
+
+        public String getName()
+        {
+            return "underline";
+        }
+    }     
+}}}
+
+===Back to Basics===
+Now back to our originally scheduled main method:
 
 {{{
         InputAdapter madlibInputAdapter = new MadlibInputAdapter(MADLIB_CONFIG);
