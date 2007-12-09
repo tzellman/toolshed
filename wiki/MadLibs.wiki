@@ -54,15 +54,15 @@ This is an example of a _variable expression_. A variable expression consists of
 How many plural nouns are there? Answer: '{{ plnoun.length }}'
 }}}
 
-===What's a filter?===
+====What's a filter?====
 Filters are an idea borrowed from the Django framework, who were no doubt inspired by the ability to create pipelines of commands in many Unix shells. Here we are piping the 'output' of a variable to the input of one or more special function objects that will 
 
 In our example, we make use of two filters: 'random' and 'underline'. 'random' is a built-in filter provided with the [Galoot] framework. It takes a list-like object, and picks a random element from it. 'underline' is an example of a user-defined filter. It will wrap the the string representation of the object piped to it in special formatting tags that will cause it to render with an underline when viewed in a web browser.
 
-Filters are a special type of object in the galoot framework that allow
-
-Remember when we issued a `{{ load "underline"}}` back in Madlib.galoot?
+Remember when we issued a `{{ load "underline"}}` back in Madlib.galoot? That directive told galoot to make available a non-default filter for use in the templates rendered from that point on.
 
 ==header.galoot and footer.galoot==
 
 The header and footer galoot templates are (very) simple text files that create the header and footer (who'd have guessed?) of an html document. They contain no special galoot directives, and are thus pasted verbatim into Madlib.galoot as it is evaluated.
+
+==
