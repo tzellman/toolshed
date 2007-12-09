@@ -112,6 +112,15 @@ We take a detour from `main` to look at a simple example of how to create a user
     }     
 }}}
 
+To create a custom filter, the easiest route is to subclass `AbstractFilter`, overriding the `getName()` and `filter()` methods. The `filter` method takes two arguments: the first is the object that we are interested in transforming. The second is a String of user defined arguments. This can be a string delimited by any separator string/character defined by chosen by the filter creator. An example makes this more clear:
+{{{
+{% load "myfilter" %}
+{{ myvar|myfilter:"foo;bar;baz" }}
+}}}
+
+Here we load 'myfilter', and pipe myvar into it, with the arguments foo, bar, and baz, which are separated by the ';' chosen by myfilter's creator.
+
+
 ===Back to Basics===
 Now back to our originally scheduled main method:
 
