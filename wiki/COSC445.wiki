@@ -5,8 +5,110 @@ Imitation is the sincerest form of flattery. In that spirit, we decided to creat
 
 One point of comparison between the two approaches is the method of parsing employed. Our implementation makes use of a SableCC grammar to generate a language recognizer. In contrast, Django makes use of the regular expression support available in Python to perform parsing. One drawback to the SableCC approach is the lack of support for exception throwing in SableCC. Bailing out of a parse requires resorting to throwing RuntimeExceptions, which need not be declared in a method's signature to be thrown. Additionally, it lacks the error production mechanisms available in Yacc/Bison that allow more robust error handling to be embedded into the grammar itself. The advantage that using SableCC has over the python implementation is that there is a clearer separation between the language recognition constructs used in SableCC's lexer and parser, than in regular expressions, which must perform a double-duty of parsing and lexing.
 
-=== Challenges ===
+== Design ==
 
+==== Template API ====
+The first step of the design process involved defining what we wanted the final API to look like. We came up with the following simple API (borrowing some ideas from Django):
+{{{
+/*
+ * Keep it simple. A template is simply a string of data, which
+ * can be read from anywhere: file, url, memory, etc.
+ */
+
+// initialize the template from a file
+Template template1 = new Template(new File("template.txt"));
+
+// initialize the template from a String
+Template template2 = new Template(
+        "my name is {{ name|lower }}, and my lottery numbers are: "
+      + "{% for num in lottery %}num{% if not forloop.last %},{% endif %}{% endfor %}");
+
+/*
+ * We need some way of passing values into the template. This is
+ * done via a ContextStack, which is basically a glorified Map
+ * of key/value pairs representing objects and their names. The
+ * ContextStack keeps a stack of maps so that the top-level
+ * operations (put, get, etc.) are akin to scope-ing variables
+ * in a normal programming language.
+ */
+
+// fill up the context with some pertinent data
+ContextStack context = new ContextStack();
+context.put("name", "Morpheus");
+context.put("answer", 42);
+context.put("lottery", new int[] { 7, 13, 15, 26, 42 });
+
+// render the templates to a String... easy as pie
+String output1 = template1.render(context);
+String output2 = template2.render(context);
+
+// you can do anything with the output
+System.out.print(output1);
+System.out.print(output2);
+}}}
+
+==== Filter Plug-Ins ====
+We have a concept known as a _filter_, which plays an essential role in the processing of context variables/objects within templates. A filter is simply a black box that does some type of data processing, or filtering, to an input object, resulting in some type of output object. Each filter has a name, with which can be used inside templates to filter variables. Here is some example usage of a filter named _length_, which just takes in an object and attempts to return its length.
+{{{
+The length of this string is {{ stringObj|length }}.
+The length of this array is {{ arrayObj|length }}.
+The length of this list is {{ listObj|length }}.
+This will result in an empty string returned: {{ someUnknownObject|length }}
+}}}
+
+Filters can be very useful for template programmers, but we don't want you to be restricted to the ones we have built in. In order to allow maximum flexibility, we provide a plug-in API for creating and registering your own filters. The API has a Filter interface, as follows:
+{{{
+/**
+ * Filter an object by applying some type of processing to it. The input
+ * object can be anything, so good implementations should only handle known
+ * types for the filter.
+ * 
+ * If the input object does not apply to the operation at hand, you can
+ * return null. You could also return the original object.
+ * 
+ * @param object
+ *            the input object
+ * @param args
+ *            optional arguments, pertinent to the operation
+ * @return the resultant object
+ */
+public Object filter(Object object, String args);
+
+/**
+ * Return the name of this filter. Filter names are case-sensitive.
+ * 
+ * @return the name of the filter
+ */
+public String getName();
+}}}
+
+If you _implement_ this interface, you can register your own filters which can then be used in your templates.
+
+For convenience, we provide some common built-in filters. A quick description of each, and their supported input:
+  * *upper* - returns an uppercase version of the object
+    * Strings
+  * *lower* - returns an lowercase version of the object
+    * Strings
+  * *default* - accepts a String argument, which is returned if the object is null, otherwise the original object is returned
+    * any Object
+  * *yesno* - accepts a comma-delimited list of yes/no/maybe(optional) arguments, one of which is returned based on the object's boolean-ness
+    * any Object
+  * *random* - returns a random member of the input object
+    * Strings, Arrays, Lists, Maps
+  * *make_list* - create a new List from the object and returns it
+    * Strings, Iterables, Lists, Arrays
+  * *length* - returns the length of the object
+    * Strings, Arrays, Lists, Maps
+  * *length_is* - takes an int argument and returns true if the object equals it
+    * same input as _length_
+
+
+==== Internal Design ====
+The API that users have to deal with is much simpler than the code we wrote to support some of the internal workings of the interpreter. For example, as you'll read about in the Challenges section, we came up with a Document model which abstracts each template as a document consisting of text and block fragments. This design helped us to create a common interface amongst the blocking code, which helped with the template inheritance task.
+
+== Challenges ==
+
+==== Template Inheritance ====
 One of the most difficult and daunting tasks was implementing template inheritance. Template inheritance allows you to define blocks within a template which can later be overridden or extended. Dealing with template inheritance meant that we needed to be able to recursively load documents while keeping track of document blocks.
 
 We realized that at an abstract level, each template is comprised of two types of "fragments":
@@ -30,6 +132,9 @@ We took a look at how Django deals with inheritance and came up with the followi
       * if we do NOT have a parent document, we push the block onto the current block of the document fragment stack.
   * all other tags were processed in a manner that was far less challenging than processing blocks with an inheritance scheme.
 
-
+==== Lexer States ====
 Another hurdle to be overcome was learning to use the lexer states feature available in SableCC. Because the template language essentially embeds one language within a stream of raw data, the lexer needed to be manipulated to pass the raw data through, unmodified, while recognizing the language embedded within the stream of data. To effect this, lexer states were used in a fashion very much analogous to the way used to recognize C-style comments in Lex.
- 
+
+
+== Further Material ==
+Take a look at the main [Galoot] wiki page, which describes some of the more in-depth documentation.
