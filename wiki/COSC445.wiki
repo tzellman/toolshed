@@ -1,3 +1,4 @@
+#labels Featured,Phase-Design
 == Introduction ==
 
 Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC. While we cannot claim any points for originality in coming up with a project idea, creating an alternate implementation of a language presented us with the opportunity to explore the strengths and weaknesses of each implementation.
@@ -6,7 +7,29 @@ One point of comparison between the two approaches is the method of parsing empl
 
 === Challenges ===
 
-One of the most difficult and daunting tasks was implementing template inheritance. Template inheritance allows you to define blocks within a template which can later be overridden or extended. Dealing with document inheritance meant that we needed to be able to recursively load documents while keeping track of document blocks. We realized that at an abstract level, each template is comprised of two types of "fragments": text, and blocks (of fragments). The processing flow is as follows: when processing a fragment (either text or a block) add the fragment to the current block on the document fragment stack. There are some exceptions though. If a block of the same name has already been defined in the current document, then it is invalid. If a block of the same name exists in any of the parent document, and if the block is a top-level fragment of the current document, then it will replace the block within the parent. Otherwise, if a block of the same name does not exist in a parent document, then it gets rendered normally, and is pushed onto the fragment stack.
+One of the most difficult and daunting tasks was implementing template inheritance. Template inheritance allows you to define blocks within a template which can later be overridden or extended. Dealing with template inheritance meant that we needed to be able to recursively load documents while keeping track of document blocks.
 
-Another hurdle to be overcome was learning to use the lexer states feature available in SableCC. Because the template language essentially embeds one language within a stream of raw data, the lexer needed to be manipulated to pass the raw data through unchanged, while recognizing the language embedded within the stream of data. To effect this, lexer states were used in a fashion very much analogous to the way used to recognize C-style comments in Lex.
+We realized that at an abstract level, each template is comprised of two types of "fragments":
+  * *text* - any sequence of text that has been processed
+  * *blocks* - a _named_ block containing a sequence of fragments.
+While processing a document we only categorize the processed data as either a text fragment or a block (of fragments). The processing flow initializes by constructing a document object, which in turn keeps track of a fragment stack. The depth of the block fragment stack is synonymous with the depth of the block nesting. 
+
+We took a look at how Django deals with inheritance and came up with the following processing flow. When processing a document:
+  * if the document contains an extends tag, load the parent document. This is a recursive behavior.
+  * when we come across a block tag, we do the following:
+    * check to see if the block name already exists in the current document:
+      * if it does, we (currently) log an error message stating that you cannot have two blocks with the same name in the same document.
+    * next, we check to see if we have a parent document (i.e. if the _extends_ tag was used):
+      * if we do have a parent, check to see if the block name already exists in the parent hierarchy:
+        * if the block name DOES already exist:
+          * and we are in the top-level of the document (i.e if we aren't in a nested block), then we replace the parent's block with this block.
+          * and we are NOT in the top-level of the document (i.e. if we ARE in a nested block), then we log an error message since this type of behavior is not supported.
+        * if the block name does NOT already exist:
+          * and we are in a sub-block, then we just push the block onto the current block in the fragment stack.
+          * and we are in a top-level block, then we ignore the block, since we don't really know where to put it within the document hierarchy.
+      * if we do NOT have a parent document, we push the block onto the current block of the document fragment stack.
+  * all other tags were processed in a manner that was far less challenging than processing blocks with an inheritance scheme.
+
+
+Another hurdle to be overcome was learning to use the lexer states feature available in SableCC. Because the template language essentially embeds one language within a stream of raw data, the lexer needed to be manipulated to pass the raw data through, unmodified, while recognizing the language embedded within the stream of data. To effect this, lexer states were used in a fashion very much analogous to the way used to recognize C-style comments in Lex.
  
