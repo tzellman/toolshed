@@ -101,12 +101,6 @@
             <version>4.4</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>2.0-alpha-4</version>
-            <scope>package</scope>
-        </dependency>
     </dependencies>
 
 
@@ -173,40 +167,6 @@
                         </filesets>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>unpack-dependencies</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>unpack-dependencies</goal>
-                            </goals>
-                            <configuration>
-                                <includes>**/*.class</includes>
-                                <excludes>**/*.properties</excludes>
-                                <outputDirectory>
-                                    ${project.build.directory}
-                                </outputDirectory>
-                                <overWriteReleases>false</overWriteReleases>
-                                <overWriteSnapshots>true</overWriteSnapshots>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <configuration>
-                        <archive>
-                            <manifestEntries>
-                                <main-class>
-                                    galoot.examples.madlibs.MadlibExample
-                                </main-class>
-                            </manifestEntries>
-                        </archive>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
         <sourceDirectory>src/java</sourceDirectory>
@@ -227,6 +187,12 @@
                 <directory>${basedir}/samples/madlib</directory>
                 <includes>
                     <include>*.galoot</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}</directory>
+                <includes>
+                    <include>*.grammar</include>
                 </includes>
             </resource>
         </resources>
