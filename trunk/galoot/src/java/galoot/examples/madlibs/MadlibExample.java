@@ -9,8 +9,9 @@ import galoot.InputAdapter;
 import galoot.PluginRegistry;
 import galoot.Template;
 
-import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.HeadlessException;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,7 +21,6 @@ import java.util.Map;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
-import javax.swing.text.html.HTMLDocument;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -38,10 +38,7 @@ public class MadlibExample
     private static Log log = LogFactory.getLog(MadlibExample.class);
 
     // **** The configuration file that defines our vocabulary
-    private static final String MADLIB_CONFIG = "samples/madlib/madlib.config";
-
-    // **** The galoot template for a madlib
-    private static final String MADLIB_TEMPLATE = "samples/madlib/Madlib.galoot";
+    private static final String MADLIB_CONFIG = "madlib.config";
 
     /**
      * Sample illustrating the features of the galoot framework
@@ -54,24 +51,25 @@ public class MadlibExample
     public static void main(String[] args) throws ConfigurationException,
             FileNotFoundException, IOException
     {
-        if (! (args.length == 1 || args.length == 2))
+        if (!(args.length == 1 || args.length == 2))
         {
             System.out.println("Usage: " + MadlibExample.class + " "
                     + "<madlib file> <show in browser>");
             System.exit(0);
         }
 
+        File file = new File(args[0]);
+
         // register a filter with the plugin registry
         PluginRegistry.getInstance().registerFilter(new Underline());
         // register the directory where our templates live
-        PluginRegistry.getInstance().addTemplateIncludePath(
-                System.getProperty("user.dir") + "/samples/madlib/");
-
-        log.warn(System.getProperty("user.dir") + "/samples/madlib/");
+        PluginRegistry.getInstance().addTemplateIncludePath(file.getParent());
 
         // create a new input adapter that generates data for feeding to a
         // template
-        InputAdapter madlibInputAdapter = new MadlibInputAdapter(MADLIB_CONFIG);
+
+        URL config = MadlibExample.class.getResource(MADLIB_CONFIG);
+        InputAdapter madlibInputAdapter = new MadlibInputAdapter(config);
 
         // create a new context stack for from the MadlibInputAdapter
         ContextStack contextStack = new ContextStack(madlibInputAdapter
@@ -93,7 +91,11 @@ public class MadlibExample
             {
                 URL[] urls = FileUtils.toURLs(new File[] { madlibFile });
                 JFrame frame = new JFrame();
-                frame.setSize(400, 400);
+
+                Dimension screenSize = Toolkit.getDefaultToolkit()
+                        .getScreenSize();
+                frame.setLocation(screenSize.width / 4, screenSize.height / 4);
+                frame.setSize(screenSize.width / 2, screenSize.height / 2);
                 JEditorPane editorPane = new JEditorPane(urls[0]);
 
                 // editorPane.setText(filledInMadlibs);
@@ -134,6 +136,13 @@ public class MadlibExample
         {
             xmlconfig = new XMLConfiguration();
             xmlconfig.load(new File(path));
+        }
+
+        public MadlibInputAdapter(URL url) throws FileNotFoundException,
+                IOException, ConfigurationException
+        {
+            xmlconfig = new XMLConfiguration();
+            xmlconfig.load(url);
         }
 
         /*

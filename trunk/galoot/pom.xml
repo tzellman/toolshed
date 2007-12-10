@@ -6,7 +6,7 @@
     <groupId>toolshed</groupId>
     <artifactId>galoot</artifactId>
     <packaging>jar</packaging>
-    <version>1.0</version>
+    <version>0.1-dev</version>
     <inceptionYear>2007</inceptionYear>
     <name>Galoot Template Engine</name>
     <url>http://code.google.com/p/toolshed/</url>
@@ -101,6 +101,12 @@
             <version>4.4</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>2.0-alpha-4</version>
+            <scope>package</scope>
+        </dependency>
     </dependencies>
 
 
@@ -171,19 +177,34 @@
                     <artifactId>maven-dependency-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>unpack</id>
+                            <id>unpack-dependencies</id>
                             <phase>package</phase>
                             <goals>
-                                <goal>unpack</goal>
+                                <goal>unpack-dependencies</goal>
                             </goals>
+                            <configuration>
+                                <includes>**/*.class</includes>
+                                <excludes>**/*.properties</excludes>
+                                <outputDirectory>
+                                    ${project.build.directory}
+                                </outputDirectory>
+                                <overWriteReleases>false</overWriteReleases>
+                                <overWriteSnapshots>true</overWriteSnapshots>
+                            </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
                     <configuration>
-                        <includes>**/*.class</includes>
-                        <excludes>**/*.properties</excludes>
-                        <outputDirectory>alternateLocation</outputDirectory>
-                        <overWriteReleases>false</overWriteReleases>
-                        <overWriteSnapshots>true</overWriteSnapshots>
+                        <archive>
+                            <manifestEntries>
+                                <main-class>
+                                    galoot.examples.madlibs.MadlibExample
+                                </main-class>
+                            </manifestEntries>
+                        </archive>
                     </configuration>
                 </plugin>
             </plugins>
@@ -197,10 +218,11 @@
                 <directory>${basedir}/src/java</directory>
                 <includes>
                     <include>**/*.dat</include>
+                    <include>**/*.config</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>samples/madlib</targetPath>
+                <targetPath>galoot/examples/madlibs/</targetPath>
                 <directory>${basedir}/samples/madlib</directory>
             </resource>
         </resources>
