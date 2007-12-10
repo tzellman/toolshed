@@ -5,7 +5,7 @@ To show a quick and simple example of how the [Galoot] template engine could be 
 
 The configuration file consists of lists of various words split up into various classifications from the specific (names, liquids, places) to the general (parts of speech: nouns, verbs, adjectives, etc.)
 
-==Show me the MadLib!==
+==Show Me The Mad Lib!==
 So you don't want to read through all of the documentation for this example and just want to make some MadLibs huh. Well, if you follow these simple steps, you'll be in business:
   * Download the galoot library jar [http://toolshed.googlecode.com/files/galoot-0.1-dev.jar here] _(all dependencies are included in the jar, as well as the MadLib sample application)_.
   * Create a MadLib (sorry, you'll have to read further to do that), or, you can just use the default MadLib provided by passing the --default parameter.
