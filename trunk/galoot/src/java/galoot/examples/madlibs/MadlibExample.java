@@ -9,11 +9,18 @@ import galoot.InputAdapter;
 import galoot.PluginRegistry;
 import galoot.Template;
 
+import java.awt.BorderLayout;
+import java.awt.HeadlessException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.text.html.HTMLDocument;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -47,10 +54,10 @@ public class MadlibExample
     public static void main(String[] args) throws ConfigurationException,
             FileNotFoundException, IOException
     {
-        if (args.length != 1)
+        if (! (args.length == 1 || args.length == 2))
         {
             System.out.println("Usage: " + MadlibExample.class + " "
-                    + "<madlib file>");
+                    + "<madlib file> <show in browser>");
             System.exit(0);
         }
 
@@ -75,8 +82,34 @@ public class MadlibExample
 
         // dump the output of the replace
         System.out.println(filledInMadlibs);
-        FileUtils.writeStringToFile(new File("madlib.html"), filledInMadlibs,
-                "UTF-8");
+        File madlibFile = new File("madlib.html");
+
+        FileUtils.writeStringToFile(madlibFile, filledInMadlibs, "UTF-8");
+
+        // display in a mini web browser
+        if (args.length == 2)
+        {
+            try
+            {
+                URL[] urls = FileUtils.toURLs(new File[] { madlibFile });
+                JFrame frame = new JFrame();
+                frame.setSize(400, 400);
+                JEditorPane editorPane = new JEditorPane(urls[0]);
+
+                // editorPane.setText(filledInMadlibs);
+                editorPane.setSize(375, 375);
+                frame.add(editorPane);
+
+                // frame.pack();
+                frame.setVisible(true);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            }
+            catch (HeadlessException e)
+            {
+                log.warn("Display was unavailable");
+            }
+        }
+
     }
 
     /**
