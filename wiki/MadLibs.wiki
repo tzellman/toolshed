@@ -5,6 +5,14 @@ To show a quick and simple example of how the [Galoot] template engine could be 
 
 The configuration file consists of lists of various words split up into various classifications from the specific (names, liquids, places) to the general (parts of speech: nouns, verbs, adjectives, etc.)
 
+==Show me the MadLib!==
+So you don't want to read through all of the documentation for this example and just want to make some MadLibs huh. Well, if you follow these simple steps, you'll be in business:
+  * Download the galoot library jar [http://toolshed.googlecode.com/files/galoot-0.1-dev.jar here] _(all dependencies are included in the jar, as well as the MadLib sample application)_.
+  * Create a MadLib (sorry, you'll have to read further to do that), or, you can just use the default MadLib provided by passing the --default parameter.
+  * Usage: java -jar galoot-0.1-dev.jar [--default] [--window] <madlib file>
+    * --default will use the default built-in MadLib
+    * --window will show the MadLib in a dialog window
+
 ==Madlib.galoot==
 
 {{{
@@ -18,7 +26,7 @@ As Galoot reads this file, the load directive tells the framework to make the "u
 
 The include directive tells Galoot to look into a special set of paths (configurable by the user of the framework) for the each of the listed .galoot template files. These files will be loaded and parsed by the framework. Any galoot directives encountered therein will  in turn be parsed and evaluated in the same fashion.
 
-NNote that templates can be any text file.
+Note that templates can be any text file.
 
 ==body.galoot==
 
@@ -79,8 +87,6 @@ public class MadlibExample
     {
         ...
         PluginRegistry.getInstance().registerFilter(new Underline());    
-        PluginRegistry.getInstance().addTemplateIncludePath(
-                System.getProperty("user.dir") + "/samples/madlib/");
 }}}
 
 The `PluginRegistry` is a singleton class that is used to configure the framework. Setup of template paths and registering of filter objects are two of this class's responsibilities.
@@ -137,10 +143,10 @@ The next step is to actually read in some data to populate our madlib template. 
 In this step, we create a new `ContextStack`. The `ContextStack` is the object that forms the bridge between a map of input data and the template engine.
 
 {{{
-        Template template = new Template(new File(args[0]));
+        //we wrote the input file/url to a StringWriter instance already
+        Template template = new Template(stringWriter.toString());
         String filledInMadlibs = template.render(contextStack);
-        FileUtils.writeStringToFile(new File("madlib.html"), filledInMadlibs,
-                "UTF-8");
+        System.out.println(filledInMadlibs);
     }
 }}}
 
