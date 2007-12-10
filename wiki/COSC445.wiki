@@ -11,8 +11,6 @@ One point of comparison between the two approaches is the method of parsing empl
 === Challenges ===
 Writing this document. I suck at documentation, especially when my brain is fried..
 
-Template files contain text interspersed with processing tags in seemingly endless combinations and orders. Any character is allowed within text portions of the document, however only certain keywords are allowed within processing tag sections. This sounds like a case for lexer states! SableCC came to the rescue and, just like lex, provided a way for us to transition between lexer states, which allowed us to change the way we match tokens.  
-
 TODO: discuss
   * Challenge of implementing extends
   * Usage of SableCC parser states
