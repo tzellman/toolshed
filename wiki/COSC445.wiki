@@ -10,9 +10,3 @@ One of the most difficult and daunting tasks was implementing template inheritan
 
 Another hurdle to be overcome was learning to use the lexer states feature available in SableCC. Because the template language essentially embeds one language within a stream of raw data, the lexer needed to be manipulated to pass the raw data through unchanged, while recognizing the language embedded within the stream of data. To effect this, lexer states were used in a fashion very much analogous to the way used to recognize C-style comments in Lex.
  
-
-
-TODO: discuss
-  * Challenge of implementing extends
-  * Usage of SableCC parser states
-  * Things that make you go hmm??
