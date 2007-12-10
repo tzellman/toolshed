@@ -219,11 +219,15 @@
                 <includes>
                     <include>**/*.dat</include>
                     <include>**/*.config</include>
+                    <include>**/*.galoot</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>galoot/examples/madlibs/</targetPath>
+                <targetPath>samples/madlib</targetPath>
                 <directory>${basedir}/samples/madlib</directory>
+                <includes>
+                    <include>*.galoot</include>
+                </includes>
             </resource>
         </resources>
     </build>
