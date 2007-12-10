@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Add your content here.
+Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC.
 
 
 = Details =
