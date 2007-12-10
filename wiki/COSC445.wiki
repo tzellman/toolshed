@@ -1,13 +1,17 @@
-# Language processing challenge
-
-= Introduction =
+== Introduction ==
 
 Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC. While we cannot claim any points for originality in coming up with a project idea, creating an alternate implementation of a language presented us with the opportunity to explore the strengths and weaknesses of each implementation.
 
 One point of comparison between the two approaches is the method of parsing employed. Our implementation makes use of a SableCC grammar to generate a language recognizer. In contrast, Django makes use of the regular expression support available in Python to perform parsing. One drawback to the SableCC approach is the lack of support for exception throwing in SableCC. Bailing out of a parse requires resorting to throwing RuntimeExceptions, which need not be declared in a method's signature to be thrown. Additionally, it lacks the error production mechanisms available in Yacc/Bison that allow more robust error handling to be embedded into the grammar itself. The advantage that using SableCC has over the python implementation is that there is a clearer separation between the language recognition constructs used in SableCC's lexer and parser, than in regular expressions, which must perform a double-duty of parsing and lexing.
 
+== Details ==
 
-= Details =
+- Overview of the language syntax
+
+=== Challenges ===
+Writing this document. I suck at documentation, especially when my brain is fried..
+
+Template files contain text interspersed with processing tags in seemingly endless combinations and orders. Any character is allowed within text portions of the document, however only certain keywords are allowed within processing tag sections. This sounds like a case for lexer states! SableCC came to the rescue and, just like lex, provided a way for us to transition between lexer states, which allowed us to change the way we match tokens.  
 
 TODO: discuss
   * Challenge of implementing extends
