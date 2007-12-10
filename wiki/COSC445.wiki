@@ -1,8 +1,10 @@
-#Language processing challenge
+# Language processing challenge
 
 = Introduction =
 
-Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC.
+Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC. While we cannot claim any points for originality in coming up with a project idea, creating an alternate implementation of a language presented us with the opportunity to explore the strengths and weaknesses of each implementation.
+
+One point of comparison between the two approaches is the method of parsing employed. Our implementation makes use of a SableCC grammar to generate a language recognizer. In contrast, Django makes use of the regular expression support available in Python to perform parsing. One drawback to the SableCC approach is the lack of support for exception throwing in SableCC. Bailing out of a parse requires resorting to throwing RuntimeExceptions, which need not be declared in a method's signature to be thrown. Additionally, it lacks the error production mechanisms available in Yacc/Bison that allow more robust error handling to be embedded into the grammar itself. The advantage that using SableCC has over the python implementation is that 
 
 
 = Details =
