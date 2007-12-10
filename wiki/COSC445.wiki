@@ -5,6 +5,10 @@ Imitation is the sincerest form of flattery. In that spirit, we decided to creat
 
 One point of comparison between the two approaches is the method of parsing employed. Our implementation makes use of a SableCC grammar to generate a language recognizer. In contrast, Django makes use of the regular expression support available in Python to perform parsing. One drawback to the SableCC approach is the lack of support for exception throwing in SableCC. Bailing out of a parse requires resorting to throwing RuntimeExceptions, which need not be declared in a method's signature to be thrown. Additionally, it lacks the error production mechanisms available in Yacc/Bison that allow more robust error handling to be embedded into the grammar itself. The advantage that using SableCC has over the python implementation is that there is a clearer separation between the language recognition constructs used in SableCC's lexer and parser, than in regular expressions, which must perform a double-duty of parsing and lexing.
 
+== Sample Application ==
+
+View the [MadLibs] wiki page for information on how we used our [Galoot] library to create a simple Mad Lib generation application.
+
 == Design ==
 
 ==== Template API ====
