@@ -24,6 +24,7 @@ import galoot.node.AStringArgument;
 import galoot.node.AStringAsPlugin;
 import galoot.node.AStringInclude;
 import galoot.node.AStringPlugin;
+import galoot.node.ATemplatetagEntity;
 import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarAsPlugin;
 import galoot.node.AVarExpression;
@@ -771,6 +772,28 @@ public class Interpreter extends DepthFirstAdapter
         }
         if (obj != null)
             finishString(obj.toString());
+    }
+
+    @Override
+    public void outATemplatetagEntity(ATemplatetagEntity node)
+    {
+        String tag = node.getTag().getText().toLowerCase();
+        if (tag.equals("openblock"))
+            finishString("{%");
+        else if (tag.equals("closeblock"))
+            finishString("%}");
+        else if (tag.equals("openvariable"))
+            finishString("{{");
+        else if (tag.equals("closevariable"))
+            finishString("}}");
+        else if (tag.equals("openbrace"))
+            finishString("{");
+        else if (tag.equals("closebrace"))
+            finishString("}");
+        else if (tag.equals("opencomment"))
+            finishString("{#");
+        else if (tag.equals("closecomment"))
+            finishString("#}");
     }
 
     /**
