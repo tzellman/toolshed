@@ -18,6 +18,7 @@ import galoot.node.AFirstOfEntity;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
+import galoot.node.ANowEntity;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
 import galoot.node.AStringArgument;
@@ -44,6 +45,7 @@ import galoot.types.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -794,6 +796,27 @@ public class Interpreter extends DepthFirstAdapter
             finishString("{#");
         else if (tag.equals("closecomment"))
             finishString("#}");
+    }
+
+    @Override
+    public void outANowEntity(ANowEntity node)
+    {
+        Calendar cal = Calendar.getInstance();
+        String format = node.getFormat() != null ? TemplateUtils
+                .stripEncasedString(node.getFormat().getText(), '"') : null;
+
+        try
+        {
+            String formatted = format != null ? String.format(format, cal)
+                    : cal.getTime().toString();
+            if (formatted != null)
+                finishString(formatted);
+        }
+        catch (Throwable e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     /**

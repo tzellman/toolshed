@@ -3,6 +3,7 @@ package galoot;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -484,6 +485,27 @@ public class TemplateTest extends TestCase
             Template t = new Template("{% templatetag opencomment %}");
             String output = t.render(context);
             assertEquals(output, "{#");
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testNow()
+    {
+        try
+        {
+            Date date = new Date();
+
+            Template t = new Template("{% now %}");
+            String output = t.render(context);
+            System.out.println(output);
+
+            t = new Template("{% now \"Today: %1$tb %1$td, %1$tY\" %}");
+            output = t.render(context);
+            System.out.println(output);
+
         }
         catch (IOException e)
         {
