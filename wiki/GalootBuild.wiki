@@ -1,3 +1,5 @@
+#labels Featured,Galoot,Phase-Deploy
+=== Building Galoot With Maven ===
 We use Maven 2 to handle the build process. Below are the steps on how to build Galoot.
 
   * Make sure you have Maven 2 installed. You can download it from http://maven.apache.org.
