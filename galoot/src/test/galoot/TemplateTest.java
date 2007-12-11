@@ -28,7 +28,7 @@ public class TemplateTest extends TestCase
     {
         super.setUp();
         context = new ContextStack();
-        
+
         // add some variables to the context
         List<String> randomStrings = new ArrayList<String>();
         Random random = new Random();
@@ -470,6 +470,20 @@ public class TemplateTest extends TestCase
             FileUtils.forceDelete(childFile4);
             FileUtils.forceDelete(childFile5);
 
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testTemplateTags()
+    {
+        try
+        {
+            Template t = new Template("{% templatetag opencomment %}");
+            String output = t.render(context);
+            assertEquals(output, "{#");
         }
         catch (IOException e)
         {

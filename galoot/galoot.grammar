@@ -64,7 +64,8 @@ States
     firstof_member,
     firstof_filter,
     filter_var,
-    filter_filter
+    filter_filter,
+    template_tag
     ;
 
     
@@ -129,6 +130,9 @@ Tokens
     {default->extends_tag}
         extends_start   = '{%' ws* 'extends' ws+;
     
+    {default->template_tag}
+        templatetag     = '{%' ws* 'templatetag' ws+;
+    
     {default}
         else_tag        = '{%' ws* 'else' ws* '%}' eol?;
     
@@ -142,7 +146,8 @@ Tokens
         comment_start   = '{%' ws* 'comment' ws* '%}';
     
     {var->default, load_var->default, include_tag->default,
-    extends_tag->default, load_as->default, firstof_var->default}
+    extends_tag->default, load_as->default, firstof_var->default,
+    template_tag->default}
         tag_end         = '%}';
     
     {for_var->default, block_tag->default, filter_var->default,
@@ -178,7 +183,7 @@ Tokens
         dot             = '.';
     
     {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag,
-    include_tag, for_tag, firstof_var, filter_var}
+    include_tag, for_tag, firstof_var, filter_var, template_tag}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
@@ -188,7 +193,7 @@ Tokens
     
     {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var,
     for_tag, filter, with_filter, load_filter, if_filter, extends_tag, load_as,
-    firstof_var, filter_var}
+    firstof_var, filter_var, template_tag}
         strip_ws        = ws+;
     
     {default}
@@ -241,6 +246,7 @@ Productions
         |   {ifequal}   [ifequal]:ifequal_block                         {-> New entity.ifequal(ifequal)}
         |   {with}      [with]:with_block                               {-> New entity.with(with)}
         |   {filter}    [filter]:filter_block                           {-> New entity.filter(filter)}
+        |   {templatetag} templatetag [tag]:id tag_end                  {-> New entity.templatetag(tag)}
         ;
     
     extends {-> extends} =
@@ -367,6 +373,7 @@ Abstract Syntax Tree
         |   {ifequal}   [ifequal]:ifequal_block
         |   {with}      [with]:with_block
         |   {filter}    [filter]:filter_block
+        |   {templatetag} [tag]:id
         ;
 
     extends =           [parent_name]:string_literal;
