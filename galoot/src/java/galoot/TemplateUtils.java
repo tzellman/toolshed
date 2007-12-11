@@ -223,7 +223,7 @@ public final class TemplateUtils
         else if (object instanceof Iterable)
         {
             int c = 0;
-            for (Object obj : (Iterable)object)
+            for (Object obj : (Iterable) object)
                 ++c;
             return c;
         }
