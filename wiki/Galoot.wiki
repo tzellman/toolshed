@@ -1,4 +1,4 @@
-#labels Featured,Galoot
+#labels Featured,Galoot,Phase-Support
 == Introduction ==
 
 Galoot is a templating engine written in Java, designed after the [http://www.djangoproject.com/documentation/templates/ Django templating engine] for Python. Currently, this project is being developed for a compilers course and is considered to be in an early stage of development. The project uses [http://sablecc.org/ SableCC] to generate the lexer/parser from the language grammar.
@@ -60,10 +60,13 @@ So you've decided to create the world's greatest online, Web 3.0 pet store. (Yes
 </html>
 }}}
 
+More to come...
 
-== Built-in Tags ==
+== Template Tags ==
+See the [GalootTags] page for detailed information.
 
-See the [GalootTags] page for detailed information. 
+== Template Filters ==
+See the [GalootFilters] page for detailed information. 
 
 
 == FAQ ==
