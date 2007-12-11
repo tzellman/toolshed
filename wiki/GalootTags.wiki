@@ -160,7 +160,9 @@ Examples:
 }}}
 
 ==== now ====
-Format the current date according to an optional format string. This uses the Java Formatter syntax to format the passed in string. Complete documentation on the supported date-format syntax is located here: http://java.sun.com/j2se/1.5.0/docs/api/java/util/Formatter.html#dt. *Note:* You do not need to add the 1$, 2$, etc. positional arguments to your format string. Check out the examples below for better clarification.
+Format the current date according to an optional format string. This uses the Java Formatter syntax to format the passed in string. Complete documentation on the supported date-format syntax is located here: http://java.sun.com/j2se/1.5.0/docs/api/java/util/Formatter.html#dt.
+
+*Note:* You do not need to add the 1$, 2$, etc. positional arguments to your format string. Check out the examples below for better clarification.
 
 Examples:
 {{{
@@ -168,7 +170,25 @@ Copyright {% now "%tY" %}
 
 The verbose date/time is: {% now %}
 
-Today is {% now "%tm/%td/%tY %}
+Today is {% now "%tm/%td/%tY" %}
+}}}
+
+==== templatetag ====
+This tag is here to match the supported tag in Django. Since escaping is not built-in (yet), this tag lets you evaluate the special tag characters. Just like with Django, the supported keyword arguments to this tag, and corresponding output are:
+|| *keyword* || *output* ||
+|| openblock ||     {% ||
+|| closeblock ||    %} ||
+|| openvariable ||  {{ ||
+|| closevariable || }} ||
+|| openbrace || 	  { ||
+|| closebrace || 	  } ||
+|| opencomment ||   {# ||
+|| closecomment ||  #} ||
+
+Example:
+{{{
+This is how you specify a Galoot comment:
+{% templatetag opencomment %} my comment! {% templatetag closecomment %}
 }}}
 
 ==== with ====
