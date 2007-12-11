@@ -1,4 +1,4 @@
-#labels Example,Featured,Galoot
+#labels Example,Sample,Galoot
 ==Introduction==
 
 To show a quick and simple example of how the [Galoot] template engine could be used, we have written a Mad Lib generator. The example application fills in a [Galoot] template with randomly chosen words from a dictionary configuration file.
