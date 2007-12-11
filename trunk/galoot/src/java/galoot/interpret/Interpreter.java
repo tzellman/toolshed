@@ -47,12 +47,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Deque;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -807,8 +809,24 @@ public class Interpreter extends DepthFirstAdapter
 
         try
         {
-            String formatted = format != null ? String.format(format, cal)
-                    : cal.getTime().toString();
+            String formatted = cal.getTime().toString();
+            if (format != null)
+            {
+                // add a little hack here that lets you not have to specify the
+                // 1$ positional chars in the format
+                String[] parts = format.split("%[tT]");
+                if (parts.length == 0)
+                    formatted = new Formatter().format(format, cal).toString();
+                else
+                {
+                    Calendar calArr[] = new Calendar[parts.length];
+                    for (int i = 0, size = parts.length; i < size; ++i)
+                        calArr[i] = cal;
+                    formatted = new Formatter().format(format, calArr)
+                            .toString();
+                }
+            }
+
             if (formatted != null)
                 finishString(formatted);
         }

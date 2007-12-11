@@ -502,10 +502,9 @@ public class TemplateTest extends TestCase
             String output = t.render(context);
             System.out.println(output);
 
-            t = new Template("{% now \"Today: %1$tb %1$td, %1$tY\" %}");
+            t = new Template("{% now \"Today: %tm/%Td/%tY\" %}");
             output = t.render(context);
             System.out.println(output);
-
         }
         catch (IOException e)
         {
