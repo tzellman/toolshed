@@ -12,15 +12,25 @@
 || *if* || conditionally evaluate a block of data || {{{ {% if var1 or var2 %}true!{% else %}false...{% endif %} }}} ||
 || *ifequal* || conditionally evaluate a block if two variables/strings are equal || {{{ {% ifequal user.name "admin" %}Welcome Admin{% endifequal %} }}} ||
 || *include* || include and render a file at the specified location in the document || {{{ {% ifequal user.name "admin" %}{% include "pages/adminPage.html" %}{% endifequal %} }}} ||
-
+|| *set* || set a variable within the current context || {{{ {% set users|length as numUsers %}There are {{ numUsers }} users. }}} ||
 
 === More Details ===
 ==== block ====
-The block tag deals with template inheritance. It is used to fragment the document into sections which can be overridden by sub-documents.
-Example:
+The block tag deals with template inheritance. It is used to fragment the document into sections which can be overridden by sub-documents. The block tag takes an optional name argument. The name is important if you plan on possibly overriding the block (or overriding another of the same name). It is useful to create blocks without names if all you want to do is create a new context scope.
+Examples:
 {{{
 {% block content %}
     block text
+{% endblock %}
+
+
+Unnamed block, used purely to set some variables in a protected scope.
+{% block %}
+    {% set name|upper as upperName %}
+    {% set users|length as numUsers %}
+    {% set database.users as users %}
+
+    ... now do something with the vars ...
 {% endblock %}
 }}}
 
@@ -185,6 +195,22 @@ Copyright {% now "%tY" %}
 The verbose date/time is: {% now %}
 
 Today is {% now "%tm/%td/%tY" %}
+}}}
+
+==== set ====
+The `set` tag allows you to set a variable within the current context. This will overwrite  a pre-existing variable of the same name (within the same context).
+
+Examples:
+{{{
+{% set users|length as numUsers %}
+
+{% block %}
+The next var is only available within this block and does not modify the variable of the same name in the parent context.
+    {% set users.admins|length as numUsers %}
+    There are {{ numUsers }} admins.
+{% endblock %}
+
+There are {{ numUsers }} users.
 }}}
 
 ==== templatetag ====
