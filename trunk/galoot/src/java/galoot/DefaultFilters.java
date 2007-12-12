@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 
@@ -247,6 +249,43 @@ public final class DefaultFilters
                 }
             }
             return false;
+        }
+    }
+
+    static class WordCount extends AbstractFilter
+    {
+        public Object filter(Object object, String args)
+        {
+            if (object instanceof String)
+                return ((String) object).split("\\s+").length;
+            return null;
+        }
+    }
+
+    static class Title extends AbstractFilter
+    {
+        public Object filter(Object object, String args)
+        {
+            if (object instanceof String)
+            {
+                String stringObj = (String) object;
+                String titled = "";
+
+                Pattern pattern = Pattern.compile(("((^\\w)|(\\s+\\w))"));
+                Matcher matcher = pattern.matcher(stringObj);
+                int lastEnd = -1;
+                while (matcher.find())
+                {
+                    if (lastEnd >= 0)
+                        titled += stringObj.substring(lastEnd, matcher.start());
+                    titled += matcher.group().toUpperCase();
+                    lastEnd = matcher.end();
+                }
+                if (lastEnd < stringObj.length() && lastEnd >= 0)
+                    titled += stringObj.substring(lastEnd);
+                return titled;
+            }
+            return null;
         }
     }
 
