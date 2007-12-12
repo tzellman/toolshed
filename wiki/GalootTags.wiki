@@ -12,7 +12,12 @@
 || *if* || conditionally evaluate a block of data || {{{ {% if var1 or var2 %}true!{% else %}false...{% endif %} }}} ||
 || *ifequal* || conditionally evaluate a block if two variables/strings are equal || {{{ {% ifequal user.name "admin" %}Welcome Admin{% endifequal %} }}} ||
 || *include* || include and render a file at the specified location in the document || {{{ {% ifequal user.name "admin" %}{% include "pages/adminPage.html" %}{% endifequal %} }}} ||
+|| *load* || load a filter plug-in || {{{ {% load "is_null" %} {{ var|is_null|yesno:"yes,no" }} }}} ||
+|| *now* || format the current date/time || {{{ Copyright {% now "%tY" %} }}} ||
 || *set* || set a variable within the current context || {{{ {% set users|length as numUsers %}There are {{ numUsers }} users. }}} ||
+|| *templatetag* || display a reserved template tag || {{{ {% templatetag opencomment %} }}} ||
+|| *with* || sets a variable within a new block || {{{ {% with users|length as count %}user count: {{ count }}{% endwith %} }}} ||
+
 
 === More Details ===
 ==== block ====
