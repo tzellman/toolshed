@@ -1,5 +1,9 @@
 package galoot;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import junit.framework.TestCase;
 
 public class FilterTest extends TestCase
@@ -59,5 +63,19 @@ public class FilterTest extends TestCase
         assertTrue((Boolean) filters.getFilter("is_num").filter(Math.PI, null));
         assertTrue((Boolean) filters.getFilter("is_num").filter(
                 String.valueOf(Math.PI), null));
+    }
+
+    public void testWordCount()
+    {
+        Object result = PluginRegistry.getInstance().getFilter("wordcount")
+                .filter("There are 4    words.", null);
+        assertEquals(4, ((Integer) result).intValue());
+    }
+
+    public void testTitle()
+    {
+        Object result = PluginRegistry.getInstance().getFilter("title").filter(
+                "convert to title case.", null);
+        assertEquals("Convert To Title Case.", result);
     }
 }
