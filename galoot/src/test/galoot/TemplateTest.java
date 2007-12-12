@@ -511,4 +511,41 @@ public class TemplateTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
+
+    public void testBlock()
+    {
+        try
+        {
+            Template t = new Template("{% block %}here{% endblock %}");
+            String output = t.render(context);
+            assertEquals(output, "here");
+
+            t = new Template("{% block named %}here{% endblock %}");
+            output = t.render(context);
+            assertEquals(output, "here");
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testSet()
+    {
+        try
+        {
+            Template t = new Template(
+                    "{% set name|upper as upperName %}{{ upperName }}");
+            String output = t.render(context);
+            assertEquals(output, "TOM");
+
+            t = new Template("{% set intArray|length as len %}{{ len }}");
+            output = t.render(context);
+            assertEquals(output, String.valueOf(intArray.length));
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 }

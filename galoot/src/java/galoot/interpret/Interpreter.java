@@ -21,6 +21,7 @@ import galoot.node.AIfequalBlock;
 import galoot.node.ANowEntity;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
+import galoot.node.ASetEntity;
 import galoot.node.AStringArgument;
 import galoot.node.AStringAsPlugin;
 import galoot.node.AStringInclude;
@@ -682,7 +683,7 @@ public class Interpreter extends DepthFirstAdapter
         boolean evaluate = false, existsInParent = false;
         int curBlockDepth = document.getBlockDepth();
 
-        String blockName = node.getId().getText();
+        String blockName = node.getId() != null ? node.getId().getText() : null;
 
         /*
          * We only render the block if one of the following is true: (1) if the
@@ -696,13 +697,14 @@ public class Interpreter extends DepthFirstAdapter
         if (parentDocument != null)
         {
             BlockFragment parentBlock = parentDocument.getDocumentBlock();
-            existsInParent = parentBlock.hasBlock(blockName);
+            existsInParent = blockName != null
+                    && parentBlock.hasBlock(blockName);
 
             if ((curBlockDepth == 0 && existsInParent)
                     || (curBlockDepth > 0 && !existsInParent))
                 evaluate = true;
         }
-        else if (document.hasBlock(blockName))
+        else if (blockName != null && document.hasBlock(blockName))
             throw new RuntimeException("Block already exists with name: "
                     + blockName);
         else
@@ -835,6 +837,17 @@ public class Interpreter extends DepthFirstAdapter
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+    
+    @Override
+    public void outASetEntity(ASetEntity node)
+    {
+        //pop off the stack
+        Object value = variableStack.pop();
+        String varName = node.getVar().getText();
+        
+        //add the variable to the current context
+        context.put(varName, value);
     }
 
     /**
