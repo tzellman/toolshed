@@ -11,7 +11,7 @@ This will result in an empty string returned: {{ someUnknownObject|length }}
 
 
 ==Built-in Filters==
-We don't start you off empty handed. Below are the built-in filters.
+We don't start you off empty handed. Below are the built-in filters. :)
 || *Name* || *Quick Description* || *Supported Object Types* ||
 || *default* || accepts a String argument, which is returned if the object is null, otherwise the original object is returned || `Object` ||
 || *length* || returns the length of the object || `String`, array, `List`, `Map` ||
@@ -19,10 +19,12 @@ We don't start you off empty handed. Below are the built-in filters.
 || *lower* || returns an lowercase version of the object || 'String' ||
 || *make_list* || create a new List from the object and returns it || `String`, `Iterable`, `List`, array ||
 || *random* || returns a random member of the input object || `String`, array, `List`, `Map` ||
+|| *title* || converts the sentence to title case || `String` ||
 || *upper* || returns an uppercase version of the object || `String` ||
+|| *wordcount* || returns the number of words in the input || `String` ||
 || *yesno* || accepts a comma-delimited list of yes/no/maybe(optional) arguments, one of which is returned based on the object's boolean-ness || `Object` ||
 
-== Plug-Ins ==
+== Plug-In API ==
 Filters can be very useful for template programmers, but we don't want you to be restricted to the ones we have packaged with the library. In order to allow maximum flexibility, we provide a plug-in API for creating and registering your own filters. The API has a Filter interface, which looks as follows:
 {{{
 /**
