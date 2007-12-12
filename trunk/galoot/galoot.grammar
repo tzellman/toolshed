@@ -45,6 +45,9 @@ States
     with_var,       //{% with obj.expensive.op as var %} {% endwith %}
     with_member,
     with_filter,
+    set_var,       //{% set obj.expensive.op as var %}
+    set_member,
+    set_filter,
     load_var,       //{% load plugin1 plugin2 %}
     load_as,
     load_member,
@@ -76,7 +79,7 @@ Tokens
 
     //put higher precedence keywords here
 
-    {with_var, load_as->load_var}
+    {with_var, load_as->load_var, set_var}
         kw_as           = 'as';
     
     {if_var}
@@ -127,6 +130,9 @@ Tokens
     {default->with_var}
         with_start      = '{%' ws* 'with' ws+;
     
+    {default->set_var}
+        set_start       = '{%' ws* 'set' ws+;
+    
     {default->now_tag}
         now_start       = '{%' ws* 'now' ws+;
     
@@ -154,7 +160,7 @@ Tokens
         tag_end         = '%}';
     
     {for_var->default, block_tag->default, filter_var->default,
-    if_var->default, with_var->default, ifeq_var->default}
+    if_var->default, with_var->default, ifeq_var->default, set_var->default}
     tag_end_eol         = '%}' eol?;
     
     {default}
@@ -177,32 +183,32 @@ Tokens
     
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
     load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
-    firstof_var, filter_filter->filter_var, now_tag}
+    firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var}
         string_literal  = '"' string_char* '"';
     
     {var->var_member, with_var->with_member, load_var->load_member,
     if_var->if_member, ifeq_var->ifeq_member, for_var->for_member,
-    firstof_var->firstof_member}
+    firstof_var->firstof_member, set_var->set_member}
         dot             = '.';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var, block_tag,
+    {var, with_var, set_var, load_var, if_var, ifeq_var, for_var, block_tag,
     include_tag, for_tag, firstof_var, filter_var, template_tag}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
     if_member->if_var, ifeq_member->ifeq_var, for_member->for_var, include_tag,
-    firstof_member->firstof_var }
+    firstof_member->firstof_var, set_member->set_var}
         member          = member_id;
     
-    {var, with_var, load_var, if_var, ifeq_var, block_tag, include_tag, for_var,
-    for_tag, filter, with_filter, load_filter, if_filter, extends_tag, load_as,
-    firstof_var, filter_var, template_tag, now_tag}
+    {var, with_var, set_var, load_var, if_var, ifeq_var, block_tag, include_tag,
+    for_var, for_tag, filter, with_filter, set_filter, load_filter, if_filter,
+    extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag}
         strip_ws        = ws+;
     
     {default}
         text_char       = any_char;
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var,
+    {var, with_var, set_var, load_var, if_var, ifeq_var, for_var,
     firstof_var, filter_var}
         vert_pipe       = '|';
     
@@ -211,12 +217,14 @@ Tokens
     
     {var->filter, with_var->with_filter, load_var->load_filter,
     if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter,
-    firstof_var->firstof_filter, filter_var->filter_filter}
+    firstof_var->firstof_filter, filter_var->filter_filter,
+    set_var->set_filter}
         colon           = ':';
     
     {filter->var, with_filter->with_var, load_filter->load_var,
     if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var,
-    firstof_filter->firstof_var, filter_filter->filter_var}
+    firstof_filter->firstof_var, filter_filter->filter_var,
+    set_filter->set_var}
         unquoted        = alpha_num+;
     
 
@@ -251,6 +259,8 @@ Productions
         |   {filter}    [filter]:filter_block                           {-> New entity.filter(filter)}
         |   {templatetag} templatetag [tag]:id tag_end                  {-> New entity.templatetag(tag)}
         |   {now}       now_start [format]:string_literal? tag_end      {-> New entity.now(format)}
+        |   {set}       set_start [value]:var_expression
+                        kw_as [var]:id tag_end_eol                      {-> New entity.set(value, var)}
         ;
     
     extends {-> extends} =
@@ -293,7 +303,7 @@ Productions
     
     
     block {-> block} =
-                        block_start [id]:id tag_end_eol
+                        block_start [id]:id? tag_end_eol
                             [entities]:entity* block_end                {-> New block(id, [entities.entity])}
         ;
     
@@ -379,6 +389,7 @@ Abstract Syntax Tree
         |   {filter}    [filter]:filter_block
         |   {templatetag} [tag]:id
         |   {now}       [format]:string_literal?
+        |   {set}       [value]:var_expression [var]:id
         ;
 
     extends =           [parent_name]:string_literal;
@@ -389,7 +400,7 @@ Abstract Syntax Tree
             {string}    [string]:string_literal
         |   {variable}  [variable]:var_expression;
             
-    block =             [id]:id [entities]:entity*;
+    block =             [id]:id? [entities]:entity*;
     
     for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
     
