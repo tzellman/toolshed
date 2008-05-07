@@ -2,14 +2,13 @@ package galoot.types;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 public final class BlockFragment implements DocumentFragment
 {
-    private Deque<DocumentFragment> contents;
+    private LinkedList<DocumentFragment> contents;
 
     private Map<String, BlockFragment> blocks;
 
@@ -41,9 +40,9 @@ public final class BlockFragment implements DocumentFragment
                 || content instanceof TextFragment)
         {
             if (contents.isEmpty()
-                    || !(contents.peekLast() instanceof TextFragment))
+                    || !(contents.getLast() instanceof TextFragment))
                 contents.addLast(new TextFragment());
-            contents.peekLast().addContent(content);
+            contents.getLast().addContent(content);
         }
         else if (content instanceof DocumentFragment)
         {

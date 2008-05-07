@@ -2,11 +2,13 @@ package galoot;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 public final class DefaultFilters
@@ -145,7 +147,7 @@ public final class DefaultFilters
             else if (object instanceof String)
             {
                 String stringObj = (String) object;
-                if (stringObj.isEmpty())
+                if (StringUtils.isEmpty(stringObj))
                     return null;
                 int index = rand.nextInt(stringObj.length());
                 return String.valueOf(stringObj.charAt(index));
@@ -186,6 +188,16 @@ public final class DefaultFilters
                 List<Character> charList = Arrays.asList(arr);
                 return charList;
             }
+
+            if (object instanceof Iterable)
+            {
+                LinkedList list = new LinkedList();
+                Iterable iterable = (Iterable) object;
+                for (Object obj : iterable)
+                    list.add(obj);
+                return list;
+            }
+
             // otherwise, we can't listify it
             return null;
         }
