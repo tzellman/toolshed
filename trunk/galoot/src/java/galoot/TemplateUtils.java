@@ -51,7 +51,6 @@ public final class TemplateUtils
 
             for (String name : names)
             {
-                System.out.println(name);
                 // try it as a field
                 try
                 {
@@ -151,8 +150,6 @@ public final class TemplateUtils
             // otherwise, it can't find the member object
             else
             {
-                System.out.println("Not found: " + memberName + ": " + object
-                        + ": " + object.getClass().getCanonicalName());
                 object = null;
             }
         }
