@@ -45,6 +45,10 @@ import galoot.types.Pair;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Formatter;
@@ -55,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,6 +101,8 @@ public class Interpreter extends DepthFirstAdapter
      */
     public Interpreter(ContextStack context)
     {
+        if (context == null)
+            context = new ContextStack();
         this.context = context;
     }
 
@@ -641,10 +648,40 @@ public class Interpreter extends DepthFirstAdapter
                 break;
             }
         }
+
+        if (templateFile == null)
+        {
+            // try local or absolute filenames
+            File file = new File(filename);
+            if (file.exists())
+                templateFile = file;
+        }
+
         if (templateFile != null)
             return new Template(templateFile).renderDocument(context);
         else
+        {
+            // try to load it as a resource (url)
+            InputStream stream = Interpreter.class
+                    .getResourceAsStream(filename);
+
+            if (stream == null)
+            {
+                // try to load it as a straight URL
+                stream = new URL(filename).openStream();
+            }
+
+            if (stream != null)
+            {
+                Reader reader = new InputStreamReader(stream);
+                final Document doc = new Template(reader)
+                        .renderDocument(context);
+                stream.close();
+                return doc;
+            }
+
             log.warn("File could not be located in include paths: " + filename);
+        }
         return null;
     }
 
