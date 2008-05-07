@@ -12,10 +12,10 @@
     <url>http://code.google.com/p/toolshed/</url>
 
     <description>
-        Galoot is a templating engine for processing text files (html, xml,
-        etc.) as templates. The syntax of Galoot is designed after the Django
-        templating system for Python. Galoot uses SableCC to generate a parser
-        for the language.
+        Galoot is a templating engine for processing text files (html,
+        xml, etc.) as templates. The syntax of Galoot is designed after
+        the Django templating system for Python. Galoot uses SableCC to
+        generate a parser for the language.
     </description>
 
     <licenses>
@@ -134,7 +134,9 @@
                     </executions>
                     <configuration>
                         <sourceDirectory>${basedir}</sourceDirectory>
-                        <outputDirectory>${basedir}/src/java/</outputDirectory>
+                        <outputDirectory>
+                            ${basedir}/src/java/
+                        </outputDirectory>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -149,19 +151,27 @@
                     <configuration>
                         <filesets>
                             <fileset>
-                                <directory>src/java/galoot/analysis</directory>
+                                <directory>
+                                    src/java/galoot/analysis
+                                </directory>
                                 <followSymlinks>false</followSymlinks>
                             </fileset>
                             <fileset>
-                                <directory>src/java/galoot/lexer</directory>
+                                <directory>
+                                    src/java/galoot/lexer
+                                </directory>
                                 <followSymlinks>false</followSymlinks>
                             </fileset>
                             <fileset>
-                                <directory>src/java/galoot/node</directory>
+                                <directory>
+                                    src/java/galoot/node
+                                </directory>
                                 <followSymlinks>false</followSymlinks>
                             </fileset>
                             <fileset>
-                                <directory>src/java/galoot/parser</directory>
+                                <directory>
+                                    src/java/galoot/parser
+                                </directory>
                                 <followSymlinks>false</followSymlinks>
                             </fileset>
                         </filesets>
@@ -194,6 +204,10 @@
                     <include>**/*.config</include>
                     <include>**/*.galoot</include>
                 </includes>
+
+                <excludes>
+                    <exclude>**/.svn/**</exclude>
+                </excludes>
             </resource>
             <resource>
                 <targetPath>samples/madlib</targetPath>
