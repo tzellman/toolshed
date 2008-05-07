@@ -16,6 +16,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
+
 public class Template
 {
 
@@ -28,10 +30,18 @@ public class Template
 
     public Template(File file) throws IOException
     {
-        this(new FileReader(file));
+
+        final FileReader reader = new FileReader(file);
+        initAST(reader);
+        reader.close();
     }
 
     public Template(Reader reader) throws IOException
+    {
+        initAST(reader);
+    }
+
+    protected void initAST(Reader reader) throws IOException
     {
         try
         {
@@ -42,11 +52,13 @@ public class Template
         }
         catch (ParserException e)
         {
-            throw new IOException(e);
+            // in Java 1.6 we *could* just pass the exception...
+            throw new IOException(ExceptionUtils.getStackTrace(e));
         }
         catch (LexerException e)
         {
-            throw new IOException(e);
+            // in Java 1.6 we *could* just pass the exception...
+            throw new IOException(ExceptionUtils.getStackTrace(e));
         }
     }
 

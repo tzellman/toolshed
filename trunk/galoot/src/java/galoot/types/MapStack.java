@@ -1,6 +1,5 @@
 package galoot.types;
 
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,12 +7,12 @@ import java.util.Map;
 
 public class MapStack<K, V>
 {
-    protected Deque<Map<K, V>> mapStack;
+    protected LinkedList<Map<K, V>> mapStack;
 
     public MapStack()
     {
         mapStack = new LinkedList<Map<K, V>>();
-        mapStack.push(new HashMap<K, V>()); // initialize it
+        mapStack.addFirst(new HashMap<K, V>()); // initialize it
     }
 
     public MapStack(Map<K, V> initialItems)
@@ -46,7 +45,7 @@ public class MapStack<K, V>
      */
     public void push()
     {
-        mapStack.push(new HashMap<K, V>());
+        mapStack.addFirst(new HashMap<K, V>());
     }
 
     /**
@@ -56,7 +55,7 @@ public class MapStack<K, V>
      */
     public Map<K, V> pop()
     {
-        return mapStack.pop();
+        return mapStack.removeFirst();
     }
 
     /**

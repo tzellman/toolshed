@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 public final class TemplateUtils
 {
     private TemplateUtils()
@@ -29,7 +31,8 @@ public final class TemplateUtils
      * @param members
      * @return
      */
-    public static Object evaluateObject(Object object, Iterable<String> members)
+    public static Object evaluateObject(Object object,
+            Iterable<String> members, ContextStack context)
     {
         for (Iterator<String> it = members.iterator(); object != null
                 && it.hasNext();)
@@ -39,28 +42,29 @@ public final class TemplateUtils
             boolean found = false; // used to flag if we found it
 
             // first, check to see if it has parameters/methods with this name
-            try
-            {
-                Field field = object.getClass().getField(memberName);
-                object = field.get(object);
-                found = true;
-            }
-            catch (Exception e)
-            {
-                // ok, let's see if it has a method with that name
-                List<String> names = new ArrayList<String>();
-                names.add(memberName);
+            List<String> names = new ArrayList<String>();
+            names.add(memberName);
 
-                // compute the getter name and add it as a possibility
-                names.add("get" + memberName.substring(0, 1).toUpperCase()
-                        + memberName.substring(1));
+            // compute the getter name and add it as a possibility
+            names.add("get" + memberName.substring(0, 1).toUpperCase()
+                    + memberName.substring(1));
 
-                for (String name : names)
+            for (String name : names)
+            {
+                System.out.println(name);
+                // try it as a field
+                try
                 {
+                    Field field = object.getClass().getField(name);
+                    object = field.get(object);
+                    found = true;
+                }
+                catch (Exception e)
+                {
+                    // try it as a method
                     try
                     {
-                        Method method = object.getClass().getMethod(memberName,
-                                null);
+                        Method method = object.getClass().getMethod(name, null);
                         if (method.getParameterTypes().length != 0)
                             throw new InvalidParameterException();
                         object = method.invoke(object, null);
@@ -71,7 +75,6 @@ public final class TemplateUtils
                     {
                     }
                 }
-
             }
 
             // if we found it already, continue on
@@ -135,7 +138,22 @@ public final class TemplateUtils
                 if (mapObj.containsKey(memberName))
                     object = mapObj.get(memberName);
                 else
-                    object = null;
+                {
+                    // try to get it from the context
+                    Object key = context.get(memberName);
+
+                    if (key != null)
+                        object = mapObj.get(key);
+                    else
+                        object = null;
+                }
+            }
+            // otherwise, it can't find the member object
+            else
+            {
+                System.out.println("Not found: " + memberName + ": " + object
+                        + ": " + object.getClass().getCanonicalName());
+                object = null;
             }
         }
         return object;
@@ -157,7 +175,7 @@ public final class TemplateUtils
             return !Double.valueOf(((Number) object).doubleValue()).equals(
                     new Double(0.0));
         if (object instanceof String)
-            return !((String) object).isEmpty();
+            return !StringUtils.isEmpty((String) object);
         if (object instanceof List)
             return ((List) object).size() != 0;
         if (object instanceof Map)

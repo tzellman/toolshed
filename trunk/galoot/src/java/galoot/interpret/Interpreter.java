@@ -47,7 +47,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Deque;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,7 +54,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -78,7 +76,7 @@ public class Interpreter extends DepthFirstAdapter
     private Stack<Object> variableStack;
 
     // ! stack used to keep track of filter expressions, as they are evaluated
-    private Deque<Pair<String, String>> filterStack;
+    private LinkedList<Pair<String, String>> filterStack;
 
     /**
      * stack of actual {% filter %} blocks, which needs to do post-processing on
@@ -169,13 +167,14 @@ public class Interpreter extends DepthFirstAdapter
             object = context.get(referent);
 
             // evaluate the object/methods
-            object = TemplateUtils.evaluateObject(object, stringMembers);
+            object = TemplateUtils.evaluateObject(object, stringMembers,
+                    context);
         }
 
         // apply the filters
         for (int i = 0, size = node.getFilters().size(); i < size; ++i)
         {
-            Pair<String, String> nextFilter = filterStack.pollLast();
+            Pair<String, String> nextFilter = filterStack.removeLast();
             Filter filter = context.getFilterMap().getFilter(
                     nextFilter.getFirst());
             if (filter == null)
@@ -208,7 +207,7 @@ public class Interpreter extends DepthFirstAdapter
         // pop the filter arg off of the var stack, if it exists
         String arg = node.getArg() != null ? variableStack.pop().toString()
                 : "";
-        filterStack.push(new Pair<String, String>(name, arg));
+        filterStack.addFirst(new Pair<String, String>(name, arg));
     }
 
     @Override
@@ -561,7 +560,7 @@ public class Interpreter extends DepthFirstAdapter
         for (int i = 0, size = node.getFilters().size(); i < size
                 && output != null; ++i)
         {
-            Pair<String, String> nextFilter = filterStack.pollLast();
+            Pair<String, String> nextFilter = filterStack.removeLast();
             Filter filter = context.getFilterMap().getFilter(
                     nextFilter.getFirst());
 
@@ -838,15 +837,15 @@ public class Interpreter extends DepthFirstAdapter
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public void outASetEntity(ASetEntity node)
     {
-        //pop off the stack
+        // pop off the stack
         Object value = variableStack.pop();
         String varName = node.getVar().getText();
-        
-        //add the variable to the current context
+
+        // add the variable to the current context
         context.put(varName, value);
     }
 

@@ -10,6 +10,7 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +77,7 @@ public class TemplateTest extends TestCase
             // shouldn't render any output since the var doesn't exist
             t = new Template("{{ doesnt_exist }}");
             output = t.render(context);
-            assertTrue(output.isEmpty());
+            assertTrue(StringUtils.isEmpty(output));
         }
         catch (IOException e)
         {
@@ -94,11 +95,11 @@ public class TemplateTest extends TestCase
 
             t = new Template("{% if not name %}false{% endif %}");
             output = t.render(context);
-            assertTrue(output.isEmpty());
+            assertTrue(StringUtils.isEmpty(output));
 
             t = new Template("{% if bad_var %}false{% endif %}");
             output = t.render(context);
-            assertTrue(output.isEmpty());
+            assertTrue(StringUtils.isEmpty(output));
 
             t = new Template("{% if name %}true{% else %}false{% endif %}");
             output = t.render(context);
@@ -224,7 +225,7 @@ public class TemplateTest extends TestCase
             // test that it doesn't work
             t = new Template("{% include \"" + f.getName() + "\" %}");
             output = t.render(context);
-            assertTrue(output.isEmpty());
+            assertTrue(StringUtils.isEmpty(output));
 
             // add the path to the pluginregistry
             PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
@@ -344,7 +345,7 @@ public class TemplateTest extends TestCase
             // this should return nothing, since we don't know about the filter
             Template t = new Template("{{ bad_var|is_null }}");
             String output = t.render(context);
-            assertTrue(output.isEmpty());
+            assertTrue(StringUtils.isEmpty(output));
 
             // now, we'll load the plug-in we created into the context
             t = new Template("{% load \"is_null\" %}{{ bad_var|is_null }}");
