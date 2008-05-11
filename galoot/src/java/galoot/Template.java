@@ -62,19 +62,35 @@ public class Template
         }
     }
 
-    public void render(ContextStack context, Writer writer) throws IOException
+    public void render(ContextStack contextStack, Writer writer)
+            throws IOException
     {
-        writer.write(render(context));
+        writer.write(render(contextStack));
     }
 
-    public String render(ContextStack context) throws IOException
+    public String render(ContextStack contextStack) throws IOException
+    {
+        return renderDocument(contextStack).evaluateAsString();
+    }
+
+    public void render(Context context, Writer writer) throws IOException
+    {
+        render(new ContextStack(context), writer);
+    }
+
+    public String render(Context context) throws IOException
     {
         return renderDocument(context).evaluateAsString();
     }
 
-    public Document renderDocument(ContextStack context)
+    public Document renderDocument(Context context)
     {
-        Interpreter interp = new Interpreter(context);
+        return renderDocument(new ContextStack(context));
+    }
+
+    public Document renderDocument(ContextStack contextStack)
+    {
+        Interpreter interp = new Interpreter(contextStack);
         templateAST.apply(interp);
         return interp.getDocument();
     }

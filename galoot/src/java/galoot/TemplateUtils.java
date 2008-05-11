@@ -139,7 +139,7 @@ public final class TemplateUtils
                 else
                 {
                     // try to get it from the context
-                    Object key = context.get(memberName);
+                    Object key = context.getVariable(memberName);
 
                     if (key != null)
                         object = mapObj.get(key);

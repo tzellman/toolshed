@@ -4,7 +4,7 @@
 package galoot.examples.madlibs;
 
 import galoot.AbstractFilter;
-import galoot.ContextStack;
+import galoot.Context;
 import galoot.InputAdapter;
 import galoot.PluginRegistry;
 import galoot.Template;
@@ -12,13 +12,11 @@ import galoot.Template;
 import java.awt.Dimension;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +27,7 @@ import javax.swing.JScrollPane;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -111,12 +110,8 @@ public class MadlibExample
         if (streamReader == null)
             showHelp(null);
 
-        StringWriter stringWriter = new StringWriter();
-        BufferedReader reader = new BufferedReader(streamReader);
-        char buf[] = new char[1024];
-        int numRead;
-        while ((numRead = reader.read(buf)) > 0)
-            stringWriter.write(buf, 0, numRead);
+        String rawText = IOUtils.toString(streamReader);
+        streamReader.close();
 
         // register a filter with the plugin registry
         PluginRegistry.getInstance().registerFilter(new Underline());
@@ -128,11 +123,10 @@ public class MadlibExample
         InputAdapter madlibInputAdapter = new MadlibInputAdapter(config);
 
         // create a new context stack for from the MadlibInputAdapter
-        ContextStack contextStack = new ContextStack(madlibInputAdapter
-                .getContextStackInput());
+        Context context = new Context(madlibInputAdapter.getContextInput());
 
-        Template template = new Template(stringWriter.toString());
-        String filledInMadlibs = template.render(contextStack);
+        Template template = new Template(rawText);
+        String filledInMadlibs = template.render(context);
 
         // dump the output of the replace
         System.out.println(filledInMadlibs);
@@ -141,7 +135,7 @@ public class MadlibExample
         // FileUtils.writeStringToFile(madlibFile, filledInMadlibs, "UTF-8");
 
         // display in a mini web browser
-        if (args.length == 2)
+        if (useWindow)
         {
             try
             {
@@ -152,15 +146,14 @@ public class MadlibExample
                         .getScreenSize();
                 frame.setLocation(screenSize.width / 4, screenSize.height / 4);
                 frame.setSize(screenSize.width / 2, screenSize.height / 2);
-                JEditorPane editorPane = new JEditorPane("text/html",
-                        filledInMadlibs);
 
-                // editorPane.setText(filledInMadlibs);
-                frame.add(new JScrollPane(editorPane));
+                frame.setContentPane(new JScrollPane(new JEditorPane(
+                        "text/html", filledInMadlibs)));
 
-                // frame.pack();
-                frame.setVisible(true);
+                frame.pack();
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(true);
+
             }
             catch (HeadlessException e)
             {
@@ -206,7 +199,7 @@ public class MadlibExample
          * 
          * @see galoot.InputAdapter#getContextStackInput()
          */
-        public Map<String, Object> getContextStackInput()
+        public Map<String, Object> getContextInput()
         {
             Map<String, Object> ctxtMap = new HashMap<String, Object>();
             ctxtMap.put("person", xmlconfig.getList("person.item"));

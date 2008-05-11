@@ -48,14 +48,14 @@ public class TemplateTest extends TestCase
             randomStrings.add(buf.toString());
         }
 
-        context.put("name", "Tom");
-        context.put("randomStrings", randomStrings);
-        context.put("intArray", intArray);
-        context.put("intList", TemplateUtils.objectToCollection(intArray));
-        context.put("doubleArray", doubleArray);
-        context
-                .put("doubleList", TemplateUtils
-                        .objectToCollection(doubleArray));
+        context.putVariable("name", "Tom");
+        context.putVariable("randomStrings", randomStrings);
+        context.putVariable("intArray", intArray);
+        context.putVariable("intList", TemplateUtils
+                .objectToCollection(intArray));
+        context.putVariable("doubleArray", doubleArray);
+        context.putVariable("doubleList", TemplateUtils
+                .objectToCollection(doubleArray));
     }
 
     public void testVarExpression()
@@ -236,7 +236,7 @@ public class TemplateTest extends TestCase
             assertEquals("TOM", output);
 
             // now test case where file is specified by variable
-            context.put("mypath", f.getName());
+            context.putVariable("mypath", f.getName());
             t = new Template("{% include mypath %}");
             output = t.render(context);
             assertEquals("TOM", output);
@@ -280,6 +280,23 @@ public class TemplateTest extends TestCase
         }
     }
 
+    public void testMacroStatement()
+    {
+        // nested ifs
+        try
+        {
+            Template t = new Template(
+                    "{% macro testMacro zellmo %}{{ zellmo|upper }}{% endmacro %}"
+                            + "{{ testMacro(name) }}");
+            String output = t.render(context);
+            assertEquals("TOM", output);
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
     public void testDefaultFilters()
     {
         try
@@ -302,8 +319,8 @@ public class TemplateTest extends TestCase
 
             t = new Template("{{ intArray|make_list }}");
             output = t.render(context);
-            assertEquals(output, ((List<Integer>) context.get("intList"))
-                    .toString());
+            assertEquals(output, ((List<Integer>) context
+                    .getVariable("intList")).toString());
 
             t = new Template("{{ intArray|length }}");
             output = t.render(context);

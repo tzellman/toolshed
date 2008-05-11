@@ -8,9 +8,9 @@ import java.util.Map;
 public interface InputAdapter
 {
     /**
-     * Retrieve a map suitable for use with a {@link ContextStack}
+     * Retrieve a map suitable for use with a {@link Context}
      * 
-     * @return a {@link Map} suitable for use with a {@link ContextStack}
+     * @return a {@link Map} suitable for use with a {@link Context}
      */
-    public abstract Map<String, Object> getContextStackInput();
+    public abstract Map<String, Object> getContextInput();
 }

@@ -69,7 +69,8 @@ States
     filter_var,
     filter_filter,
     template_tag,
-    now_tag
+    now_tag,
+    macro_tag
     ;
 
     
@@ -81,7 +82,6 @@ Tokens
 
     {with_var, load_as->load_var, set_var}
         kw_as           = 'as';
-    
     {if_var}
         kw_not          = 'not';
     
@@ -111,6 +111,9 @@ Tokens
     
     {default->include_tag}
         include_start   = '{%' ws* 'include' ws+;
+    
+    {default->macro_tag}
+        macro_start     = '{%' ws* 'macro' ws+;
     
     {default->firstof_var}
         firstof_start   = '{%' ws* 'firstof' ws+;
@@ -160,7 +163,8 @@ Tokens
         tag_end         = '%}';
     
     {for_var->default, block_tag->default, filter_var->default,
-    if_var->default, with_var->default, ifeq_var->default, set_var->default}
+    if_var->default, with_var->default, ifeq_var->default, set_var->default,
+    macro_tag->default}
     tag_end_eol         = '%}' eol?;
     
     {default}
@@ -168,6 +172,9 @@ Tokens
     
     {default}
         with_end        = '{%' ws* 'endwith' ws* '%}';
+    
+    {default}
+        macro_end       = '{%' ws* 'endmacro' ws* '%}';
     
     {default}
         filter_end      = '{%' ws* 'endfilter' ws* '%}';
@@ -192,7 +199,7 @@ Tokens
         dot             = '.';
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, for_var, block_tag,
-    include_tag, for_tag, firstof_var, filter_var, template_tag}
+    include_tag, for_tag, firstof_var, filter_var, template_tag, macro_tag}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
@@ -202,7 +209,7 @@ Tokens
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, block_tag, include_tag,
     for_var, for_tag, filter, with_filter, set_filter, load_filter, if_filter,
-    extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag}
+    extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag, macro_tag}
         strip_ws        = ws+;
     
     {default}
@@ -227,6 +234,11 @@ Tokens
     set_filter->set_var}
         unquoted        = alpha_num+;
     
+    {var}
+        l_paren         = '(';
+     
+    {var}
+        r_paren         = ')';
 
 ///////////////////////////////////////////////////////////////////////////////
 Ignored Tokens
@@ -247,7 +259,7 @@ Productions
     
     entity {-> entity} =
             {char}      [char]:text_char                                {-> New entity.char(char)}
-        |   {variable}  var_start [expression]:var_expression var_end   {-> New entity.variable(expression)}
+        |   {variable}  [var_block]:variable_block                      {-> New entity.variable(var_block)}
         |   {block}     [block]:block                                   {-> New entity.block(block)}
         |   {load}      [load]:load                                     {-> New entity.load(load)}
         |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
@@ -259,8 +271,16 @@ Productions
         |   {filter}    [filter]:filter_block                           {-> New entity.filter(filter)}
         |   {templatetag} templatetag [tag]:id tag_end                  {-> New entity.templatetag(tag)}
         |   {now}       now_start [format]:string_literal? tag_end      {-> New entity.now(format)}
+        |   {macro}     [macro]:macro_block                             {-> New entity.macro(macro)}
         |   {set}       set_start [value]:var_expression
                         kw_as [var]:id tag_end_eol                      {-> New entity.set(value, var)}
+        ;
+    
+    
+    variable_block {-> variable_block} =
+            {variable}  var_start [expression]:var_expression var_end   {-> New variable_block.variable(expression)}
+        |   {macro}     var_start [macro]:id l_paren
+                            [args]:argument_list? r_paren var_end      {-> New variable_block.macro(macro, [args.argument])}
         ;
     
     extends {-> extends} =
@@ -312,6 +332,11 @@ Productions
                         kw_as [var]:id tag_end_eol
                         [entities]:entity* with_end                     {-> New with_block(expression, var, [entities])}
         ;
+
+    macro_block {-> macro_block} =
+                        macro_start [id]:id [vars]:id_list tag_end_eol
+                        [entities]:entity* macro_end                    {-> New macro_block(id, [vars.id], [entities])}
+        ;
     
     filter_block {-> filter_block} =
                         filter_start [filter]:filter
@@ -335,6 +360,10 @@ Productions
         |   {multiple}  [plugin]:plugin comma [rest]:plugin_list        {-> [plugin, rest.plugin]}
         ;
     
+    id_list {-> id+} =
+            {single}    [id]:id                                         {-> [id]}
+        |   {multiple}  [id]:id comma [rest]:id_list                    {-> [id, rest.id]}
+        ;
     
     include {-> include} =
             {string}    [string]:string_literal                         {-> New include.string(string)}
@@ -342,8 +371,8 @@ Productions
         ;
 
     var_expression {-> var_expression} = 
-            {reference} [referent]:id
-                [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression(referent, [lookup.member], [filters.filter])}
+            {variable}  [referent]:id
+                [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression.variable(referent, [lookup.member], [filters.filter])}
         ;
 
     memberchain {-> member+} =
@@ -354,6 +383,11 @@ Productions
     argument {-> argument} =
             {string}    [string]:string_literal                         {-> New argument.string(string)}
         |   {variable}  [variable]:var_expression                       {-> New argument.variable(variable)}
+        ;
+    
+    argument_list {-> argument+} =
+            {single}    [arg]:argument                                  {-> [arg]}
+        |   {multiple}  [arg]:argument comma [rest]:argument_list       {-> [arg, rest.argument]}
         ;
     
     var_filter {-> filter} =
@@ -377,7 +411,7 @@ Abstract Syntax Tree
     
     entity =
             {char}      [char]:text_char
-        |   {variable}  [expr]:var_expression
+        |   {variable}  [var_block]:variable_block
         |   {block}     [block]:block
         |   {load}      [load]:load
         |   {include}   [include]:include
@@ -389,12 +423,18 @@ Abstract Syntax Tree
         |   {filter}    [filter]:filter_block
         |   {templatetag} [tag]:id
         |   {now}       [format]:string_literal?
+        |   {macro}     [macro]:macro_block
         |   {set}       [value]:var_expression [var]:id
         ;
 
+    variable_block =
+            {variable}  [expression]:var_expression
+        |   {macro}     [macro]:id [args]:argument*;
+
     extends =           [parent_name]:string_literal;
     
-    var_expression =    [referent]:id [members]:member* [filters]:filter*;
+    var_expression =
+            {variable}  [referent]:id [members]:member* [filters]:filter*;
     
     argument =
             {string}    [string]:string_literal
@@ -405,6 +445,8 @@ Abstract Syntax Tree
     for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
     
     with_block =        [expression]:var_expression [var]:id [entities]:entity*;
+    
+    macro_block =       [id]:id [vars]:id+ [entities]:entity*;
     
     filter_block =      [filters]:filter+ [entities]:entity*;
     
