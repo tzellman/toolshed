@@ -16,13 +16,13 @@ public final class PluginRegistry
 {
     private static final Log log = LogFactory.getLog(PluginRegistry.class);
 
-    private static PluginRegistry instance = null;
+    private static PluginRegistry instance = new PluginRegistry();
 
-    FilterMap filterMap;
+    private FilterMap filterMap;
 
     private Map<String, String> templateIncludePaths;
 
-    protected PluginRegistry()
+    private PluginRegistry()
     {
         filterMap = new FilterMap();
         templateIncludePaths = Collections
@@ -31,16 +31,6 @@ public final class PluginRegistry
 
     public static PluginRegistry getInstance()
     {
-        if (instance == null)
-        {
-            synchronized (DefaultFilters.class)
-            {
-                if (instance == null)
-                {
-                    instance = new PluginRegistry();
-                }
-            }
-        }
         return instance;
     }
 
