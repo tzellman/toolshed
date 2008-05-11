@@ -3,7 +3,7 @@
 
 === Quick Details ===
 || *Name* || *Quick Description* || *Inline Example* ||
-|| *block* || used to fragment the document into sections which can be overridden by sub-documents || {{{ {% block content %}{{ content }}{% endblock %} }}} ||
+|| *[GalootTags#block block]* || used to fragment the document into sections which can be overridden by sub-documents || {{{ {% block content %}{{ content }}{% endblock %} }}} ||
 || *comment* || comment your code || {{{ {# a comment #} or {% comment %} another comment {% endcomment %} }}} ||
 || *extends* || signifies that the template extends another template || {{{ {% extends "base.html" %} }}} ||
 || *filter* || apply filters to a block of data || {{{ {% filter lower %}lowercase me{% endfilter %} }}} ||
