@@ -2,6 +2,7 @@ package galoot.interpret;
 
 import galoot.ContextStack;
 import galoot.Filter;
+import galoot.Macro;
 import galoot.PluginRegistry;
 import galoot.Template;
 import galoot.TemplateUtils;
@@ -18,6 +19,8 @@ import galoot.node.AFirstOfEntity;
 import galoot.node.AForBlock;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
+import galoot.node.AMacroBlock;
+import galoot.node.AMacroVariableBlock;
 import galoot.node.ANowEntity;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
@@ -29,14 +32,16 @@ import galoot.node.AStringPlugin;
 import galoot.node.ATemplatetagEntity;
 import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarAsPlugin;
-import galoot.node.AVarExpression;
 import galoot.node.AVarPlugin;
 import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
+import galoot.node.AVariableVarExpression;
+import galoot.node.AVariableVariableBlock;
 import galoot.node.AWithBlock;
 import galoot.node.PArgument;
 import galoot.node.PEntity;
 import galoot.node.Start;
+import galoot.node.TId;
 import galoot.node.TMember;
 import galoot.parser.ParserException;
 import galoot.types.BlockFragment;
@@ -59,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -147,7 +151,7 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void outAVarExpression(AVarExpression node)
+    public void outAVariableVarExpression(AVariableVarExpression node)
     {
         // whenever we come across a variable expression, we evaluate it, then
         // push it onto an expression stack. This way, the operations that use
@@ -167,11 +171,11 @@ public class Interpreter extends DepthFirstAdapter
         }
 
         // first things first, see if the full "dot" expression is in the map
-        Object object = context.get(fullDotExpression);
+        Object object = context.getVariable(fullDotExpression);
         if (object == null)
         {
             // try to get just the base object then
-            object = context.get(referent);
+            object = context.getVariable(referent);
 
             // evaluate the object/methods
             object = TemplateUtils.evaluateObject(object, stringMembers,
@@ -191,6 +195,42 @@ public class Interpreter extends DepthFirstAdapter
         }
 
         variableStack.push(object);
+    }
+
+    @Override
+    public void outAMacroVariableBlock(AMacroVariableBlock node)
+    {
+        String macroName = node.getMacro().getText();
+
+        Macro macro = context.getMacro(macroName);
+        if (macro != null)
+        {
+            if (macro.getNumArguments() != variableStack.size())
+                throw new RuntimeException("Macro '" + macroName
+                        + "' expected " + macro.getNumArguments()
+                        + " arguments");
+
+            // push a new context
+            context.push();
+
+            // add the arguments as vars in the context
+            Iterable<String> args = macro.getArguments();
+            for (String arg : args)
+                context.putVariable(arg, variableStack.pop());
+
+            {
+                for (PEntity e : macro.getEntities())
+                {
+                    e.apply(this);
+                }
+            }
+            // pop the context
+            context.pop();
+        }
+        else
+        {
+            log.warn("Unknown macro: " + macroName);
+        }
     }
 
     @Override
@@ -218,7 +258,7 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
-    public void outAVariableEntity(AVariableEntity node)
+    public void outAVariableVariableBlock(AVariableVariableBlock node)
     {
         Object object = variableStack.pop();
         if (object != null)
@@ -226,6 +266,16 @@ public class Interpreter extends DepthFirstAdapter
             finishString(object.toString());
         }
     }
+
+    // @Override
+    // public void outAVariableEntity(AVariableEntity node)
+    // {
+    // Object object = variableStack.pop();
+    // if (object != null)
+    // {
+    // finishString(object.toString());
+    // }
+    // }
 
     @Override
     public void outABooleanExpr(ABooleanExpr node)
@@ -436,7 +486,7 @@ public class Interpreter extends DepthFirstAdapter
         Map<String, Object> extraLoopVars = new HashMap<String, Object>();
 
         // add the vars
-        context.put(loopVar, loopObj);
+        context.putVariable(loopVar, loopObj);
         extraLoopVars.put("counter0", iterCount);
         extraLoopVars.put("counter1", iterCount + 1);
         extraLoopVars.put("first", iterCount == 0);
@@ -446,7 +496,7 @@ public class Interpreter extends DepthFirstAdapter
         extraLoopVars.put("revcounter0", revCounter - 1);
         if (!forLoopStack.isEmpty())
             extraLoopVars.put("parent", forLoopStack.peek());
-        context.put("forloop", extraLoopVars);
+        context.putVariable("forloop", extraLoopVars);
 
         // push the loop vars onto the stack, so sub-for loops can access it
         forLoopStack.push(extraLoopVars);
@@ -607,7 +657,7 @@ public class Interpreter extends DepthFirstAdapter
         // push a new context
         context.push();
         // add the vars
-        context.put(withVar, withObj);
+        context.putVariable(withVar, withObj);
         {
             List<PEntity> copy = new ArrayList<PEntity>(node.getEntities());
             for (PEntity e : copy)
@@ -764,7 +814,7 @@ public class Interpreter extends DepthFirstAdapter
             {
                 String superBlock = parentDocument.getDocumentBlock().getBlock(
                         blockName).evaluateAsString();
-                context.put("block.super", superBlock);
+                context.putVariable("block.super", superBlock);
             }
 
             inABlock(node);
@@ -883,7 +933,25 @@ public class Interpreter extends DepthFirstAdapter
         String varName = node.getVar().getText();
 
         // add the variable to the current context
-        context.put(varName, value);
+        context.putVariable(varName, value);
+    }
+
+    @Override
+    public void caseAMacroBlock(AMacroBlock node)
+    {
+        inAMacroBlock(node);
+        LinkedList<TId> vars = node.getVars();
+        List<String> args = new ArrayList<String>(vars.size());
+        for (TId e : vars)
+        {
+            e.apply(this);
+            args.add(e.getText());
+        }
+        String name = node.getId().getText();
+        Macro macro = new Macro(name, args, node.getEntities());
+        context.putMacro(name, macro);
+
+        outAMacroBlock(node);
     }
 
     /**

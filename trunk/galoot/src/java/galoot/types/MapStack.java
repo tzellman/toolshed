@@ -29,7 +29,7 @@ public class MapStack<K, V>
      * @param name
      * @return the object or null if not found
      */
-    public Object get(K key)
+    public Object getVariable(K key)
     {
         for (Iterator<Map<K, V>> it = mapStack.iterator(); it.hasNext();)
         {
@@ -64,7 +64,7 @@ public class MapStack<K, V>
      * @param key
      * @param val
      */
-    public boolean put(K key, V val)
+    public boolean putVariable(K key, V val)
     {
         if (mapStack.isEmpty())
             return false;
@@ -81,7 +81,7 @@ public class MapStack<K, V>
     {
         if (map != null)
             for (K key : map.keySet())
-                put(key, map.get(key));
+                putVariable(key, map.get(key));
     }
 
     /**
@@ -92,7 +92,7 @@ public class MapStack<K, V>
      * @param key
      * @return
      */
-    public Object remove(K key)
+    public Object removeVariable(K key)
     {
         if (mapStack.isEmpty() || !mapStack.peek().containsKey(key))
             return null;
