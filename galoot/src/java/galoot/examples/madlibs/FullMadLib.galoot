@@ -1,7 +1,7 @@
 {% load "underline" %}
 
 {# useless macro just to show how to use macros #}
-{% macro randomWord text %}
+{% macro randomWord(text) %}
     {{ text|random|underline }}
 {% endmacro %}
 

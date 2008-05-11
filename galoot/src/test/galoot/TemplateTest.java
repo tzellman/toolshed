@@ -286,7 +286,7 @@ public class TemplateTest extends TestCase
         try
         {
             Template t = new Template(
-                    "{% macro testMacro zellmo %}{{ zellmo|upper }}{% endmacro %}"
+                    "{% macro testMacro(zellmo) %}{{ zellmo|upper }}{% endmacro %}"
                             + "{{ testMacro(name) }}");
             String output = t.render(context);
             assertEquals("TOM", output);

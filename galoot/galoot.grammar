@@ -234,10 +234,10 @@ Tokens
     set_filter->set_var}
         unquoted        = alpha_num+;
     
-    {var}
+    {var, macro_tag}
         l_paren         = '(';
      
-    {var}
+    {var, macro_tag}
         r_paren         = ')';
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -334,8 +334,8 @@ Productions
         ;
 
     macro_block {-> macro_block} =
-                        macro_start [id]:id [vars]:id_list tag_end_eol
-                        [entities]:entity* macro_end                    {-> New macro_block(id, [vars.id], [entities])}
+                        macro_start [id]:id l_paren [vars]:id_list r_paren
+                        tag_end_eol [entities]:entity* macro_end        {-> New macro_block(id, [vars.id], [entities])}
         ;
     
     filter_block {-> filter_block} =
@@ -345,7 +345,7 @@ Productions
         ;
     
     
-    load {-> load} =    load_start [plugins]:plugin+ tag_end    {-> New load([plugins])}
+    load {-> load} =    load_start [plugins]:plugin+ tag_end            {-> New load([plugins])}
         ;
     
     plugin {-> plugin} =
