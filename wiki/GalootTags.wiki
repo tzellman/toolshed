@@ -13,6 +13,7 @@
 || *[GalootTags#ifequal ifequal]* || conditionally evaluate a block if two variables/strings are equal || {{{ {% ifequal user.name "admin" %}Welcome Admin{% endifequal %} }}} ||
 || *[GalootTags#include include]* || include and render a file at the specified location in the document || {{{ {% ifequal user.name "admin" %}{% include "pages/adminPage.html" %}{% endifequal %} }}} ||
 || *[GalootTags#load load]* || load a filter plug-in || {{{ {% load "is_null" %} {{ var|is_null|yesno:"yes,no" }} }}} ||
+|| *[GalootTags#macro macro]* || define a re-usable macro block || {{{ {% macro sayHello(name) %} hello {{ name }} {% endmacro %} }}} ||
 || *[GalootTags#now now]* || format the current date/time || {{{ Copyright {% now "%tY" %} }}} ||
 || *[GalootTags#set set]* || set a variable within the current context || {{{ {% set users|length as numUsers %}There are {{ numUsers }} users. }}} ||
 || *[GalootTags#templatetag templatetag]* || display a reserved template tag || {{{ {% templatetag opencomment %} }}} ||
@@ -186,6 +187,24 @@ Examples:
     apply the dynamically loaded filter plug-in to this block
 {% endfilter %}
 
+}}}
+
+=== macro ===
+Create a re-usable macro, adding it to the context it was defined in, making it callable by all sub-contexts.
+
+An example:
+{{{
+{% macro makeTable(items) %}
+<table><tbody>
+{% for item in items %}
+<tr><td>{{ forloop.counter }}</td><td>{{ item.name }}</td><td>{{ item.toString }}</td></tr>
+{% endfor %}
+{% endmacro %}
+}}}
+
+To call it:
+{{{
+{{ makeTable(myItems) }}
 }}}
 
 ==== now ====
