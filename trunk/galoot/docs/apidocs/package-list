@@ -1,0 +1,8 @@
+galoot
+galoot.analysis
+galoot.examples.madlibs
+galoot.interpret
+galoot.lexer
+galoot.node
+galoot.parser
+galoot.types
