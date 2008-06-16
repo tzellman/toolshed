@@ -264,6 +264,69 @@ public class TemplateTest extends TestCase
         }
     }
 
+    public void testMacroStatement()
+    {
+        // nested ifs
+        try
+        {
+            final String templateText = "{% macro testMacro(zellmo, var) %}{{ zellmo|upper }}{{ var|upper }}{% endmacro %}"
+                    + "{{ testMacro(name, name) }}";
+            System.out.println(templateText);
+            Template t = new Template(templateText);
+            String output = t.render(context);
+            assertEquals("TOMTOM", output);
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testIncludeMacro()
+    {
+        // includes
+        File f = null;
+        try
+        {
+            f = File.createTempFile("tmp", "includeMacro");
+            FileUtils.writeStringToFile(f,
+                    "{% macro printVar(var) %}\n{{ var|upper }}\n{% endmacro %}", "UTF-8");
+            log.debug("creating tmp file: " + f.getAbsolutePath());
+
+            // add the path to the pluginregistry
+            PluginRegistry.getInstance().addTemplateIncludePath(f.getParent());
+
+            // test case where file is specified by name
+            final String templateText = "{% include \"" + f.getName()
+                    + "\" %}\n" + "{{ printVar(name) }}";
+            System.out.println(templateText);
+            Template t = new Template(templateText);
+            String output = t.render(context).trim();
+            assertEquals("TOM", output);
+
+            // remove the parent from the global include paths
+            PluginRegistry.getInstance().removeTemplateIncludePath(
+                    f.getParent());
+
+            FileUtils.forceDelete(f);
+        }
+        catch (IOException e)
+        {
+            if (f != null)
+            {
+                try
+                {
+                    FileUtils.forceDelete(f);
+                }
+                catch (IOException e1)
+                {
+                    // couldn't delete the file
+                }
+            }
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
     public void testWithStatement()
     {
         // nested ifs
@@ -273,23 +336,6 @@ public class TemplateTest extends TestCase
                     "{% with name|upper as bar %}{{ bar }}{% endwith %}");
             String output = t.render(context);
             assertEquals(output, "TOM");
-        }
-        catch (IOException e)
-        {
-            fail(ExceptionUtils.getStackTrace(e));
-        }
-    }
-
-    public void testMacroStatement()
-    {
-        // nested ifs
-        try
-        {
-            Template t = new Template(
-                    "{% macro testMacro(zellmo) %}{{ zellmo|upper }}{% endmacro %}"
-                            + "{{ testMacro(name) }}");
-            String output = t.render(context);
-            assertEquals("TOM", output);
         }
         catch (IOException e)
         {
