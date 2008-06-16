@@ -29,7 +29,10 @@ Helpers
     octal_digit     = ['0'..'7'];
     octal_escape    = '\' (octal_digit octal_digit? | ['0'..'3'] octal_digit octal_digit);
     escape_sequence = '\b' | '\t' | '\n' | '\f' | '\r' | '\"' | '\' ''' | '\\' | octal_escape;
-    string_char     = [input_char - ['"' + '\']] | escape_sequence;
+    dq_string_char  = [input_char - ['"' + '\']] | escape_sequence;
+//    sq_string_char  = [input_char - [''' + '\']] | escape_sequence;
+//    string          = '"' dq_string_char* '"' | ''' sq_string_char* ''';
+    string          = '"' dq_string_char* '"';
     
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,7 +73,8 @@ States
     filter_filter,
     template_tag,
     now_tag,
-    macro_tag
+    macro_tag,
+    macro_var
     ;
 
     
@@ -190,8 +194,9 @@ Tokens
     
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
     load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
-    firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var}
-        string_literal  = '"' string_char* '"';
+    firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var,
+    macro_var}
+        string_literal  = string;
     
     {var->var_member, with_var->with_member, load_var->load_member,
     if_var->if_member, ifeq_var->ifeq_member, for_var->for_member,
@@ -199,7 +204,8 @@ Tokens
         dot             = '.';
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, for_var, block_tag,
-    include_tag, for_tag, firstof_var, filter_var, template_tag, macro_tag}
+    include_tag, for_tag, firstof_var, filter_var, template_tag, macro_tag,
+    macro_var}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
@@ -209,7 +215,8 @@ Tokens
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, block_tag, include_tag,
     for_var, for_tag, filter, with_filter, set_filter, load_filter, if_filter,
-    extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag, macro_tag}
+    extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag,
+    macro_var, macro_tag}
         strip_ws        = ws+;
     
     {default}
@@ -219,7 +226,7 @@ Tokens
     firstof_var, filter_var}
         vert_pipe       = '|';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var, firstof_var}
+    {var, with_var, load_var, if_var, ifeq_var, for_var, firstof_var, macro_var}
         comma           = ',';
     
     {var->filter, with_var->with_filter, load_var->load_filter,
@@ -234,10 +241,10 @@ Tokens
     set_filter->set_var}
         unquoted        = alpha_num+;
     
-    {var, macro_tag}
+    {var, macro_tag->macro_var}
         l_paren         = '(';
      
-    {var, macro_tag}
+    {var, macro_var->macro_tag}
         r_paren         = ')';
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -334,7 +341,7 @@ Productions
         ;
 
     macro_block {-> macro_block} =
-                        macro_start [id]:id l_paren [vars]:id_list r_paren
+                        macro_start [id]:id l_paren [vars]:id_list? r_paren
                         tag_end_eol [entities]:entity* macro_end        {-> New macro_block(id, [vars.id], [entities])}
         ;
     

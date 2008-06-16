@@ -33,7 +33,6 @@ import galoot.node.ATemplatetagEntity;
 import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarAsPlugin;
 import galoot.node.AVarPlugin;
-import galoot.node.AVariableEntity;
 import galoot.node.AVariableInclude;
 import galoot.node.AVariableVarExpression;
 import galoot.node.AVariableVariableBlock;
@@ -56,6 +55,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -214,7 +215,10 @@ public class Interpreter extends DepthFirstAdapter
             context.push();
 
             // add the arguments as vars in the context
-            Iterable<String> args = macro.getArguments();
+            List<String> args = IteratorUtils.toList(macro.getArguments()
+                    .iterator());
+            // reverse the list, since we are popping in reverse order
+            Collections.reverse(args);
             for (String arg : args)
                 context.putVariable(arg, variableStack.pop());
 
@@ -395,7 +399,7 @@ public class Interpreter extends DepthFirstAdapter
      */
     private void processIncludedFile(String filename)
     {
-        context.push();
+        // context.push();
         try
         {
             Document doc = loadDocument(filename);
@@ -408,10 +412,10 @@ public class Interpreter extends DepthFirstAdapter
             log.warn("File could not be included: " + filename);
             // ignore the problem for now
         }
-        finally
-        {
-            context.pop();
-        }
+        // finally
+        // {
+        // context.pop();
+        // }
     }
 
     @Override
@@ -946,6 +950,7 @@ public class Interpreter extends DepthFirstAdapter
         {
             e.apply(this);
             args.add(e.getText());
+            System.out.println("Arg: " + e.getText());
         }
         String name = node.getId().getText();
         Macro macro = new Macro(name, args, node.getEntities());
