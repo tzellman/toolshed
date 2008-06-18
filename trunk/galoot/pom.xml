@@ -6,7 +6,7 @@
     <groupId>toolshed</groupId>
     <artifactId>galoot</artifactId>
     <packaging>jar</packaging>
-    <version>0.2-dev</version>
+    <version>0.3-dev</version>
     <inceptionYear>2007</inceptionYear>
     <name>Galoot Template Engine</name>
     <url>http://code.google.com/p/toolshed/</url>
