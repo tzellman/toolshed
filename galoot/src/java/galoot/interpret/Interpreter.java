@@ -950,7 +950,6 @@ public class Interpreter extends DepthFirstAdapter
         {
             e.apply(this);
             args.add(e.getText());
-            System.out.println("Arg: " + e.getText());
         }
         String name = node.getId().getText();
         Macro macro = new Macro(name, args, node.getEntities());
