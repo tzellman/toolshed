@@ -248,7 +248,14 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void outAUnquotedFilterArg(AUnquotedFilterArg node)
     {
-        variableStack.push(node.getArg().getText());
+        final String text = node.getArg().getText();
+        // look it up in the context
+        final Object var = context.getVariable(text);
+
+        if (var == null)
+            variableStack.push(text);
+        else
+            variableStack.push(var);
     }
 
     @Override
