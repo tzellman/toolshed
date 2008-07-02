@@ -289,8 +289,11 @@ public class TemplateTest extends TestCase
         try
         {
             f = File.createTempFile("tmp", "includeMacro");
-            FileUtils.writeStringToFile(f,
-                    "{% macro printVar(var) %}\n{{ var|upper }}\n{% endmacro %}", "UTF-8");
+            FileUtils
+                    .writeStringToFile(
+                            f,
+                            "{% macro printVar(var) %}\n{{ var|upper }}\n{% endmacro %}",
+                            "UTF-8");
             log.debug("creating tmp file: " + f.getAbsolutePath());
 
             // add the path to the pluginregistry
@@ -375,6 +378,11 @@ public class TemplateTest extends TestCase
             t = new Template("{{ name|make_list|length }}");
             output = t.render(context);
             assertEquals(Integer.parseInt(output), "Tom".length());
+
+            context.putVariable("theSize", "Tom".length());
+            t = new Template("{{ name|make_list|length_is:theSize }}");
+            output = t.render(context);
+            assertEquals(output, "true");
 
         }
         catch (IOException e)
