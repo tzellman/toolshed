@@ -60,7 +60,7 @@ public class Context
 
     public Object removeVariable(String key)
     {
-        return macroMap.remove(key);
+        return contextMap.remove(key);
     }
 
     public void add(Map<String, Object> map)
