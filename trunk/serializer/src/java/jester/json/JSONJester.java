@@ -78,7 +78,7 @@ public class JSONJester implements IJester
      * 
      * @throws NotImplementedException
      */
-    public Object in(InputStream stream) throws Exception
+    public Object in(InputStream stream, Map hints) throws Exception
     {
         // TODO
         throw new NotImplementedException();
@@ -91,7 +91,7 @@ public class JSONJester implements IJester
      * @return
      * @throws Exception
      */
-    public String serialize(Object object) throws Exception
+    public String serialize(Object object, Map hints) throws Exception
     {
         Transformer<String> serializer = null;
         Class clazz = object.getClass();
@@ -118,11 +118,11 @@ public class JSONJester implements IJester
         if (serializer == null)
         {
             // do the default serialization if we can't decipher it
-            stringValue = defaultOut(object);
+            stringValue = defaultOut(object, hints);
         }
         else
         {
-            stringValue = serializer.to(object, this);
+            stringValue = serializer.to(object, this, hints);
         }
 
         return stringValue;
@@ -131,9 +131,10 @@ public class JSONJester implements IJester
     /**
      * Fulfills the IJester Interface
      */
-    public void out(Object object, OutputStream out) throws Exception
+    public void out(Object object, OutputStream out, Map hints)
+            throws Exception
     {
-        out.write(serialize(object).getBytes());
+        out.write(serialize(object, hints).getBytes());
     }
 
     /**
@@ -143,24 +144,21 @@ public class JSONJester implements IJester
      * customize the serialization.
      * 
      * @param object
+     *            the object being serialized
+     * @param hints
+     *            optional Map of serialization hints
      * @return
      */
-    protected String defaultOut(Object object) throws Exception
+    protected String defaultOut(Object object, Map hints) throws Exception
     {
         if (object == null)
             return "null";
         else if (SerializationUtils.isArrayType(object))
         {
-            return serialize(SerializationUtils.objectToCollection(object));
+            return serialize(SerializationUtils.objectToCollection(object),
+                    hints);
         }
         return JSONUtils.toJSONString(object.toString());
-    }
-
-    public static void main(String[] args) throws Exception
-    {
-        JSONJester s = new JSONJester();
-        System.out.println(s.serialize("some value"));
-        s.out(new Object[] { "string", 1, 15f }, System.out);
     }
 
 }
