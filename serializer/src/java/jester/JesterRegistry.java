@@ -47,23 +47,24 @@ public class JesterRegistry
             register(jester);
     }
 
-    public void out(Object object, String contentType, OutputStream out)
+    public void out(Object object, String contentType, OutputStream out,
+            Map hints) throws Exception
+    {
+        if (!registry.containsKey(contentType))
+            contentType = defaultContentType;
+        if (StringUtils.isEmpty(contentType))
+            throw new Exception("Unable to serialize object");
+        registry.get(contentType).out(object, out, hints);
+    }
+
+    public Object in(InputStream in, String contentType, Map hints)
             throws Exception
     {
         if (!registry.containsKey(contentType))
             contentType = defaultContentType;
         if (StringUtils.isEmpty(contentType))
             throw new Exception("Unable to serialize object");
-        registry.get(contentType).out(object, out);
-    }
-
-    public Object in(InputStream in, String contentType) throws Exception
-    {
-        if (!registry.containsKey(contentType))
-            contentType = defaultContentType;
-        if (StringUtils.isEmpty(contentType))
-            throw new Exception("Unable to serialize object");
-        return registry.get(contentType).in(in);
+        return registry.get(contentType).in(in, hints);
     }
 
     public String getDefaultContentType()
@@ -75,6 +76,5 @@ public class JesterRegistry
     {
         this.defaultContentType = defaultContentType;
     }
-    
-    
+
 }

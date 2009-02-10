@@ -1,5 +1,7 @@
 package jester;
 
+import java.util.Map;
+
 /**
  * A Transformer knows how to transform to/from an Object
  */
@@ -11,19 +13,27 @@ public interface Transformer<T>
      * serialization.
      * 
      * @param object
+     *            the Object to transform
      * @param jester
+     *            the Jester
+     * @param hints
+     *            optional Map of serialization hints
      * @return
      * @throws Exception
      */
-    T to(Object object, IJester jester) throws Exception;
+    T to(Object object, IJester jester, Map hints) throws Exception;
 
     /**
      * Returns an Object, transformed from the input data.
      * 
-     * @param json
+     * @param data
+     *            the data being serialized to the new Object
      * @param jester
+     *            the Jester
+     * @param hints
+     *            optional Map of serialization hints
      * @return
      * @throws Exception
      */
-    Object from(T data, IJester jester) throws Exception;
+    Object from(T data, IJester jester, Map hints) throws Exception;
 }

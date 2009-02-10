@@ -65,8 +65,8 @@ public class JSONTest extends TestCase
                     new NullTransformer<String>()
                     {
                         @Override
-                        public String to(Object object, IJester jester)
-                                throws Exception
+                        public String to(Object object, IJester jester,
+                                Map hints) throws Exception
                         {
                             BigDecimal d = (BigDecimal) object;
                             return JSONUtils.toJSONString("BigDecimal: "
@@ -93,7 +93,8 @@ public class JSONTest extends TestCase
             JSONJester serializer = new JSONJester()
             {
                 @Override
-                protected String defaultOut(Object object) throws Exception
+                protected String defaultOut(Object object, Map hints)
+                        throws Exception
                 {
                     return JSONUtils.toJSONString("Default: "
                             + object.toString());

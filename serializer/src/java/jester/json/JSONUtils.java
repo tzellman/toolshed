@@ -44,7 +44,8 @@ public final class JSONUtils
      */
     public static class CollectionTransformer implements Transformer<String>
     {
-        public String to(Object object, IJester jester) throws Exception
+        public String to(Object object, IJester jester, Map hints)
+                throws Exception
         {
             Collection c = (Collection) object;
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -55,7 +56,7 @@ public final class JSONUtils
             for (int i = 0, size = vals.length; i < size; ++i)
             {
                 Object val = vals[i];
-                jester.out(val, out);
+                jester.out(val, out, hints);
                 if (i < size - 1)
                     out.print(",");
             }
@@ -63,7 +64,8 @@ public final class JSONUtils
             return bout.toString();
         }
 
-        public Object from(String json, IJester jester) throws Exception
+        public Object from(String json, IJester jester, Map hints)
+                throws Exception
         {
             throw new NotImplementedException();
         }
@@ -74,12 +76,14 @@ public final class JSONUtils
      */
     public static class StringTransformer implements Transformer<String>
     {
-        public String to(Object object, IJester jester) throws Exception
+        public String to(Object object, IJester jester, Map hints)
+                throws Exception
         {
             return JSONUtils.toJSONString(object.toString());
         }
 
-        public Object from(String json, IJester jester) throws Exception
+        public Object from(String json, IJester jester, Map hints)
+                throws Exception
         {
             throw new NotImplementedException();
         }
@@ -90,12 +94,14 @@ public final class JSONUtils
      */
     public static class NumberTransformer implements Transformer<String>
     {
-        public String to(Object object, IJester jester) throws Exception
+        public String to(Object object, IJester jester, Map hints)
+                throws Exception
         {
             return ((Number) object).toString();
         }
 
-        public Object from(String json, IJester jester) throws Exception
+        public Object from(String json, IJester jester, Map hints)
+                throws Exception
         {
             throw new NotImplementedException();
         }
@@ -106,12 +112,14 @@ public final class JSONUtils
      */
     public static class BooleanTransformer implements Transformer<String>
     {
-        public String to(Object object, IJester jester) throws Exception
+        public String to(Object object, IJester jester, Map hints)
+                throws Exception
         {
             return ((Boolean) object).booleanValue() ? "true" : "false";
         }
 
-        public Object from(String json, IJester jester) throws Exception
+        public Object from(String json, IJester jester, Map hints)
+                throws Exception
         {
             throw new NotImplementedException();
         }
@@ -122,7 +130,8 @@ public final class JSONUtils
      */
     public static class MapTransformer implements Transformer<String>
     {
-        public String to(Object object, IJester jester) throws Exception
+        public String to(Object object, IJester jester, Map hints)
+                throws Exception
         {
             Map map = (Map) object;
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -134,13 +143,13 @@ public final class JSONUtils
             {
                 Object key = keys[i];
                 String keyString = SerializationUtils.serializeToString(key,
-                        jester);
+                        jester, hints);
                 if (!keyString.startsWith("\"") && !keyString.endsWith("\""))
                     keyString = toJSONString(keyString);
 
                 out.print(keyString);
                 out.print(":");
-                jester.out(map.get(key), out);
+                jester.out(map.get(key), out, hints);
                 if (i < size - 1)
                     out.print(",");
             }
@@ -148,7 +157,8 @@ public final class JSONUtils
             return bout.toString();
         }
 
-        public Object from(String json, IJester jester) throws Exception
+        public Object from(String json, IJester jester, Map hints)
+                throws Exception
         {
             throw new NotImplementedException();
         }

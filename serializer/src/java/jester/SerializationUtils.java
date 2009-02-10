@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 public final class SerializationUtils
 {
@@ -122,12 +123,22 @@ public final class SerializationUtils
      * @return
      * @throws Exception
      */
+    public static String serializeToString(Object object, IJester jester,
+            Map hints) throws Exception
+    {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        BufferedOutputStream stream = new BufferedOutputStream(bout);
+        jester.out(object, stream, hints);
+        stream.flush();
+        return bout.toString();
+    }
+
     public static String serializeToString(Object object, IJester jester)
             throws Exception
     {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         BufferedOutputStream stream = new BufferedOutputStream(bout);
-        jester.out(object, stream);
+        jester.out(object, stream, null);
         stream.flush();
         return bout.toString();
     }

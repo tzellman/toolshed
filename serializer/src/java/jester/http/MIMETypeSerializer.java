@@ -55,7 +55,7 @@ public class MIMETypeSerializer extends JesterRegistry
      * @throws Exception
      */
     public String serialize(Object object, HttpServletRequest request,
-            OutputStream out) throws Exception
+            OutputStream out, Map hints) throws Exception
     {
         String mimeType = guessMIMEType(request);
         if (StringUtils.isEmpty(mimeType) || !mimeTypeMap.containsKey(mimeType))
@@ -75,7 +75,7 @@ public class MIMETypeSerializer extends JesterRegistry
             throw new Exception("Unable to serialize object");
 
         String contentType = mimeTypeMap.get(mimeType);
-        super.out(object, contentType, out);
+        super.out(object, contentType, out, hints);
         return mimeType;
     }
 
