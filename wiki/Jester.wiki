@@ -1,0 +1,8 @@
+#labels Featured
+== Introduction ==
+
+Jester is a pluggable serialization library written in Java.
+
+
+== JSON ==
+Currently, only JSON is supported.
