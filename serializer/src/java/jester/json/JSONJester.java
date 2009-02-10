@@ -94,6 +94,11 @@ public class JSONJester implements IJester
     public String serialize(Object object, Map hints) throws Exception
     {
         Transformer<String> serializer = null;
+
+        // guard against null objects
+        if (object == null)
+            return defaultOut(object, hints);
+
         Class clazz = object.getClass();
         String clazzName = clazz.getName();
 
@@ -113,19 +118,15 @@ public class JSONJester implements IJester
             }
         }
 
-        final String stringValue;
-
         if (serializer == null)
         {
             // do the default serialization if we can't decipher it
-            stringValue = defaultOut(object, hints);
+            return defaultOut(object, hints);
         }
         else
         {
-            stringValue = serializer.to(object, this, hints);
+            return serializer.to(object, this, hints);
         }
-
-        return stringValue;
     }
 
     /**
