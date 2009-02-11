@@ -10,9 +10,10 @@ import org.apache.commons.lang.NotImplementedException;
 
 /**
  * Simple Transformer that takes in any POJO, along with some OGNL-like
- * expressions, and produces a Map containing the results.
+ * expressions, and produces a String that contains the Object and it's desired
+ * fields, somehow serialized.
  */
-public abstract class POJOTransformer<T> implements Transformer<T>
+public abstract class POJOTransformer implements Transformer<String>
 {
     // protected List<String> expressions;
     protected Map<String, String> expressions;
@@ -45,13 +46,13 @@ public abstract class POJOTransformer<T> implements Transformer<T>
         expressions.putAll(expressions);
     }
 
-    public Object from(T data, IJester jester, Map hints) throws Exception
+    public Object from(String data, IJester jester, Map hints) throws Exception
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    public T to(Object object, IJester jester, Map hints) throws Exception
+    public String to(Object object, IJester jester, Map hints) throws Exception
     {
         Map data = new HashMap();
         for (String name : expressions.keySet())
@@ -68,7 +69,7 @@ public abstract class POJOTransformer<T> implements Transformer<T>
      * @param data
      * @return
      */
-    protected abstract T transformFromMap(Map data, IJester jester, Map hints)
-            throws Exception;
+    protected abstract String transformFromMap(Map data, IJester jester,
+            Map hints) throws Exception;
 
 }
