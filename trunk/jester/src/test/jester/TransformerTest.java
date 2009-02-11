@@ -32,65 +32,65 @@ public class TransformerTest extends TestCase
         }
     }
 
-    /**
-     * This class just uses a POJOTransformer to transform data to a Map, and
-     * then to a String. This is by no means a correct implementation, so don't
-     * go about using it.
-     */
-    class DumbJSONJester implements IJester
+/**
+ * This class just uses a POJOTransformer to transform data to a Map, and
+ * then to a String. This is by no means a correct implementation, so don't
+ * go about using it.
+ */
+class DumbJSONJester implements IJester
+{
+    // we are going to always use this transformer
+    private POJOTransformer transformer;
+
+    public DumbJSONJester()
     {
-        // we are going to always use this transformer
-        private POJOTransformer transformer;
+        // we want to transform the following fields/methods
+        // note that if we try to transform an objec that doesn't have
+        // these fields/methods, they will be set to null
+        // we could add a flag that prunes null fields... a thought
+        transformer = new POJOTransformer("name", "email", "required",
+                "toString", "class.simpleName");
+    }
 
-        public DumbJSONJester()
-        {
-            // we want to transform the following fields/methods
-            // note that if we try to transform an objec that doesn't have
-            // these fields/methods, they will be set to null
-            // we could add a flag that prunes null fields... a thought
-            transformer = new POJOTransformer("name", "email", "required",
-                    "toString", "class.simpleName");
-        }
+    public String getContentType()
+    {
+        return "dumbText";
+    }
 
-        public String getContentType()
-        {
-            return "dumbText";
-        }
+    public Object in(InputStream stream, Map hints) throws Exception
+    {
+        throw new NotImplementedException();
+    }
 
-        public Object in(InputStream stream, Map hints) throws Exception
+    public void out(Object object, OutputStream out, Map hints)
+            throws Exception
+    {
+        // serialize a Map
+        if (object instanceof Map)
         {
-            throw new NotImplementedException();
-        }
-
-        public void out(Object object, OutputStream out, Map hints)
-                throws Exception
-        {
-            // serialize a Map
-            if (object instanceof Map)
+            Map data = (Map) object;
+            // this is really rock dumb, but it's an example
+            StringBuffer b = new StringBuffer("{");
+            Object[] keys = data.keySet().toArray();
+            for (int i = 0, size = keys.length; i < size; ++i)
             {
-                Map data = (Map) object;
-                // this is really rock dumb, but it's an example
-                StringBuffer b = new StringBuffer("{");
-                Object[] keys = data.keySet().toArray();
-                for (int i = 0, size = keys.length; i < size; ++i)
-                {
-                    Object key = keys[i];
-                    b.append("\"" + key.toString() + "\":\"" + data.get(key)
-                            + "\"");
-                    if (i < size - 1)
-                        b.append(",");
-                }
-                b.append("}");
-                out.write(b.toString().getBytes());
+                Object key = keys[i];
+                b.append("\"" + key.toString() + "\":\"" + data.get(key)
+                        + "\"");
+                if (i < size - 1)
+                    b.append(",");
             }
-            else
-            {
-                // use the POJOTransformer to transform it
-                String stringVal = transformer.to(object, this, hints);
-                out.write(stringVal.getBytes());
-            }
+            b.append("}");
+            out.write(b.toString().getBytes());
+        }
+        else
+        {
+            // use the POJOTransformer to transform it
+            String stringVal = transformer.to(object, this, hints);
+            out.write(stringVal.getBytes());
         }
     }
+}
 
     public void testPOJOTransformer()
     {
