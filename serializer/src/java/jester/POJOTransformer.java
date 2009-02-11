@@ -14,25 +14,21 @@ import org.apache.commons.lang.NotImplementedException;
  */
 public abstract class POJOTransformer<T> implements Transformer<T>
 {
-    protected Class beanClass;
-
     // protected List<String> expressions;
     protected Map<String, String> expressions;
 
     /**
      * 
-     * @param beanClass
      * @param expressions
      *            Array of expressions
      */
-    public POJOTransformer(Class beanClass, String... expressions)
+    public POJOTransformer(String... expressions)
     {
-        this(beanClass, Arrays.asList(expressions));
+        this(Arrays.asList(expressions));
     }
 
-    public POJOTransformer(Class beanClass, List<String> expressions)
+    public POJOTransformer(List<String> expressions)
     {
-        this.beanClass = beanClass;
         this.expressions = new TreeMap<String, String>();
         for (String e : expressions)
             this.expressions.put(e, e);
@@ -40,20 +36,13 @@ public abstract class POJOTransformer<T> implements Transformer<T>
 
     /**
      * 
-     * @param beanClass
      * @param expressions
      *            Map of (name, expression)
      */
-    public POJOTransformer(Class beanClass, Map<String, String> expressions)
+    public POJOTransformer(Map<String, String> expressions)
     {
-        this.beanClass = beanClass;
         this.expressions = new TreeMap<String, String>();
         expressions.putAll(expressions);
-    }
-
-    public Class getBeanClass()
-    {
-        return beanClass;
     }
 
     public Object from(T data, IJester jester, Map hints) throws Exception
