@@ -25,23 +25,28 @@ public class JSONTest extends TestCase
         {
             IJester serializer = new JSONJester();
 
+            // ingest a map and spit out JSON
             Map data = new HashMap();
             data.put("drink", "Diet Mountain Dew");
 
             assertEquals("{\"drink\":\"Diet Mountain Dew\"}",
                     SerializationUtils.serializeToString(data, serializer));
 
+            // serialize a String
             assertEquals("\"scream aim fire\"", SerializationUtils
                     .serializeToString("scream aim fire", serializer));
 
+            // serialize a Number
             assertEquals("42", SerializationUtils.serializeToString(42,
                     serializer));
 
+            // serialize an array
             Object[] objects = new Object[] { "skateboard", "snowboard",
                     "hack", 300 };
             assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]",
                     SerializationUtils.serializeToString(objects, serializer));
 
+            // serialize a List/Collection
             List<Object> objectList = Arrays.asList(objects);
             assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]",
                     SerializationUtils
@@ -61,6 +66,8 @@ public class JSONTest extends TestCase
         try
         {
             JSONJester serializer = new JSONJester();
+
+            // register an anonymous transformer for BigDecimal objects
             serializer.registerTransformer(BigDecimal.class,
                     new NullTransformer<String>()
                     {
@@ -84,12 +91,13 @@ public class JSONTest extends TestCase
     }
 
     /**
-     * Tests overriding the defaultOut method
+     * Tests overriding the defaultOut method.
      */
     public void testOverrideDefaultOut()
     {
         try
         {
+            // Override a JSONJester inline, providing the defaultOut method
             JSONJester serializer = new JSONJester()
             {
                 @Override
