@@ -1,8 +1,146 @@
 #labels Featured
 == Introduction ==
 
-Jester is a pluggable serialization library written in Java.
+Jester is a pluggable serialization library written in Java. You can use it to serialize Objects to/from an output/input streams. In addition, Jester provides tools that assist in the serialization process.
+
+The best way to really highlight how Jester can work for you is by going through a couple of examples.
+
+----
+
+=== Example : JSON ===
+
+JSON is a very simple yet powerful notation that can be used to serialize server-side data to client-side JavaScript. Let's use Jester to serialize our data to JSON. We will have some custom objects that need to be serialized transparently.
+
+First, we have our sample class that we need to serialize.
+{{{
+/**
+ * Test class to show how we can transform it
+ */
+class MyCustomModelClass
+{
+    public String name;
+
+    protected int id;
+
+    public boolean required;
+
+    public String email;
+
+    @Override
+    public String toString()
+    {
+        return name;
+    }
+}
+}}}
 
 
-== JSON ==
-Currently, only JSON is supported.
+In your application (maybe in a servlet), let's use some of Jester.
+First, let's create a Dumb POJOTransformer. It's job is to take in an Object along with a set of fields/methods in OGNL notation, and to churn that object into a Map of data. We just need to implement the method that turns the Map into a String.
+
+{{{
+/**
+ * This is not an actual implementation of serializing to JSON - it WILL
+ * fail on Strings that contain escape characters.. this is just an example.
+ */
+class DumbJSONTransformer extends POJOTransformer
+{
+    public DumbJSONTransformer(String... expressions)
+    {
+        super(expressions);
+    }
+
+    @Override
+    protected String transformFromMap(Map data, IJester jester, Map hints)
+            throws Exception
+    {
+        // this is really rock dumb, but it's an example
+        StringBuffer b = new StringBuffer("{");
+        Object[] keys = data.keySet().toArray();
+        for (int i = 0, size = keys.length; i < size; ++i)
+        {
+            Object key = keys[i];
+            b
+                    .append("\"" + key.toString() + "\":\"" + data.get(key)
+                            + "\"");
+            if (i < size - 1)
+                b.append(",");
+        }
+        b.append("}");
+        return b.toString();
+    }
+}
+}}}
+
+
+Now that we have something that can transform the objects we care about, let's create an implementation of the IJester interface that will serialize our JSON data. This is pretty trivial, as you can see below. For now, we only care about serializing to an OutputStream, so we'll ignore the in() method. Note that the expressions passed into the POJOTransformer can evaluate to fields, methods, or even sub-objects/values.
+{{{
+/**
+ * This class just uses a String transformer
+ */
+class DumbJSONJester implements IJester
+{
+    // we are going to always use this transformer
+    private DumbJSONTransformer transformer;
+
+    public DumbJSONJester()
+    {
+        // we want to transform the following fields/methods
+        // note that if we try to transform an objec that doesn't have
+        // these fields/methods, they will be set to null
+        // we could add a flag that prunes null fields... a thought
+        transformer = new DumbJSONTransformer("name", "email", "required",
+                "toString", "class.simpleName");
+    }
+
+    public String getContentType()
+    {
+        return "dumbText";
+    }
+
+    public Object in(InputStream stream, Map hints) throws Exception
+    {
+        throw new NotImplementedException();
+    }
+
+    public void out(Object object, OutputStream out, Map hints)
+            throws Exception
+    {
+        // just write the string value
+        String stringVal = transformer.to(object, this, hints);
+        out.write(stringVal.getBytes());
+    }
+}
+}}}
+
+Now, let's serialize an object!
+
+{{{
+DumbJSONJester jester = new DumbJSONJester();
+
+// now, let's try with an object that has all fields set
+MyCustomModelClass myModel = new MyCustomModelClass();
+myModel.email = "lets@getpumpedwithjava.com";
+myModel.id = 1; // this won't get serialized, since it's "private"
+myModel.name = "Gert P. Frohb";
+myModel.required = true;
+
+//serialize to a String
+String jsonData = SerializationUtils.serializeToString(myModel, jester);
+
+// or...
+
+jester.out(myModel, System.out, null); //serialize to stdout
+}}}
+
+If you got this far, congratulations! Now, I wouldn't recommend that you go ahead and use the above example in your code. Instead, you should use the JSONJester and JSONUtils classes in the repository. Below is an example.
+
+{{{
+IJester serializer = new JSONJester();
+
+// ingest a map and spit out JSON
+Map data = new HashMap();
+data.put("drink", "Diet Mountain Dew");
+
+String jsonData = SerializationUtils.serializeToString(data, serializer);
+}}}
