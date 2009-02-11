@@ -67,19 +67,19 @@ public class JSONTest extends TestCase
         {
             JSONJester serializer = new JSONJester();
 
-            // register an anonymous transformer for BigDecimal objects
-            serializer.registerTransformer(BigDecimal.class,
-                    new NullTransformer<String>()
-                    {
-                        @Override
-                        public String to(Object object, IJester jester,
-                                Map hints) throws Exception
-                        {
-                            BigDecimal d = (BigDecimal) object;
-                            return JSONUtils.toJSONString("BigDecimal: "
-                                    + String.valueOf(d.doubleValue()));
-                        }
-                    });
+// register an anonymous transformer for BigDecimal objects
+serializer.registerTransformer(BigDecimal.class,
+        new NullTransformer<String>()
+        {
+            @Override
+            public String to(Object object, IJester jester,
+                    Map hints) throws Exception
+            {
+                BigDecimal d = (BigDecimal) object;
+                return JSONUtils.toJSONString("BigDecimal: "
+                        + String.valueOf(d.doubleValue()));
+            }
+        });
 
             assertEquals("\"BigDecimal: 42.15\"", SerializationUtils
                     .serializeToString(new BigDecimal(42.15), serializer));
