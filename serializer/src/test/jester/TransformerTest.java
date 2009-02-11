@@ -33,12 +33,12 @@ public class TransformerTest extends TestCase
     }
 
     /**
-     * Dumb Transformer that transforms an Object instance to a String, in a
-     * really rock dumb fashion.
+     * This is not an actual implementation of serializing to JSON - it WILL
+     * fail on Strings that contain escape characters.. this is just an example.
      */
-    class DumbTransformer extends POJOTransformer<String>
+    class DumbJSONTransformer extends POJOTransformer
     {
-        public DumbTransformer(String... expressions)
+        public DumbJSONTransformer(String... expressions)
         {
             super(expressions);
         }
@@ -49,9 +49,15 @@ public class TransformerTest extends TestCase
         {
             // this is really rock dumb, but it's an example
             StringBuffer b = new StringBuffer("{");
-            for (Object key : data.keySet())
+            Object[] keys = data.keySet().toArray();
+            for (int i = 0, size = keys.length; i < size; ++i)
             {
-                b.append(key.toString() + ":" + data.get(key) + ",");
+                Object key = keys[i];
+                b
+                        .append("\"" + key.toString() + "\":\"" + data.get(key)
+                                + "\"");
+                if (i < size - 1)
+                    b.append(",");
             }
             b.append("}");
             return b.toString();
@@ -61,17 +67,18 @@ public class TransformerTest extends TestCase
     /**
      * This class just uses a String transformer
      */
-    class DumbJester implements IJester
+    class DumbJSONJester implements IJester
     {
-        private DumbTransformer transformer;
+        // we are going to always use this transformer
+        private DumbJSONTransformer transformer;
 
-        public DumbJester()
+        public DumbJSONJester()
         {
             // we want to transform the following fields/methods
             // note that if we try to transform an objec that doesn't have
             // these fields/methods, they will be set to null
             // we could add a flag that prunes null fields... a thought
-            transformer = new DumbTransformer("name", "email", "required",
+            transformer = new DumbJSONTransformer("name", "email", "required",
                     "toString", "class.simpleName");
         }
 
@@ -96,7 +103,7 @@ public class TransformerTest extends TestCase
 
     public void testPOJOTransformer()
     {
-        DumbJester jester = new DumbJester();
+        DumbJSONJester jester = new DumbJSONJester();
 
         try
         {
@@ -115,6 +122,7 @@ public class TransformerTest extends TestCase
             assertEquals(
                     "{class.simpleName:MyCustomModelClass,email:lets@getpumpedwithjava.com,name:Gert P. Frohb,toString:Gert P. Frohb,required:true,}",
                     SerializationUtils.serializeToString(myModel, jester));
+            
         }
         catch (Exception e)
         {
