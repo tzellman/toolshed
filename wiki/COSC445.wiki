@@ -1,4 +1,4 @@
-#labels Featured,Phase-Design
+#labels Phase-Design
 == Introduction ==
 
 Imitation is the sincerest form of flattery. In that spirit, we decided to create an implementation of of the templating language used by the [http://www.djangoproject.com/ Django Project] in Java using SableCC. While we cannot claim any points for originality in coming up with a project idea, creating an alternate implementation of a language presented us with the opportunity to explore the strengths and weaknesses of each implementation.
