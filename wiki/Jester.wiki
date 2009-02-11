@@ -120,7 +120,7 @@ String jsonData = SerializationUtils.serializeToString(myModel, jester);
 jester.out(myModel, System.out, null); //serialize to stdout
 }}}
 
-If you got this far, congratulations! Now, I wouldn't recommend that you go ahead and use the above example in your code. Instead, you should use the JSONJester and JSONUtils classes in the repository. Below is an example.
+If you got this far, congratulations, because the best is yet to come! Now, I wouldn't recommend that you go ahead and use the above example in your code. Instead, you should use the JSONJester and JSONUtils classes in the repository. Below is an example.
 
 {{{
 JSONJester serializer = new JSONJester();
@@ -130,6 +130,12 @@ Map data = new HashMap();
 data.put("drink", "Diet Mountain Dew");
 
 String jsonData = SerializationUtils.serializeToString(data, serializer);
+
+//or, you can serialize to, say an HttpServletResponse OutputStream
+
+OutputStream stream = servletResponse.getOutputStream();
+serializer.serialize(data, stream, null);
+stream.flush();
 }}}
 
 It's easy to provide your own serializers if you want.
@@ -138,3 +144,20 @@ serializer.registerTransformer(MyCustomModelClass.class, new POJOTransformer("na
 }}}
 
 Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containing the values key/values for the name, email and required fields.
+
+Another example of registering a serializer, which really isn't very useful, but serves as an example:
+{{{
+// register an anonymous transformer for BigDecimal objects
+serializer.registerTransformer(BigDecimal.class,
+        new NullTransformer<String>()
+        {
+            @Override
+            public String to(Object object, IJester jester,
+                    Map hints) throws Exception
+            {
+                BigDecimal d = (BigDecimal) object;
+                return JSONUtils.toJSONString("BigDecimal: "
+                        + String.valueOf(d.doubleValue()));
+            }
+        });
+}}}
