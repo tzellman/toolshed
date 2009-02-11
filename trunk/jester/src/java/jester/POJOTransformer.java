@@ -11,9 +11,10 @@ import org.apache.commons.lang.NotImplementedException;
 /**
  * Simple Transformer that takes in any POJO, along with some OGNL-like
  * expressions, and produces a String that contains the Object and it's desired
- * fields, somehow serialized.
+ * fields, somehow serialized. Tje passed-in IJester must be able to serialize a
+ * Map.
  */
-public abstract class POJOTransformer implements Transformer<String>
+public class POJOTransformer implements Transformer<String>
 {
     // protected List<String> expressions;
     protected Map<String, String> expressions;
@@ -60,16 +61,7 @@ public abstract class POJOTransformer implements Transformer<String>
             String expression = expressions.get(name);
             data.put(name, TransformUtils.evaluateObject(object, expression));
         }
-        return transformFromMap(data, jester, hints);
+
+        return SerializationUtils.serializeToString(data, jester, hints);
     }
-
-    /**
-     * Transforms Map to the desired type
-     * 
-     * @param data
-     * @return
-     */
-    protected abstract String transformFromMap(Map data, IJester jester,
-            Map hints) throws Exception;
-
 }
