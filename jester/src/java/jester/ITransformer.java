@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * A Transformer knows how to transform to/from an Object
  */
-public interface Transformer<T>
+public interface ITransformer<T>
 {
     /**
      * Transforms the input Object to some type of ouput data. It is assumed
@@ -14,26 +14,22 @@ public interface Transformer<T>
      * 
      * @param object
      *            the Object to transform
-     * @param jester
-     *            the Jester
      * @param hints
      *            optional Map of serialization hints
      * @return
      * @throws Exception
      */
-    T to(Object object, IJester jester, Map hints) throws Exception;
+    T to(Object object, Map hints) throws Exception;
 
     /**
      * Returns an Object, transformed from the input data.
      * 
      * @param data
      *            the data being serialized to the new Object
-     * @param jester
-     *            the Jester
      * @param hints
      *            optional Map of serialization hints
      * @return
      * @throws Exception
      */
-    Object from(T data, IJester jester, Map hints) throws Exception;
+    Object from(T data, Map hints) throws Exception;
 }
