@@ -15,7 +15,7 @@ import org.apache.commons.lang.NotImplementedException;
 public abstract class StringJester implements IJester
 {
 
-    protected Map<String, ITransformer<String>> transformers;
+    protected Map<String, ITransformer<String, Object>> transformers;
 
     protected Map<String, Class> classes;
 
@@ -24,7 +24,7 @@ public abstract class StringJester implements IJester
      */
     public StringJester()
     {
-        transformers = new HashMap<String, ITransformer<String>>();
+        transformers = new HashMap<String, ITransformer<String, Object>>();
         classes = new TreeMap<String, Class>(); // want in order
     }
 
@@ -35,7 +35,7 @@ public abstract class StringJester implements IJester
      * @param jsonBeanProcessor
      */
     public void registerTransformer(Class clazz,
-            final ITransformer<String> transformer)
+            final ITransformer<String, Object> transformer)
     {
         String className = clazz.getName();
         transformers.put(className, transformer);
@@ -69,7 +69,7 @@ public abstract class StringJester implements IJester
      */
     public String serialize(Object object, Map hints) throws Exception
     {
-        ITransformer<String> transformer = null;
+        ITransformer<String, Object> transformer = null;
 
         // guard against null objects
         if (object == null)

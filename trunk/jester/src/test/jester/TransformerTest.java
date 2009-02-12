@@ -48,7 +48,7 @@ public class TransformerTest extends TestCase
             // note that if we try to transform an objec that doesn't have
             // these fields/methods, they will be set to null
             // we could add a flag that prunes null fields... a thought
-            transformer = new POJOTransformer(this, "name", "email",
+            transformer = new POJOTransformer<Object>("name", "email",
                     "required", "toString", "class.simpleName");
         }
 
@@ -65,30 +65,33 @@ public class TransformerTest extends TestCase
         public void out(Object object, OutputStream out, Map hints)
                 throws Exception
         {
-            // serialize a Map
             if (object instanceof Map)
             {
-                Map data = (Map) object;
-                // this is really rock dumb, but it's an example
-                StringBuffer b = new StringBuffer("{");
-                Object[] keys = data.keySet().toArray();
-                for (int i = 0, size = keys.length; i < size; ++i)
-                {
-                    Object key = keys[i];
-                    b.append("\"" + key.toString() + "\":\"" + data.get(key)
-                            + "\"");
-                    if (i < size - 1)
-                        b.append(",");
-                }
-                b.append("}");
-                out.write(b.toString().getBytes());
+                out.write(mapToString((Map) object).getBytes());
             }
             else
             {
-                // use the POJOTransformer to transform it
-                String stringVal = transformer.to(object, hints);
-                out.write(stringVal.getBytes());
+                Map map = transformer.to(object, hints);
+                out(map, out, hints);
             }
+        }
+
+        private String mapToString(Map data)
+        {
+            // this is really rock dumb, but it's an example
+            StringBuffer b = new StringBuffer("{");
+            Object[] keys = data.keySet().toArray();
+            for (int i = 0, size = keys.length; i < size; ++i)
+            {
+                Object key = keys[i];
+                b
+                        .append("\"" + key.toString() + "\":\"" + data.get(key)
+                                + "\"");
+                if (i < size - 1)
+                    b.append(",");
+            }
+            b.append("}");
+            return b.toString();
         }
     }
 
@@ -98,6 +101,9 @@ public class TransformerTest extends TestCase
 
         try
         {
+            System.out.println(JesterUtils
+                    .serializeToString("coconuts", jester));
+
             // a bunch of these should be null, as you'll see
             assertEquals(
                     "{\"class.simpleName\":\"String\",\"email\":\"null\",\"name\":\"null\",\"toString\":\"coconuts\",\"required\":\"null\"}",

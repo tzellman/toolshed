@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * A Transformer knows how to transform to/from an Object
  */
-public interface ITransformer<T>
+public interface ITransformer<T, F>
 {
     /**
      * Transforms the input Object to some type of ouput data. It is assumed
@@ -19,10 +19,10 @@ public interface ITransformer<T>
      * @return
      * @throws Exception
      */
-    T to(Object object, Map hints) throws Exception;
+    T to(F object, Map hints) throws Exception;
 
     /**
-     * Returns an Object, transformed from the input data.
+     * Returns an Object, transformed from the input object.
      * 
      * @param data
      *            the data being serialized to the new Object
@@ -31,5 +31,5 @@ public interface ITransformer<T>
      * @return
      * @throws Exception
      */
-    Object from(T data, Map hints) throws Exception;
+    F from(T object, Map hints) throws Exception;
 }
