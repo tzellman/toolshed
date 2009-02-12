@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import jester.IJester;
-import jester.NullTransformer;
 import jester.JesterUtils;
+import jester.NullTransformer;
 import junit.framework.TestCase;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -29,16 +29,15 @@ public class JSONTest extends TestCase
             Map data = new HashMap();
             data.put("drink", "Diet Mountain Dew");
 
-            assertEquals("{\"drink\":\"Diet Mountain Dew\"}",
-                    JesterUtils.serializeToString(data, serializer));
+            assertEquals("{\"drink\":\"Diet Mountain Dew\"}", JesterUtils
+                    .serializeToString(data, serializer));
 
             // serialize a String
-            assertEquals("\"scream aim fire\"", JesterUtils
-                    .serializeToString("scream aim fire", serializer));
+            assertEquals("\"scream aim fire\"", JesterUtils.serializeToString(
+                    "scream aim fire", serializer));
 
             // serialize a Number
-            assertEquals("42", JesterUtils.serializeToString(42,
-                    serializer));
+            assertEquals("42", JesterUtils.serializeToString(42, serializer));
 
             // serialize an array
             Object[] objects = new Object[] { "skateboard", "snowboard",
@@ -49,8 +48,7 @@ public class JSONTest extends TestCase
             // serialize a List/Collection
             List<Object> objectList = Arrays.asList(objects);
             assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]",
-                    JesterUtils
-                            .serializeToString(objectList, serializer));
+                    JesterUtils.serializeToString(objectList, serializer));
         }
         catch (Exception e)
         {
@@ -69,7 +67,7 @@ public class JSONTest extends TestCase
 
             // register an anonymous transformer for BigDecimal objects
             serializer.registerTransformer(BigDecimal.class,
-                    new NullTransformer<String>()
+                    new NullTransformer()
                     {
                         @Override
                         public String to(Object object, Map hints)
@@ -109,9 +107,8 @@ public class JSONTest extends TestCase
                 }
             };
 
-            assertEquals("\"Default: java.lang.Exception: test\"",
-                    JesterUtils.serializeToString(new Exception("test"),
-                            serializer));
+            assertEquals("\"Default: java.lang.Exception: test\"", JesterUtils
+                    .serializeToString(new Exception("test"), serializer));
         }
         catch (Exception e)
         {

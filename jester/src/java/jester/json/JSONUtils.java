@@ -42,7 +42,8 @@ public final class JSONUtils
     /**
      * Transforms to/from a Collection.
      */
-    public static class CollectionTransformer implements ITransformer<String>
+    public static class CollectionTransformer implements
+            ITransformer<String, Object>
     {
         protected IJester jester;
 
@@ -79,7 +80,8 @@ public final class JSONUtils
     /**
      * Transforms to/from a String.
      */
-    public static class StringTransformer implements ITransformer<String>
+    public static class StringTransformer implements
+            ITransformer<String, Object>
     {
         public String to(Object object, Map hints) throws Exception
         {
@@ -95,7 +97,8 @@ public final class JSONUtils
     /**
      * Transforms to/from a Number.
      */
-    public static class NumberTransformer implements ITransformer<String>
+    public static class NumberTransformer implements
+            ITransformer<String, Object>
     {
         public String to(Object object, Map hints) throws Exception
         {
@@ -111,7 +114,8 @@ public final class JSONUtils
     /**
      * Transforms to/from a Boolean.
      */
-    public static class BooleanTransformer implements ITransformer<String>
+    public static class BooleanTransformer implements
+            ITransformer<String, Object>
     {
         public String to(Object object, Map hints) throws Exception
         {
@@ -127,7 +131,7 @@ public final class JSONUtils
     /**
      * Transforms to/from a Map.
      */
-    public static class MapTransformer implements ITransformer<String>
+    public static class MapTransformer implements ITransformer<String, Object>
     {
         protected IJester jester;
 
@@ -147,8 +151,8 @@ public final class JSONUtils
             for (int i = 0, size = keys.length; i < size; ++i)
             {
                 Object key = keys[i];
-                String keyString = JesterUtils.serializeToString(key,
-                        jester, hints);
+                String keyString = JesterUtils.serializeToString(key, jester,
+                        hints);
                 if (!keyString.startsWith("\"") && !keyString.endsWith("\""))
                     keyString = toJSONString(keyString);
 
