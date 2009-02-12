@@ -8,7 +8,7 @@ import java.util.Map;
 
 import jester.IJester;
 import jester.NullTransformer;
-import jester.SerializationUtils;
+import jester.JesterUtils;
 import junit.framework.TestCase;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -30,26 +30,26 @@ public class JSONTest extends TestCase
             data.put("drink", "Diet Mountain Dew");
 
             assertEquals("{\"drink\":\"Diet Mountain Dew\"}",
-                    SerializationUtils.serializeToString(data, serializer));
+                    JesterUtils.serializeToString(data, serializer));
 
             // serialize a String
-            assertEquals("\"scream aim fire\"", SerializationUtils
+            assertEquals("\"scream aim fire\"", JesterUtils
                     .serializeToString("scream aim fire", serializer));
 
             // serialize a Number
-            assertEquals("42", SerializationUtils.serializeToString(42,
+            assertEquals("42", JesterUtils.serializeToString(42,
                     serializer));
 
             // serialize an array
             Object[] objects = new Object[] { "skateboard", "snowboard",
                     "hack", 300 };
             assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]",
-                    SerializationUtils.serializeToString(objects, serializer));
+                    JesterUtils.serializeToString(objects, serializer));
 
             // serialize a List/Collection
             List<Object> objectList = Arrays.asList(objects);
             assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]",
-                    SerializationUtils
+                    JesterUtils
                             .serializeToString(objectList, serializer));
         }
         catch (Exception e)
@@ -67,21 +67,21 @@ public class JSONTest extends TestCase
         {
             JSONJester serializer = new JSONJester();
 
-// register an anonymous transformer for BigDecimal objects
-serializer.registerTransformer(BigDecimal.class,
-        new NullTransformer<String>()
-        {
-            @Override
-            public String to(Object object, IJester jester,
-                    Map hints) throws Exception
-            {
-                BigDecimal d = (BigDecimal) object;
-                return JSONUtils.toJSONString("BigDecimal: "
-                        + String.valueOf(d.doubleValue()));
-            }
-        });
+            // register an anonymous transformer for BigDecimal objects
+            serializer.registerTransformer(BigDecimal.class,
+                    new NullTransformer<String>()
+                    {
+                        @Override
+                        public String to(Object object, Map hints)
+                                throws Exception
+                        {
+                            BigDecimal d = (BigDecimal) object;
+                            return JSONUtils.toJSONString("BigDecimal: "
+                                    + String.valueOf(d.doubleValue()));
+                        }
+                    });
 
-            assertEquals("\"BigDecimal: 42.15\"", SerializationUtils
+            assertEquals("\"BigDecimal: 42.15\"", JesterUtils
                     .serializeToString(new BigDecimal(42.15), serializer));
         }
         catch (Exception e)
@@ -110,7 +110,7 @@ serializer.registerTransformer(BigDecimal.class,
             };
 
             assertEquals("\"Default: java.lang.Exception: test\"",
-                    SerializationUtils.serializeToString(new Exception("test"),
+                    JesterUtils.serializeToString(new Exception("test"),
                             serializer));
         }
         catch (Exception e)

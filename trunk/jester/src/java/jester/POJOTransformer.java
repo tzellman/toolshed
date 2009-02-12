@@ -11,26 +11,29 @@ import org.apache.commons.lang.NotImplementedException;
 /**
  * Simple Transformer that takes in any POJO, along with some OGNL-like
  * expressions, and produces a String that contains the Object and it's desired
- * fields, somehow serialized. Tje passed-in IJester must be able to serialize a
+ * fields, somehow serialized. The passed-in IJester must be able to serialize a
  * Map.
  */
-public class POJOTransformer implements Transformer<String>
+public class POJOTransformer implements ITransformer<String>
 {
     // protected List<String> expressions;
     protected Map<String, String> expressions;
+
+    protected IJester jester;
 
     /**
      * 
      * @param expressions
      *            Array of expressions
      */
-    public POJOTransformer(String... expressions)
+    public POJOTransformer(IJester jester, String... expressions)
     {
-        this(Arrays.asList(expressions));
+        this(jester, Arrays.asList(expressions));
     }
 
-    public POJOTransformer(List<String> expressions)
+    public POJOTransformer(IJester jester, List<String> expressions)
     {
+        this.jester = jester;
         this.expressions = new TreeMap<String, String>();
         for (String e : expressions)
             this.expressions.put(e, e);
@@ -47,21 +50,21 @@ public class POJOTransformer implements Transformer<String>
         expressions.putAll(expressions);
     }
 
-    public Object from(String data, IJester jester, Map hints) throws Exception
+    public Object from(String data, Map hints) throws Exception
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    public String to(Object object, IJester jester, Map hints) throws Exception
+    public String to(Object object, Map hints) throws Exception
     {
         Map data = new HashMap();
         for (String name : expressions.keySet())
         {
             String expression = expressions.get(name);
-            data.put(name, TransformUtils.evaluateObject(object, expression));
+            data.put(name, JesterUtils.evaluateObject(object, expression));
         }
 
-        return SerializationUtils.serializeToString(data, jester, hints);
+        return JesterUtils.serializeToString(data, jester, hints);
     }
 }

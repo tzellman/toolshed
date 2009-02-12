@@ -3,8 +3,8 @@ package jester.json;
 import java.util.Collection;
 import java.util.Map;
 
-import jester.SerializationUtils;
-import jester.TransformerJester;
+import jester.JesterUtils;
+import jester.StringJester;
 import jester.json.JSONUtils.BooleanTransformer;
 import jester.json.JSONUtils.CollectionTransformer;
 import jester.json.JSONUtils.MapTransformer;
@@ -18,7 +18,7 @@ import jester.json.JSONUtils.StringTransformer;
  * TODO: we don't support deserialization yet
  * 
  */
-public class JSONJester extends TransformerJester
+public class JSONJester extends StringJester
 {
 
     public static final String JSON_TYPE = "json";
@@ -32,8 +32,8 @@ public class JSONJester extends TransformerJester
         registerTransformer(String.class, new StringTransformer());
         registerTransformer(Number.class, new NumberTransformer());
         registerTransformer(Boolean.class, new BooleanTransformer());
-        registerTransformer(Map.class, new MapTransformer());
-        registerTransformer(Collection.class, new CollectionTransformer());
+        registerTransformer(Map.class, new MapTransformer(this));
+        registerTransformer(Collection.class, new CollectionTransformer(this));
     }
 
     public String getContentType()
@@ -57,9 +57,9 @@ public class JSONJester extends TransformerJester
     {
         if (object == null)
             return "null";
-        else if (SerializationUtils.isArrayType(object))
+        else if (JesterUtils.isArrayType(object))
         {
-            return serialize(SerializationUtils.objectToCollection(object),
+            return serialize(JesterUtils.objectToCollection(object),
                     hints);
         }
         return JSONUtils.toJSONString(object.toString());

@@ -9,21 +9,22 @@ import java.util.TreeMap;
 import org.apache.commons.lang.NotImplementedException;
 
 /**
- * Jester that manages Transformers as the means for pluggable serializers.
+ * Jester that uses Transformers as the means for pluggable serializers,
+ * requiring them to be able to transform an object to a String.
  */
-public abstract class TransformerJester implements IJester
+public abstract class StringJester implements IJester
 {
 
-    protected Map<String, Transformer<String>> transformers;
+    protected Map<String, ITransformer<String>> transformers;
 
     protected Map<String, Class> classes;
 
     /**
      * Create a new JSONSerializer
      */
-    public TransformerJester()
+    public StringJester()
     {
-        transformers = new HashMap<String, Transformer<String>>();
+        transformers = new HashMap<String, ITransformer<String>>();
         classes = new TreeMap<String, Class>(); // want in order
     }
 
@@ -34,7 +35,7 @@ public abstract class TransformerJester implements IJester
      * @param jsonBeanProcessor
      */
     public void registerTransformer(Class clazz,
-            final Transformer<String> transformer)
+            final ITransformer<String> transformer)
     {
         String className = clazz.getName();
         transformers.put(className, transformer);
@@ -60,7 +61,7 @@ public abstract class TransformerJester implements IJester
     }
 
     /**
-     * Serializes the input Object to JSON
+     * Serializes the input Object to a String
      * 
      * @param object
      * @return
@@ -68,7 +69,7 @@ public abstract class TransformerJester implements IJester
      */
     public String serialize(Object object, Map hints) throws Exception
     {
-        Transformer<String> transformer = null;
+        ITransformer<String> transformer = null;
 
         // guard against null objects
         if (object == null)
@@ -100,7 +101,7 @@ public abstract class TransformerJester implements IJester
         }
         else
         {
-            return transformer.to(object, this, hints);
+            return transformer.to(object, hints);
         }
     }
 
