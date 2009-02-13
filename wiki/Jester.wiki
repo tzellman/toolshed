@@ -52,11 +52,11 @@ class DumbJSONJester implements IJester
     public DumbJSONJester()
     {
         // we want to transform the following fields/methods
-        // note that if we try to transform an objec that doesn't have
+        // note that if we try to transform an object that doesn't have
         // these fields/methods, they will be set to null
         // we could add a flag that prunes null fields... a thought
-        transformer = new POJOTransformer("name", "email", "required",
-                "toString", "class.simpleName");
+        transformer = new POJOTransformer<Object>("name", "email",
+                "required", "toString", "class.simpleName");
     }
 
     public String getContentType()
@@ -72,30 +72,33 @@ class DumbJSONJester implements IJester
     public void out(Object object, OutputStream out, Map hints)
             throws Exception
     {
-        // serialize a Map
         if (object instanceof Map)
         {
-            Map data = (Map) object;
-            // this is really rock dumb, but it's an example
-            StringBuffer b = new StringBuffer("{");
-            Object[] keys = data.keySet().toArray();
-            for (int i = 0, size = keys.length; i < size; ++i)
-            {
-                Object key = keys[i];
-                b.append("\"" + key.toString() + "\":\"" + data.get(key)
-                        + "\"");
-                if (i < size - 1)
-                    b.append(",");
-            }
-            b.append("}");
-            out.write(b.toString().getBytes());
+            out.write(mapToString((Map) object).getBytes());
         }
         else
         {
-            // use the POJOTransformer to transform it
-            String stringVal = transformer.to(object, this, hints);
-            out.write(stringVal.getBytes());
+            Map map = transformer.to(object, hints);
+            out(map, out, hints);
         }
+    }
+
+    private String mapToString(Map data)
+    {
+        // this is really rock dumb, but it's an example
+        StringBuffer b = new StringBuffer("{");
+        Object[] keys = data.keySet().toArray();
+        for (int i = 0, size = keys.length; i < size; ++i)
+        {
+            Object key = keys[i];
+            b
+                    .append("\"" + key.toString() + "\":\"" + data.get(key)
+                            + "\"");
+            if (i < size - 1)
+                b.append(",");
+        }
+        b.append("}");
+        return b.toString();
     }
 }
 }}}
@@ -113,7 +116,7 @@ myModel.name = "Gert P. Frohb";
 myModel.required = true;
 
 //serialize to a String
-String jsonData = SerializationUtils.serializeToString(myModel, jester);
+String jsonData = JesterUtils.serializeToString(myModel, jester);
 
 // or...
 
@@ -123,24 +126,24 @@ jester.out(myModel, System.out, null); //serialize to stdout
 If you got this far, congratulations, because the best is yet to come! Now, I wouldn't recommend that you go ahead and use the above example in your code. Instead, you should use the JSONJester and JSONUtils classes in the repository. Below is an example.
 
 {{{
-JSONJester serializer = new JSONJester();
+JSONJester jester = new JSONJester();
 
 // ingest a map and spit out JSON
 Map data = new HashMap();
 data.put("drink", "Diet Mountain Dew");
 
-String jsonData = SerializationUtils.serializeToString(data, serializer);
+String jsonData = JesterUtils.serializeToString(data, jester);
 
 //or, you can serialize to, say an HttpServletResponse OutputStream
 
 OutputStream stream = servletResponse.getOutputStream();
-serializer.serialize(data, stream, null);
+jester.serialize(data, stream, null);
 stream.flush();
 }}}
 
 It's easy to provide your own serializers if you want.
 {{{
-serializer.registerTransformer(MyCustomModelClass.class, new POJOTransformer("name", "email", "required"));
+jester.registerTransformer(new POJOTransformer<MyCustomModelClass>("name", "email", "required"));
 }}}
 
 Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containing the values key/values for the name, email and required fields.
@@ -148,14 +151,12 @@ Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containin
 Another example of registering a serializer, which really isn't very useful, but serves as an example:
 {{{
 // register an anonymous transformer for BigDecimal objects
-serializer.registerTransformer(BigDecimal.class,
-        new NullTransformer<String>()
+serializer.registerTransformer(
+        new NullTransformer<String, BigDecimal>()
         {
             @Override
-            public String to(Object object, IJester jester,
-                    Map hints) throws Exception
+            public String to(BigDecimal d, Map hints) throws Exception
             {
-                BigDecimal d = (BigDecimal) object;
                 return JSONUtils.toJSONString("BigDecimal: "
                         + String.valueOf(d.doubleValue()));
             }
