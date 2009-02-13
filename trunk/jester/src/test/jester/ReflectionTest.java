@@ -28,19 +28,27 @@ public class ReflectionTest extends TestCase
     {
         MyChanger m = new MyChanger();
 
+        // This should have 2 generic types : <T, F>
         List<GenericTypeInfo> genericInfo = ReflectionUtils
-                .getGenericTypeClasses(IChanger.class, m);
-        assertEquals(genericInfo.size(), 1);
-        assertEquals(genericInfo.get(0).getTypeName(), "F");
-        assertEquals(genericInfo.get(0).getTypeClass(), String.class);
+                .getGenericTypeClassesList(IChanger.class, m);
+        assertEquals(genericInfo.size(), 2);
+        assertEquals(genericInfo.get(0).getTypeName(), "T");
+        assertEquals(genericInfo.get(0).getTypeClass(), Number.class);
+        assertEquals(genericInfo.get(1).getTypeName(), "F");
+        assertEquals(genericInfo.get(1).getTypeClass(), String.class);
 
-        genericInfo = ReflectionUtils.getGenericTypeClasses(
+        // This should only have one, since we are setting the base to
+        // NumberChanger : <F>
+        genericInfo = ReflectionUtils.getGenericTypeClassesList(
                 NumberChanger.class, m);
         assertEquals(genericInfo.size(), 1);
         assertEquals(genericInfo.get(0).getTypeName(), "F");
         assertEquals(genericInfo.get(0).getTypeClass(), String.class);
 
-        genericInfo = ReflectionUtils.getGenericTypeClasses(MyChanger.class, m);
+        // This shouldn't have any, since we set the base to the non-generic
+        // class
+        genericInfo = ReflectionUtils.getGenericTypeClassesList(
+                MyChanger.class, m);
         assertEquals(genericInfo.size(), 0);
     }
 }

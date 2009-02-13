@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.apache.commons.lang.ObjectUtils;
@@ -97,97 +98,196 @@ public final class ReflectionUtils
      * generic type, for example if looping over a collection of generic items,
      * you can figure out what types were actually used for each.
      * 
-     * @param base
-     *            the base Class the instance inherits from
-     * @param instance
-     *            the Object you want to find information about
-     * @return a Map<String, Class> of genericTypeName --> actualUsedClass
      */
-    public static List<GenericTypeInfo> getGenericTypeClasses(Class base,
-            Object instance)
+    public static class GenericTypeClassesRetriever
     {
-        List<GenericTypeInfo> genericTypeInfo = new LinkedList<GenericTypeInfo>();
-        Map<String, Type> actualTypeMap = new HashMap<String, Type>();
-        List<Type> vars = new Vector<Type>();
+        protected Class baseClass;
 
-        Type current = instance.getClass();
-        // drive up the hierarchy stack...
-        do
+        /**
+         * 
+         * @param baseClass
+         *            the Class to use as the base
+         */
+        public GenericTypeClassesRetriever(Class baseClass)
         {
-            if (current instanceof Class)
+            this.baseClass = baseClass;
+        }
+
+        /**
+         * 
+         * @param actualTypeMap
+         * @param type
+         * @return the raw Type of the input Type
+         */
+        protected Class mapArguments(Map<String, Type> actualTypeMap,
+                ParameterizedType type)
+        {
+            Class rawType = (Class) type.getRawType();
+
+            TypeVariable[] typeVars = rawType.getTypeParameters();
+            Type[] actualTypes = type.getActualTypeArguments();
+
+            if (typeVars.length == actualTypes.length)
             {
-                if (ObjectUtils.equals(current, base))
-                    break;
-                
-                // get the parent
-                current = ((Class) current).getGenericSuperclass();
-            }
-
-            if (current instanceof ParameterizedType)
-            {
-                ParameterizedType paramType = (ParameterizedType) current;
-                Class paramRawType = (Class) paramType.getRawType();
-
-                TypeVariable[] typeVars = paramRawType.getTypeParameters();
-                Type[] actualTypes = paramType.getActualTypeArguments();
-
-                if (typeVars.length == actualTypes.length)
+                for (int i = 0, size = typeVars.length; i < size; ++i)
                 {
-                    for (int i = 0, size = typeVars.length; i < size; ++i)
+                    // don't tromp an existing one from higher up
+                    if (!actualTypeMap.containsKey(typeVars[i].getName()))
                     {
-                        // don't tromp an existing one from higher up
-                        if (!actualTypeMap.containsKey(typeVars[i].getName()))
+                        actualTypeMap
+                                .put(typeVars[i].getName(), actualTypes[i]);
+                    }
+                }
+            }
+            return rawType;
+        }
+
+        protected void mapGenericInterfaces(Map<String, Type> actualTypeMap,
+                Class clazz)
+        {
+            Type[] genericInterfaces = clazz.getGenericInterfaces();
+
+            for (Type type : genericInterfaces)
+            {
+                if (type instanceof ParameterizedType)
+                {
+                    mapArguments(actualTypeMap, (ParameterizedType) type);
+                }
+            }
+        }
+
+        /**
+         * Returns a List of {@link GenericTypeInfo}
+         * 
+         * @param instance
+         * @return
+         */
+        public List<GenericTypeInfo> getGenericTypeClassesList(Object instance)
+        {
+            List<GenericTypeInfo> genericTypeInfo = new LinkedList<GenericTypeInfo>();
+            Map<String, Type> actualTypeMap = new HashMap<String, Type>();
+            List<Type> vars = new Vector<Type>();
+
+            Type current = instance.getClass();
+
+            if (!baseClass.isAssignableFrom((Class) current))
+                return genericTypeInfo;
+
+            // drive up the hierarchy stack...
+            do
+            {
+                if (current instanceof Class)
+                {
+                    // get the parent
+                    Type parent = ((Class) current).getGenericSuperclass();
+
+                    if (ObjectUtils.equals(current, baseClass)
+                            || ObjectUtils.equals(parent, Object.class))
+                    {
+                        mapGenericInterfaces(actualTypeMap, (Class) current);
+                        current = baseClass;
+                    }
+                    else
+                        current = parent;
+                }
+
+                if (current instanceof ParameterizedType
+                        && !ObjectUtils.equals(current, baseClass))
+                {
+                    Class rawType = mapArguments(actualTypeMap,
+                            (ParameterizedType) current);
+
+                    // update, if we aren't there yet
+                    if (!ObjectUtils.equals(rawType, baseClass))
+                    {
+                        if (!baseClass.isInterface())
+                            current = rawType.getGenericSuperclass();
+                        else
                         {
-                            actualTypeMap.put(typeVars[i].getName(),
-                                    actualTypes[i]);
+                            current = rawType;
+                            if (current instanceof Class)
+                            {
+                                mapGenericInterfaces(actualTypeMap,
+                                        (Class) current);
+                            }
                         }
                     }
                 }
 
-                // update, if we aren't there yet
-                if (!ObjectUtils.equals(paramRawType, base))
+            } while (!ObjectUtils.equals(getTypeClass(current), baseClass));
+
+            // get the type variables of the current Type and fill our Map
+            if (current instanceof Class)
+                vars.addAll(Arrays
+                        .asList(((Class) current).getTypeParameters()));
+            else if (current instanceof ParameterizedType)
+            {
+                ParameterizedType paramType = (ParameterizedType) current;
+                Class paramRawType = (Class) paramType.getRawType();
+                vars.addAll(Arrays.asList(paramRawType.getTypeParameters()));
+            }
+
+            for (Type var : vars)
+            {
+                TypeVariable typeVar = null;
+                while (var != null && var instanceof TypeVariable)
                 {
-                    if (!base.isInterface())
-                        current = paramRawType.getGenericSuperclass();
+                    typeVar = (TypeVariable) var;
+                    String typeVarName = typeVar.getName();
+                    if (actualTypeMap.containsKey(typeVarName))
+                        var = actualTypeMap.get(typeVarName);
                     else
-                        current = base;
+                        var = null;
+                }
+                if (typeVar != null && var != null)
+                {
+                    GenericTypeInfo info = new GenericTypeInfo();
+                    info.setTypeName(typeVar.getName());
+                    info.setTypeClass(getTypeClass(var));
+                    genericTypeInfo.add(info);
                 }
             }
 
-        } while (!ObjectUtils.equals(getTypeClass(current), base));
-
-        // get the type variables of the current Type and fill our Map
-        if (current instanceof Class)
-            vars.addAll(Arrays.asList(((Class) current).getTypeParameters()));
-        else if (current instanceof ParameterizedType)
-        {
-            ParameterizedType paramType = (ParameterizedType) current;
-            Class paramRawType = (Class) paramType.getRawType();
-            vars.addAll(Arrays.asList(paramRawType.getTypeParameters()));
+            return genericTypeInfo;
         }
 
-        for (Type var : vars)
+        /**
+         * Returns a Map of {@link GenericTypeInfo}
+         * 
+         * @param instance
+         * @return
+         */
+        public Map<String, GenericTypeInfo> getGenericTypeClassesMap(
+                Object instance)
         {
-            TypeVariable typeVar = null;
-            while (var != null && var instanceof TypeVariable)
+            Map<String, GenericTypeInfo> map = new TreeMap<String, GenericTypeInfo>();
+            List<GenericTypeInfo> list = getGenericTypeClassesList(instance);
+            for (GenericTypeInfo genericTypeInfo : list)
             {
-                typeVar = (TypeVariable) var;
-                String typeVarName = typeVar.getName();
-                if (actualTypeMap.containsKey(typeVarName))
-                    var = actualTypeMap.get(typeVarName);
-                else
-                    var = null;
+                map.put(genericTypeInfo.getTypeName(), genericTypeInfo);
             }
-            if (typeVar != null && var != null)
-            {
-                GenericTypeInfo info = new GenericTypeInfo();
-                info.setTypeName(typeVar.getName());
-                info.setTypeClass(getTypeClass(var));
-                genericTypeInfo.add(info);
-            }
+            return map;
         }
+    }
 
-        return genericTypeInfo;
+    /**
+     * @see GenericTypeClassesRetriever
+     */
+    public static List<GenericTypeInfo> getGenericTypeClassesList(Class base,
+            Object instance)
+    {
+        return new GenericTypeClassesRetriever(base)
+                .getGenericTypeClassesList(instance);
+    }
+
+    /**
+     * @see GenericTypeClassesRetriever
+     */
+    public static Map<String, GenericTypeInfo> getGenericTypeClassesMap(
+            Class base, Object instance)
+    {
+        return new GenericTypeClassesRetriever(base)
+                .getGenericTypeClassesMap(instance);
     }
 
     private ReflectionUtils()

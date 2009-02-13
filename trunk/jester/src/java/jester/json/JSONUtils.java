@@ -43,7 +43,7 @@ public final class JSONUtils
      * Transforms to/from a Collection.
      */
     public static class CollectionTransformer implements
-            ITransformer<String, Object>
+            ITransformer<String, Collection>
     {
         protected IJester jester;
 
@@ -52,9 +52,8 @@ public final class JSONUtils
             this.jester = jester;
         }
 
-        public String to(Object object, Map hints) throws Exception
+        public String to(Collection c, Map hints) throws Exception
         {
-            Collection c = (Collection) object;
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             PrintStream out = new PrintStream(bout);
 
@@ -71,7 +70,7 @@ public final class JSONUtils
             return bout.toString();
         }
 
-        public Object from(String json, Map hints) throws Exception
+        public Collection from(String json, Map hints) throws Exception
         {
             throw new NotImplementedException();
         }
@@ -81,14 +80,14 @@ public final class JSONUtils
      * Transforms to/from a String.
      */
     public static class StringTransformer implements
-            ITransformer<String, Object>
+            ITransformer<String, String>
     {
-        public String to(Object object, Map hints) throws Exception
+        public String to(String string, Map hints) throws Exception
         {
-            return JSONUtils.toJSONString(object.toString());
+            return JSONUtils.toJSONString(string.toString());
         }
 
-        public Object from(String json, Map hints) throws Exception
+        public String from(String json, Map hints) throws Exception
         {
             throw new NotImplementedException();
         }
@@ -98,14 +97,14 @@ public final class JSONUtils
      * Transforms to/from a Number.
      */
     public static class NumberTransformer implements
-            ITransformer<String, Object>
+            ITransformer<String, Number>
     {
-        public String to(Object object, Map hints) throws Exception
+        public String to(Number number, Map hints) throws Exception
         {
-            return ((Number) object).toString();
+            return number.toString();
         }
 
-        public Object from(String json, Map hints) throws Exception
+        public Number from(String json, Map hints) throws Exception
         {
             throw new NotImplementedException();
         }
@@ -115,14 +114,14 @@ public final class JSONUtils
      * Transforms to/from a Boolean.
      */
     public static class BooleanTransformer implements
-            ITransformer<String, Object>
+            ITransformer<String, Boolean>
     {
-        public String to(Object object, Map hints) throws Exception
+        public String to(Boolean b, Map hints) throws Exception
         {
-            return ((Boolean) object).booleanValue() ? "true" : "false";
+            return b.booleanValue() ? "true" : "false";
         }
 
-        public Object from(String json, Map hints) throws Exception
+        public Boolean from(String json, Map hints) throws Exception
         {
             throw new NotImplementedException();
         }
@@ -131,7 +130,7 @@ public final class JSONUtils
     /**
      * Transforms to/from a Map.
      */
-    public static class MapTransformer implements ITransformer<String, Object>
+    public static class MapTransformer implements ITransformer<String, Map>
     {
         protected IJester jester;
 
@@ -140,9 +139,8 @@ public final class JSONUtils
             this.jester = jester;
         }
 
-        public String to(Object object, Map hints) throws Exception
+        public String to(Map map, Map hints) throws Exception
         {
-            Map map = (Map) object;
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             PrintStream out = new PrintStream(bout);
 
@@ -166,7 +164,7 @@ public final class JSONUtils
             return bout.toString();
         }
 
-        public Object from(String json, Map hints) throws Exception
+        public Map from(String json, Map hints) throws Exception
         {
             throw new NotImplementedException();
         }
