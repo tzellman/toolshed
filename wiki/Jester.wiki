@@ -143,7 +143,7 @@ stream.flush();
 
 It's easy to provide your own serializers if you want.
 {{{
-jester.registerTransformer(new POJOTransformer<MyCustomModelClass>("name", "email", "required"));
+jester.registerTransformer(new POJOTransformer<MyCustomModelClass>(MyCustomModelClass.class, "name", "email", "required"));
 }}}
 
 Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containing the values key/values for the name, email and required fields.
@@ -151,7 +151,7 @@ Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containin
 Another example of registering a serializer, which really isn't very useful, but serves as an example:
 {{{
 // register an anonymous transformer for BigDecimal objects
-serializer.registerTransformer(
+serializer.registerTransformer(BigDecimal.class,
         new NullTransformer<String, BigDecimal>()
         {
             @Override
