@@ -8,6 +8,7 @@ import java.util.TreeMap;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.SerializationException;
 
 /**
  * Jester that uses Transformers as the means for pluggable serializers,
@@ -122,6 +123,27 @@ public abstract class StringJester implements IJester,
         }
     }
 
+    public Object from(String string, Map hints) throws Exception
+    {
+        // for now, just loop through the transformers, and try
+        for (String className : transformers.keySet())
+        {
+            ITransformer<String, ? extends Object> transformer = transformers
+                    .get(className);
+            try
+            {
+                return transformer.from(string, hints);
+            }
+            catch (Exception e)
+            {
+                // wasn't this one... keep trying
+            }
+        }
+
+        // otherwise, try the default
+        return defaultIn(string, hints);
+    }
+
     /**
      * Override this method to provide your own default output serialization.
      * 
@@ -135,6 +157,18 @@ public abstract class StringJester implements IJester,
      * @return
      */
     protected abstract String defaultOut(Object object, Map hints)
+            throws Exception;
+
+    /**
+     * Override this method to provide your own default input serialization.
+     * 
+     * @param string
+     *            the string being deserialized
+     * @param hints
+     *            optional Map of serialization hints
+     * @return
+     */
+    protected abstract Object defaultIn(String string, Map hints)
             throws Exception;
 
 }

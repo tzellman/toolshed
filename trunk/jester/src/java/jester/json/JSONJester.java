@@ -12,6 +12,9 @@ import jester.json.JSONUtils.MapTransformer;
 import jester.json.JSONUtils.NumberTransformer;
 import jester.json.JSONUtils.StringTransformer;
 
+import org.apache.commons.lang.SerializationException;
+import org.apache.commons.lang.StringUtils;
+
 /**
  * JSON Serializer/Deserializer. Use an instance of a JSONJester if you want to
  * serialize data to JSON.
@@ -73,10 +76,13 @@ public class JSONJester extends StringJester
         return JSONUtils.toJSONString(object.toString());
     }
 
-    public Object from(String object, Map hints) throws Exception
+    @Override
+    protected Object defaultIn(String string, Map hints) throws Exception
     {
-        // TODO
-        return null;
+        if (StringUtils.equals(string, "null"))
+            return null;
+
+        throw new SerializationException("Unable to transform JSON to Object.");
     }
 
 }

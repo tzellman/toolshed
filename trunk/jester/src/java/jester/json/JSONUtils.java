@@ -10,6 +10,9 @@ import jester.ITransformer;
 import jester.JesterUtils;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.SerializationException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 
 /**
  * JSON Utilities
@@ -106,7 +109,7 @@ public final class JSONUtils
 
         public Number from(String json, Map hints) throws Exception
         {
-            throw new NotImplementedException();
+            return NumberUtils.createNumber(json);
         }
     }
 
@@ -123,7 +126,11 @@ public final class JSONUtils
 
         public Boolean from(String json, Map hints) throws Exception
         {
-            throw new NotImplementedException();
+            if (StringUtils.equals(json, "true"))
+                return true;
+            else if (StringUtils.equals(json, "false"))
+                return false;
+            throw new SerializationException("Invalid boolean type");
         }
     }
 
