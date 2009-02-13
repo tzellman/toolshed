@@ -121,12 +121,19 @@ public class JSONTest extends TestCase
     {
         IJester serializer = new JSONJester();
 
-        String json = "12";
-
         try
         {
-            // for now, everything returned is null...
-            assertNull(serializer.in(IOUtils.toInputStream(json), null));
+            String json = "12";
+            Number n = (Number) serializer
+                    .in(IOUtils.toInputStream(json), null);
+            assertEquals(12, n.intValue());
+
+            json = "12.42";
+            n = (Number) serializer.in(IOUtils.toInputStream(json), null);
+            assertEquals(12.42f, n.floatValue());
+
+            assertNull(serializer.in(IOUtils.toInputStream("null"), null));
+
         }
         catch (Exception e)
         {
