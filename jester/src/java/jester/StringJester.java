@@ -27,7 +27,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.SerializationException;
 
 /**
  * Jester that uses Transformers as the means for pluggable serializers,
@@ -41,9 +40,6 @@ public abstract class StringJester implements IJester,
 
     protected Map<String, Class> classes;
 
-    /**
-     * Create a new JSONSerializer
-     */
     public StringJester()
     {
         transformers = new HashMap<String, ITransformer<String, ? extends Object>>();
@@ -51,10 +47,10 @@ public abstract class StringJester implements IJester,
     }
 
     /**
-     * Registers a JSONProvider for the given Class
+     * Registers a Transformer for the given Class
      * 
-     * @param target
-     * @param jsonBeanProcessor
+     * @param clazz
+     * @param transformer
      */
     public void registerTransformer(Class clazz,
             ITransformer<String, ? extends Object> transformer)
@@ -71,9 +67,36 @@ public abstract class StringJester implements IJester,
         classes.remove(className);
     }
 
-    ITransformer<String, ? extends Object> getTransformer(Class clazz)
+    /**
+     * Retrieves the Transformer that is the best match for the given Class.
+     * 
+     * @param clazz
+     * @return the best match, or null if not supported
+     */
+    public ITransformer<String, ? extends Object> getBestMatchTransformer(
+            Class clazz)
     {
-        return transformers.get(clazz.getName());
+        ITransformer<String, Object> transformer = null;
+        String clazzName = clazz.getName();
+
+        // first see if we have an exact match
+        if (transformers.containsKey(clazzName))
+            transformer = (ITransformer<String, Object>) transformers
+                    .get(clazzName);
+        else
+        {
+            // now, see if it is a sub type of any
+            for (Class c : classes.values())
+            {
+                if (c.isAssignableFrom(clazz))
+                {
+                    transformer = (ITransformer<String, Object>) transformers
+                            .get(c.getName());
+                    break;
+                }
+            }
+        }
+        return transformer;
     }
 
     /**
@@ -104,33 +127,12 @@ public abstract class StringJester implements IJester,
      */
     public String to(Object object, Map hints) throws Exception
     {
-        ITransformer<String, Object> transformer = null;
-
         // guard against null objects
         if (object == null)
             return defaultOut(object, hints);
 
-        Class clazz = object.getClass();
-        String clazzName = clazz.getName();
-
-        // first see if we have an exact match
-        if (transformers.containsKey(clazzName))
-            transformer = (ITransformer<String, Object>) transformers
-                    .get(clazzName);
-        else
-        {
-            // now, see if it is a sub type of any
-            for (Class c : classes.values())
-            {
-                if (c.isAssignableFrom(clazz))
-                {
-                    transformer = (ITransformer<String, Object>) transformers
-                            .get(c.getName());
-                    break;
-                }
-            }
-        }
-
+        ITransformer<String, Object> transformer = (ITransformer<String, Object>) getBestMatchTransformer(object
+                .getClass());
         if (transformer == null)
         {
             // do the default serialization if we can't decipher it
@@ -142,6 +144,9 @@ public abstract class StringJester implements IJester,
         }
     }
 
+    /**
+     * Serializes from a String to an Object.
+     */
     public Object from(String string, Map hints) throws Exception
     {
         // for now, just loop through the transformers, and try
