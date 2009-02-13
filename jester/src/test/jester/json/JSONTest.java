@@ -11,6 +11,7 @@ import jester.JesterUtils;
 import jester.NullTransformer;
 import junit.framework.TestCase;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 public class JSONTest extends TestCase
@@ -109,6 +110,23 @@ public class JSONTest extends TestCase
 
             assertEquals("\"Default: java.lang.Exception: test\"", JesterUtils
                     .serializeToString(new Exception("test"), serializer));
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testDeserialize()
+    {
+        IJester serializer = new JSONJester();
+
+        String json = "12";
+
+        try
+        {
+            // for now, everything returned is null...
+            assertNull(serializer.in(IOUtils.toInputStream(json), null));
         }
         catch (Exception e)
         {

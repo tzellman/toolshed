@@ -68,9 +68,15 @@ public class JSONJester extends StringJester
             return "null";
         else if (JesterUtils.isArrayType(object))
         {
-            return serialize(JesterUtils.objectToCollection(object), hints);
+            return to(JesterUtils.objectToCollection(object), hints);
         }
         return JSONUtils.toJSONString(object.toString());
+    }
+
+    public Object from(String object, Map hints) throws Exception
+    {
+        // TODO
+        return null;
     }
 
 }

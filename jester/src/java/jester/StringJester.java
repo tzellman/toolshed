@@ -6,13 +6,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.NotImplementedException;
 
 /**
  * Jester that uses Transformers as the means for pluggable serializers,
  * requiring them to be able to transform an object to a String.
  */
-public abstract class StringJester implements IJester
+public abstract class StringJester implements IJester,
+        ITransformer<String, Object>
 {
 
     protected Map<String, ITransformer<String, ? extends Object>> transformers;
@@ -49,6 +51,11 @@ public abstract class StringJester implements IJester
         classes.remove(className);
     }
 
+    ITransformer<String, ? extends Object> getTransformer(Class clazz)
+    {
+        return transformers.get(clazz.getName());
+    }
+
     /**
      * Fulfills the IJester interface.
      * 
@@ -56,8 +63,16 @@ public abstract class StringJester implements IJester
      */
     public Object in(InputStream stream, Map hints) throws Exception
     {
-        // TODO
-        throw new NotImplementedException();
+        return from(IOUtils.toString(stream), hints);
+    }
+
+    /**
+     * Fulfills the IJester Interface
+     */
+    public void out(Object object, OutputStream out, Map hints)
+            throws Exception
+    {
+        out.write(to(object, hints).getBytes());
     }
 
     /**
@@ -67,7 +82,7 @@ public abstract class StringJester implements IJester
      * @return
      * @throws Exception
      */
-    public String serialize(Object object, Map hints) throws Exception
+    public String to(Object object, Map hints) throws Exception
     {
         ITransformer<String, Object> transformer = null;
 
@@ -105,15 +120,6 @@ public abstract class StringJester implements IJester
         {
             return transformer.to(object, hints);
         }
-    }
-
-    /**
-     * Fulfills the IJester Interface
-     */
-    public void out(Object object, OutputStream out, Map hints)
-            throws Exception
-    {
-        out.write(serialize(object, hints).getBytes());
     }
 
     /**
