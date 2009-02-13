@@ -1,9 +1,10 @@
 package jester.json;
 
-import java.util.Collection;
 import java.util.Map;
 
+import jester.ITransformer;
 import jester.JesterUtils;
+import jester.ReflectionUtils;
 import jester.StringJester;
 import jester.json.JSONUtils.BooleanTransformer;
 import jester.json.JSONUtils.CollectionTransformer;
@@ -29,11 +30,19 @@ public class JSONJester extends StringJester
     public JSONJester()
     {
         // register some defaults
-        registerTransformer(String.class, new StringTransformer());
-        registerTransformer(Number.class, new NumberTransformer());
-        registerTransformer(Boolean.class, new BooleanTransformer());
-        registerTransformer(Map.class, new MapTransformer(this));
-        registerTransformer(Collection.class, new CollectionTransformer(this));
+        ITransformer<String, ? extends Object>[] defaultTransformers = new ITransformer[] {
+                new StringTransformer(), new NumberTransformer(),
+                new BooleanTransformer(), new MapTransformer(this),
+                new CollectionTransformer(this) };
+
+        for (ITransformer<String, ? extends Object> transformer : defaultTransformers)
+        {
+            // get the "From" Class defined as the F Generic Type of
+            // ITransformer (2nd parameter)
+            Class fromClass = ReflectionUtils.getGenericTypeClassesList(
+                    ITransformer.class, transformer).get(1).getTypeClass();
+            registerTransformer(fromClass, transformer);
+        }
     }
 
     public String getContentType()
@@ -59,8 +68,7 @@ public class JSONJester extends StringJester
             return "null";
         else if (JesterUtils.isArrayType(object))
         {
-            return serialize(JesterUtils.objectToCollection(object),
-                    hints);
+            return serialize(JesterUtils.objectToCollection(object), hints);
         }
         return JSONUtils.toJSONString(object.toString());
     }

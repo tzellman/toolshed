@@ -15,7 +15,7 @@ import org.apache.commons.lang.NotImplementedException;
 public abstract class StringJester implements IJester
 {
 
-    protected Map<String, ITransformer<String, Object>> transformers;
+    protected Map<String, ITransformer<String, ? extends Object>> transformers;
 
     protected Map<String, Class> classes;
 
@@ -24,7 +24,7 @@ public abstract class StringJester implements IJester
      */
     public StringJester()
     {
-        transformers = new HashMap<String, ITransformer<String, Object>>();
+        transformers = new HashMap<String, ITransformer<String, ? extends Object>>();
         classes = new TreeMap<String, Class>(); // want in order
     }
 
@@ -35,7 +35,7 @@ public abstract class StringJester implements IJester
      * @param jsonBeanProcessor
      */
     public void registerTransformer(Class clazz,
-            final ITransformer<String, Object> transformer)
+            ITransformer<String, ? extends Object> transformer)
     {
         String className = clazz.getName();
         transformers.put(className, transformer);
@@ -80,7 +80,8 @@ public abstract class StringJester implements IJester
 
         // first see if we have an exact match
         if (transformers.containsKey(clazzName))
-            transformer = transformers.get(clazzName);
+            transformer = (ITransformer<String, Object>) transformers
+                    .get(clazzName);
         else
         {
             // now, see if it is a sub type of any
@@ -88,7 +89,8 @@ public abstract class StringJester implements IJester
             {
                 if (c.isAssignableFrom(clazz))
                 {
-                    transformer = transformers.get(c.getName());
+                    transformer = (ITransformer<String, Object>) transformers
+                            .get(c.getName());
                     break;
                 }
             }
