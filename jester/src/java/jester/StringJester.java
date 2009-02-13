@@ -68,6 +68,28 @@ public abstract class StringJester implements IJester,
     }
 
     /**
+     * Registers a Transformer and attempts to guess the generic class specified
+     * as the From type (2nd generic parameter to ITransformer)
+     * 
+     * @see StringJester#registerTransformer(Class, ITransformer)
+     * @param transformer
+     */
+    public void registerTransformer(
+            ITransformer<String, ? extends Object> transformer)
+    {
+        // attempt to get the "From" Class defined as the F Generic Type of
+        // ITransformer (2nd parameter)
+        Class fromClass = ReflectionUtils.getGenericTypeClassesList(
+                ITransformer.class, transformer).get(1).getTypeClass();
+        if (fromClass == null)
+        {
+            // TODO warn that it's defaulting to Object.class
+            fromClass = Object.class;
+        }
+        registerTransformer(fromClass, transformer);
+    }
+
+    /**
      * Retrieves the Transformer that is the best match for the given Class.
      * 
      * @param clazz
