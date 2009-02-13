@@ -64,7 +64,7 @@ public class TransformerTest extends TestCase
         public DumbJSONJester()
         {
             // we want to transform the following fields/methods
-            // note that if we try to transform an objec that doesn't have
+            // note that if we try to transform an object that doesn't have
             // these fields/methods, they will be set to null
             // we could add a flag that prunes null fields... a thought
             transformer = new POJOTransformer<Object>("name", "email",

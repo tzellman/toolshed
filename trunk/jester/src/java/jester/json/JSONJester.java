@@ -78,6 +78,20 @@ public class JSONJester extends StringJester
     }
 
     /**
+     * Adds the default transformers (String, Boolean Map, Collection, Number)
+     */
+    public void addDefaultTransformers()
+    {
+        ITransformer<String, ? extends Object>[] defaultTransformers = new ITransformer[] {
+                new StringTransformer(), new NumberTransformer(),
+                new BooleanTransformer(), new MapTransformer(this),
+                new CollectionTransformer(this) };
+
+        for (ITransformer<String, ? extends Object> transformer : defaultTransformers)
+            registerTransformer(transformer);
+    }
+
+    /**
      * Creates and returns a JSONJester with a handful of default Transformers.
      * 
      * @return new JSONJester
@@ -85,20 +99,7 @@ public class JSONJester extends StringJester
     public static JSONJester makeDefault()
     {
         JSONJester jester = new JSONJester();
-        // register some defaults
-        ITransformer<String, ? extends Object>[] defaultTransformers = new ITransformer[] {
-                new StringTransformer(), new NumberTransformer(),
-                new BooleanTransformer(), new MapTransformer(jester),
-                new CollectionTransformer(jester) };
-
-        for (ITransformer<String, ? extends Object> transformer : defaultTransformers)
-        {
-            // get the "From" Class defined as the F Generic Type of
-            // ITransformer (2nd parameter)
-            Class fromClass = ReflectionUtils.getGenericTypeClassesList(
-                    ITransformer.class, transformer).get(1).getTypeClass();
-            jester.registerTransformer(fromClass, transformer);
-        }
+        jester.addDefaultTransformers();
         return jester;
     }
 
