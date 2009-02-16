@@ -36,13 +36,13 @@ public abstract class StringJester implements IJester,
         ITransformer<String, Object>
 {
 
-    protected Map<String, ITransformer<String, ? extends Object>> transformers;
+    protected Map<String, ITransformer<? extends Object, ? extends Object>> transformers;
 
     protected Map<String, Class> classes;
 
     public StringJester()
     {
-        transformers = new HashMap<String, ITransformer<String, ? extends Object>>();
+        transformers = new HashMap<String, ITransformer<? extends Object, ? extends Object>>();
         classes = new TreeMap<String, Class>(); // want in order
     }
 
@@ -53,7 +53,7 @@ public abstract class StringJester implements IJester,
      * @param transformer
      */
     public void registerTransformer(Class clazz,
-            ITransformer<String, ? extends Object> transformer)
+            ITransformer<? extends Object, ? extends Object> transformer)
     {
         String className = clazz.getName();
         transformers.put(className, transformer);
@@ -75,7 +75,7 @@ public abstract class StringJester implements IJester,
      * @param transformer
      */
     public void registerTransformer(
-            ITransformer<String, ? extends Object> transformer)
+            ITransformer<? extends Object, ? extends Object> transformer)
     {
         // attempt to get the "From" Class defined as the F Generic Type of
         // ITransformer (2nd parameter)
@@ -95,7 +95,7 @@ public abstract class StringJester implements IJester,
      * @param clazz
      * @return the best match, or null if not supported
      */
-    public ITransformer<String, ? extends Object> getBestMatchTransformer(
+    public ITransformer<? extends Object, ? extends Object> getBestMatchTransformer(
             Class clazz)
     {
         ITransformer<String, Object> transformer = null;
@@ -153,7 +153,7 @@ public abstract class StringJester implements IJester,
         if (object == null)
             return defaultOut(object, hints);
 
-        ITransformer<String, Object> transformer = (ITransformer<String, Object>) getBestMatchTransformer(object
+        ITransformer<Object, Object> transformer = (ITransformer<Object, Object>) getBestMatchTransformer(object
                 .getClass());
         if (transformer == null)
         {
@@ -162,7 +162,11 @@ public abstract class StringJester implements IJester,
         }
         else
         {
-            return transformer.to(object, hints);
+
+            Object val = transformer.to(object, hints);
+            if (val instanceof String)
+                return (String) val;
+            return to(val, hints); // keep going, until you get a String...
         }
     }
 
@@ -174,11 +178,11 @@ public abstract class StringJester implements IJester,
         // for now, just loop through the transformers, and try
         for (String className : transformers.keySet())
         {
-            ITransformer<String, ? extends Object> transformer = transformers
+            ITransformer<Object, Object> transformer = (ITransformer<Object, Object>) transformers
                     .get(className);
             try
             {
-                return transformer.from(string, hints);
+                return (Object) transformer.from((Object) string, hints);
             }
             catch (Exception e)
             {
