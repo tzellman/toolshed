@@ -21,7 +21,8 @@ package jester;
 
 import java.util.List;
 
-import jester.ReflectionUtils.GenericTypeInfo;
+import jester.utils.ReflectionUtils;
+import jester.utils.ReflectionUtils.GenericTypeInfo;
 import junit.framework.TestCase;
 
 public class ReflectionTest extends TestCase

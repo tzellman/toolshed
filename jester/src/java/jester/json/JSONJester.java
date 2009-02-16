@@ -19,36 +19,45 @@
  */
 package jester.json;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 
-import jester.ITransformer;
-import jester.JesterUtils;
-import jester.ReflectionUtils;
-import jester.StringJester;
-import jester.json.JSONUtils.BooleanTransformer;
-import jester.json.JSONUtils.CollectionTransformer;
-import jester.json.JSONUtils.MapTransformer;
-import jester.json.JSONUtils.NumberTransformer;
-import jester.json.JSONUtils.StringTransformer;
+import jester.IJester;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.SerializationException;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * JSON Serializer/Deserializer. Use an instance of a JSONJester if you want to
- * serialize Objects to/from JSON.
+ * serialize Objects to/from JSON to/from a Stream.
  * 
  */
-public class JSONJester extends StringJester
+public class JSONJester implements IJester
 {
 
     public static final String JSON_TYPE = "json";
+
+    protected JSONSerializer serializer;
+
+    /**
+     * NOTE: This will change to also take in a JSONDeserializer.
+     * 
+     * @param serializer
+     */
+    public JSONJester(JSONSerializer serializer)
+    {
+        if (serializer == null)
+            serializer = new JSONSerializer();
+        this.serializer = serializer;
+    }
 
     /**
      * Create a new JSONSerializer
      */
     public JSONJester()
     {
+        this(null);
     }
 
     public String getContentType()
@@ -56,51 +65,22 @@ public class JSONJester extends StringJester
         return JSON_TYPE;
     }
 
-    @Override
-    protected String defaultOut(Object object, Map hints) throws Exception
+    public JSONSerializer getSerializer()
     {
-        if (object == null)
-            return "null";
-        else if (JesterUtils.isArrayType(object))
-        {
-            return to(JesterUtils.objectToCollection(object), hints);
-        }
-        return JSONUtils.toJSONString(object.toString());
+        return serializer;
     }
 
-    @Override
-    protected Object defaultIn(String string, Map hints) throws Exception
+    public void out(Object object, OutputStream out, Map hints)
+            throws Exception
     {
-        if (StringUtils.equals(string, "null"))
-            return null;
-
-        throw new SerializationException("Unable to transform JSON to Object.");
+        String converted = serializer.convert(object, String.class, hints);
+        if (converted == null)
+            throw new SerializationException("Unable to serialize object");
+        out.write(converted.getBytes());
     }
 
-    /**
-     * Adds the default transformers (String, Boolean Map, Collection, Number)
-     */
-    public void addDefaultTransformers()
+    public Object in(InputStream stream, Map hints) throws Exception
     {
-        ITransformer<String, ? extends Object>[] defaultTransformers = new ITransformer[] {
-                new StringTransformer(), new NumberTransformer(),
-                new BooleanTransformer(), new MapTransformer(this),
-                new CollectionTransformer(this) };
-
-        for (ITransformer<String, ? extends Object> transformer : defaultTransformers)
-            registerTransformer(transformer);
+        throw new NotImplementedException();
     }
-
-    /**
-     * Creates and returns a JSONJester with a handful of default Transformers.
-     * 
-     * @return new JSONJester
-     */
-    public static JSONJester makeDefault()
-    {
-        JSONJester jester = new JSONJester();
-        jester.addDefaultTransformers();
-        return jester;
-    }
-
 }
