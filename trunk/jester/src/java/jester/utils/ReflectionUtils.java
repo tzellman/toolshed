@@ -17,7 +17,7 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package jester;
+package jester.utils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;

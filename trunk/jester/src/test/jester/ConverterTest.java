@@ -23,12 +23,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
+import jester.utils.JesterUtils;
 import junit.framework.TestCase;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-public class TransformerTest extends TestCase
+public class ConverterTest extends TestCase
 {
 
     /**
@@ -59,7 +60,7 @@ public class TransformerTest extends TestCase
     class DumbJSONJester implements IJester
     {
         // we are going to always use this transformer
-        private POJOTransformer transformer;
+        private POJOConverter converter;
 
         public DumbJSONJester()
         {
@@ -67,8 +68,8 @@ public class TransformerTest extends TestCase
             // note that if we try to transform an object that doesn't have
             // these fields/methods, they will be set to null
             // we could add a flag that prunes null fields... a thought
-            transformer = new POJOTransformer<Object>("name", "email",
-                    "required", "toString", "class.simpleName");
+            converter = new POJOConverter("name", "email", "required",
+                    "toString", "class.simpleName");
         }
 
         public String getContentType()
@@ -90,7 +91,7 @@ public class TransformerTest extends TestCase
             }
             else
             {
-                Map map = transformer.to(object, hints);
+                Map map = converter.convert(object, hints);
                 out(map, out, hints);
             }
         }

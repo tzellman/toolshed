@@ -31,11 +31,11 @@ import java.util.Map;
 import org.apache.commons.lang.NullArgumentException;
 
 /**
- * An OGNLEvaluator evaluates an Object using the OGNL ideology.
+ * An OGNLConverter evaluates an Object using the OGNL ideology.
  * 
  * For example:
  * 
- * OGNLEvaluator evaluator = new OGNLEvaluator("toString", "length"); Object
+ * OGNLConverter converter = new OGNLConverter("toString", "length"); Object
  * derived = e.evaluate("test", null); --> will produce the Integer value 4 This
  * would be the same as calling "test".toString().length().
  * 
@@ -44,26 +44,29 @@ import org.apache.commons.lang.NullArgumentException;
  * 
  * <code>
  * String ognl1 = "toString.length"; String ognl2 = "toString/length"
- * OGNLEvaluator e1 = new OGNLEvaluator(StringUtils.splitByWholeSeparator(ognl1, "."));
- * OGNLEvaluator e2 = new OGNLEvaluator(StringUtils.splitByWholeSeparator(ognl2, "/"));
+ * OGNLConverter e1 = new OGNLConverter(StringUtils.splitByWholeSeparator(ognl1, "."));
+ * OGNLConverter e2 = new OGNLConverter(StringUtils.splitByWholeSeparator(ognl2, "/"));
  * </code>
  */
-public class OGNLEvaluator extends ObjectEvaluator<List<String>>
+public class OGNLConverter implements IConverter
 {
+
+    protected List<String> expressions;
+
     /**
      * 
      * @param expressions
      *            Array of String expressions to apply to the Object
      */
-    public OGNLEvaluator(String... expressions)
+    public OGNLConverter(String... expressions)
     {
-        super(Arrays.asList(expressions));
+        this.expressions = Arrays.asList(expressions);
     }
 
-    @Override
-    public Object evaluate(Object object, Map hints)
+    public Object convert(Object from, Map hints)
     {
-        for (String expression : this.expression)
+        Object object = from;
+        for (String expression : this.expressions)
         {
             boolean found = false; // used to flag if we found it
 
@@ -189,7 +192,7 @@ public class OGNLEvaluator extends ObjectEvaluator<List<String>>
     public static Object evaluate(Object object, Map hints,
             String... expressions)
     {
-        return new OGNLEvaluator(expressions).evaluate(object, hints);
+        return new OGNLConverter(expressions).convert(object, hints);
     }
 
     public static Object evaluate(Object object, String... expressions)
