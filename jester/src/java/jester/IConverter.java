@@ -2,6 +2,8 @@ package jester;
 
 import java.util.Map;
 
+import org.apache.commons.lang.SerializationException;
+
 /**
  * Converts one type to another.
  * 
@@ -23,6 +25,7 @@ public interface IConverter<F, T>
      *            (optional) Map of hints to be used during the conversion
      *            process
      * @return a T object
+     * @throws SerializationException
      */
-    T convert(F from, Map hints);
+    T convert(F from, Map hints) throws SerializationException;
 }

@@ -7,6 +7,8 @@ import jester.ConverterRegistry;
 import jester.IConverter;
 import jester.utils.JesterUtils;
 
+import org.apache.commons.lang.SerializationException;
+
 public class JSONSerializer extends ConverterRegistry
 {
 
@@ -55,6 +57,7 @@ public class JSONSerializer extends ConverterRegistry
         }
 
         public String convert(Collection from, Map hints)
+                throws SerializationException
         {
             StringBuffer buffer = new StringBuffer();
             buffer.append("[");
@@ -79,6 +82,7 @@ public class JSONSerializer extends ConverterRegistry
     public static class StringConverter implements IConverter<String, String>
     {
         public String convert(String from, Map hints)
+                throws SerializationException
         {
             return toJSONString(from);
         }
@@ -90,6 +94,7 @@ public class JSONSerializer extends ConverterRegistry
     public static class NumberConverter implements IConverter<Number, String>
     {
         public String convert(Number from, Map hints)
+                throws SerializationException
         {
             return from.toString();
         }
@@ -101,6 +106,7 @@ public class JSONSerializer extends ConverterRegistry
     public static class BooleanConverter implements IConverter<Boolean, String>
     {
         public String convert(Boolean from, Map hints)
+                throws SerializationException
         {
             return from.booleanValue() ? "true" : "false";
         }
@@ -119,6 +125,7 @@ public class JSONSerializer extends ConverterRegistry
         }
 
         public String convert(Map from, Map hints)
+                throws SerializationException
         {
             StringBuffer buffer = new StringBuffer();
             buffer.append("{");
@@ -144,7 +151,7 @@ public class JSONSerializer extends ConverterRegistry
 
     @Override
     public Object defaultConvert(Object from, Class<? extends Object> toClass,
-            Map hints)
+            Map hints) throws SerializationException
     {
         if (from == null)
             return "null";
