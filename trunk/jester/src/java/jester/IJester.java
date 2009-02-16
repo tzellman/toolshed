@@ -23,13 +23,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
-public interface IJester
+/**
+ * The IJester interface provides a way to serialize an Object to an
+ * OutputStream, and to serialize an InputStream back to an Object.
+ * 
+ * @author tzellman
+ * 
+ * @param <T>
+ */
+public interface IJester<T extends Object>
 {
     /**
      * Serializes an object to an OutputStream
      * 
      * @param object
-     *            the Object to be serialized
+     *            the object to be serialized
      * @param out
      *            the OutputStream to serialize to
      * @param hints
@@ -37,10 +45,10 @@ public interface IJester
      * @return
      * @throws Exception
      */
-    void out(Object object, OutputStream out, Map hints) throws Exception;
+    void out(T object, OutputStream out, Map hints) throws Exception;
 
     /**
-     * Serializes an InputStream to an Object
+     * Serializes an InputStream to an object
      * 
      * @param stream
      *            the InputStream to read from
@@ -49,7 +57,7 @@ public interface IJester
      * @return
      * @throws Exception
      */
-    Object in(InputStream stream, Map hints) throws Exception;
+    T in(InputStream stream, Map hints) throws Exception;
 
     /**
      * @return the content type supported by this serializer
