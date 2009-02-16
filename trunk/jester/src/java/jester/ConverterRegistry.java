@@ -8,6 +8,8 @@ import java.util.TreeMap;
 import jester.utils.ReflectionUtils;
 import jester.utils.ReflectionUtils.GenericTypeInfo;
 
+import org.apache.commons.lang.SerializationException;
+
 /**
  * Registry for {@link IConverter}s.
  * 
@@ -139,6 +141,7 @@ public abstract class ConverterRegistry
      */
     public <T extends Object> T convert(Object from,
             Class<? extends T> toClass, Map hints)
+            throws SerializationException
     {
         IConverter<Object, Object> bestConverter = (IConverter<Object, Object>) getBestConverter(
                 from, toClass);
@@ -148,6 +151,7 @@ public abstract class ConverterRegistry
     }
 
     public <T extends Object> T convert(Object from, Class<? extends T> toClass)
+            throws SerializationException
     {
         return convert(from, toClass, null);
     }
@@ -163,6 +167,7 @@ public abstract class ConverterRegistry
      * @return
      */
     public abstract Object defaultConvert(Object from,
-            Class<? extends Object> toClass, Map hints);
+            Class<? extends Object> toClass, Map hints)
+            throws SerializationException;
 
 }

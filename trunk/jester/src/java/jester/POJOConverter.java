@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -79,6 +80,7 @@ public class POJOConverter<F> implements IConverter<F, Map<String, Object>>
     }
 
     public Map<String, Object> convert(F from, Map hints)
+            throws SerializationException
     {
         Map<String, Object> data = new HashMap<String, Object>();
         for (String name : expressions.keySet())
