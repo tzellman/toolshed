@@ -29,7 +29,7 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * Dispatches objects to get serialized. Serializers are registered based on
- * mimeTypes.
+ * content types.
  */
 public class JesterRegistry
 {

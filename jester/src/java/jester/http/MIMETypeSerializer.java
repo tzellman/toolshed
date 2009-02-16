@@ -37,7 +37,7 @@ import org.apache.commons.lang.StringUtils;
 public class MIMETypeSerializer extends JesterRegistry
 {
     // ! Maps mimeTypes to simple types (e.g. (text/html --> html) )
-    private Map<String, String> mimeTypeMap = new TreeMap<String, String>();
+    protected Map<String, String> mimeTypeMap = new TreeMap<String, String>();
 
     public MIMETypeSerializer()
     {
