@@ -12,6 +12,9 @@ import org.apache.commons.lang.SerializationException;
 public class JSONSerializer extends ConverterRegistry
 {
 
+    // ! Specify this hint along with a function name to get a jsonp result
+    public static final String HINT_JSONP = "jsonp";
+
     public JSONSerializer()
     {
         register(new CollectionConverter(this));
@@ -162,5 +165,22 @@ public class JSONSerializer extends ConverterRegistry
         }
         // default to String
         return convert(from.toString(), String.class, hints);
+    }
+
+    @Override
+    public <T> T convert(Object from, Class<? extends T> toClass, Map hints)
+            throws SerializationException
+    {
+        String jsonp = null;
+        if (hints != null && hints.containsKey(HINT_JSONP))
+        {
+            jsonp = (String) hints.get(HINT_JSONP);
+            hints.remove(HINT_JSONP); // remove it so it doesn't get done twice
+        }
+
+        T converted = super.convert(from, toClass, hints);
+        if (jsonp != null && converted instanceof String)
+            return (T) String.format("%s(%s);", jsonp, ((String) converted));
+        return converted;
     }
 }
