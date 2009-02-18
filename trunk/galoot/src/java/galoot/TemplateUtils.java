@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 
 public final class TemplateUtils
 {
@@ -362,6 +363,63 @@ public final class TemplateUtils
         if (s.charAt(0) == c && s.charAt(sLen - 1) == c)
             return s.substring(1, sLen - 1);
         return s;
+    }
+
+    /**
+     * Returns -1 if less than, 0 if equal, 1 if greater than.
+     * 
+     * @param o1
+     * @param o2
+     * @return
+     */
+    public static int compareObjects(Object o1, Object o2)
+            throws UnsupportedOperationException
+    {
+        if (o1 == null && o2 == null)
+            return 0;
+        if (o1 != null && o2 == null)
+            return 1;
+        if (o1 == null && o2 != null)
+            return -1;
+        if (o1 instanceof String && o2 instanceof String)
+            return ((String) o1).compareTo((String) o2);
+
+        if (o1 instanceof String && o2 instanceof Number)
+        {
+            try
+            {
+                o1 = NumberUtils.createNumber((String) o1);
+            }
+            catch (NumberFormatException e)
+            {
+            }
+        }
+
+        if (o1 instanceof Number && o2 instanceof String)
+        {
+            try
+            {
+                o2 = NumberUtils.createNumber((String) o2);
+            }
+            catch (NumberFormatException e)
+            {
+            }
+        }
+
+        if (o1 instanceof Number && o2 instanceof Number)
+        {
+            Number n1 = (Number) o1;
+            Number n2 = (Number) o2;
+            if (n1.equals(n2))
+                return 0;
+            else if (n1.doubleValue() < n2.doubleValue())
+                return -1;
+            return 1;
+        }
+        else
+            throw new UnsupportedOperationException(
+                    "The two objects being compared are not able to be compared.");
+
     }
 
 }

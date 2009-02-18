@@ -49,6 +49,7 @@ public class TemplateTest extends TestCase
         }
 
         context.putVariable("name", "Tom");
+        context.putVariable("number", 42);
         context.putVariable("randomStrings", randomStrings);
         context.putVariable("intArray", intArray);
         context.putVariable("intList", TemplateUtils
@@ -614,6 +615,61 @@ public class TemplateTest extends TestCase
             t = new Template("{% set intArray|length as len %}{{ len }}");
             output = t.render(context);
             assertEquals(output, String.valueOf(intArray.length));
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testBinaryExpressions()
+    {
+        try
+        {
+            Template t = new Template(
+                    "{% if number > 1 and number <= 100 %}true{% endif %}");
+            String output = t.render(context);
+            assertEquals(output, "true");
+
+            t = new Template(
+                    "{% if number < 5 %}true{% else %}false{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "false");
+
+            t = new Template(
+                    "{% if number <= 42 %}true{% else %}false{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "true");
+
+            t = new Template("{% if name < number %}true{% endif %}");
+            try
+            {
+                output = t.render(context);
+                fail("Should've thrown");
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testElseIf()
+    {
+        try
+        {
+            Template t = new Template(
+                    "{% if number < 0 %}negative{% elseif number == 42 %}perfect{% else %}other{% endif %}");
+            String output = t.render(context);
+            assertEquals(output, "perfect");
+
+            t = new Template(
+                    "{% if number < 0 %}negative{% elseif number != 42 %}perfect{% endif %}");
+            output = t.render(context);
+            assertEquals(output, "");
         }
         catch (IOException e)
         {

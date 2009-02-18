@@ -9,19 +9,27 @@ import galoot.TemplateUtils;
 import galoot.analysis.DepthFirstAdapter;
 import galoot.lexer.LexerException;
 import galoot.node.AAndBooleanOp;
+import galoot.node.ABinaryBooleanExpr;
 import galoot.node.ABlock;
-import galoot.node.ABooleanExpr;
 import galoot.node.ACharEntity;
+import galoot.node.AElseifBlock;
+import galoot.node.AEqBinaryExpr;
 import galoot.node.AExtends;
 import galoot.node.AFilter;
 import galoot.node.AFilterBlock;
 import galoot.node.AFirstOfEntity;
 import galoot.node.AForBlock;
+import galoot.node.AGtBinaryExpr;
+import galoot.node.AGteBinaryExpr;
 import galoot.node.AIfBlock;
 import galoot.node.AIfequalBlock;
+import galoot.node.ALtBinaryExpr;
+import galoot.node.ALteBinaryExpr;
 import galoot.node.AMacroBlock;
 import galoot.node.AMacroVariableBlock;
+import galoot.node.ANeBinaryExpr;
 import galoot.node.ANowEntity;
+import galoot.node.ANumberArgument;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
 import galoot.node.ASetEntity;
@@ -30,6 +38,7 @@ import galoot.node.AStringAsPlugin;
 import galoot.node.AStringInclude;
 import galoot.node.AStringPlugin;
 import galoot.node.ATemplatetagEntity;
+import galoot.node.AUnaryBooleanExpr;
 import galoot.node.AUnquotedFilterArg;
 import galoot.node.AVarAsPlugin;
 import galoot.node.AVarPlugin;
@@ -38,8 +47,10 @@ import galoot.node.AVariableVarExpression;
 import galoot.node.AVariableVariableBlock;
 import galoot.node.AWithBlock;
 import galoot.node.PArgument;
+import galoot.node.PElseifBlock;
 import galoot.node.PEntity;
 import galoot.node.Start;
+import galoot.node.TDecimal;
 import galoot.node.TId;
 import galoot.node.TMember;
 import galoot.parser.ParserException;
@@ -66,6 +77,7 @@ import java.util.Stack;
 
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -288,8 +300,20 @@ public class Interpreter extends DepthFirstAdapter
     // }
     // }
 
+    // @Override
+    // public void outABooleanExpr(ABooleanExpr node)
+    // {
+    // // pop the variable (evaluated expression) off the stack
+    // Object object = variableStack.pop();
+    // boolean negate = node.getNot() != null;
+    //
+    // boolean boolObj = TemplateUtils.evaluateAsBoolean(object);
+    // boolObj = negate ? !boolObj : boolObj;
+    // variableStack.push(boolObj);
+    // }
+
     @Override
-    public void outABooleanExpr(ABooleanExpr node)
+    public void outAUnaryBooleanExpr(AUnaryBooleanExpr node)
     {
         // pop the variable (evaluated expression) off the stack
         Object object = variableStack.pop();
@@ -297,6 +321,70 @@ public class Interpreter extends DepthFirstAdapter
 
         boolean boolObj = TemplateUtils.evaluateAsBoolean(object);
         boolObj = negate ? !boolObj : boolObj;
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outABinaryBooleanExpr(ABinaryBooleanExpr node)
+    {
+        Object object = variableStack.pop();
+        boolean boolObj = TemplateUtils.evaluateAsBoolean(object);
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outAGtBinaryExpr(AGtBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        boolean boolObj = TemplateUtils.compareObjects(lhs, rhs) == 1;
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outAGteBinaryExpr(AGteBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        int val = TemplateUtils.compareObjects(lhs, rhs);
+        boolean boolObj = (val == 1 || val == 0);
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outALtBinaryExpr(ALtBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        boolean boolObj = TemplateUtils.compareObjects(lhs, rhs) == -1;
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outALteBinaryExpr(ALteBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        int val = TemplateUtils.compareObjects(lhs, rhs);
+        boolean boolObj = (val == -1 || val == 0);
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outAEqBinaryExpr(AEqBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        boolean boolObj = TemplateUtils.compareObjects(lhs, rhs) == 0;
+        variableStack.push(boolObj);
+    }
+
+    @Override
+    public void outANeBinaryExpr(ANeBinaryExpr node)
+    {
+        Object rhs = variableStack.pop();
+        Object lhs = variableStack.pop();
+        boolean boolObj = TemplateUtils.compareObjects(lhs, rhs) != 0;
         variableStack.push(boolObj);
     }
 
@@ -324,6 +412,13 @@ public class Interpreter extends DepthFirstAdapter
         // remove the end-quotes and push the string argument onto the stack
         variableStack.push(TemplateUtils.stripEncasedString(node.getString()
                 .getText(), '"'));
+    }
+
+    @Override
+    public void outANumberArgument(ANumberArgument node)
+    {
+        TDecimal number = node.getNumber();
+        variableStack.push(NumberUtils.createNumber(number.getText()));
     }
 
     private void loadFilterPlugin(String pluginName, String alias)
@@ -526,12 +621,46 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     @Override
+    public void caseAElseifBlock(AElseifBlock node)
+    {
+        inAElseifBlock(node);
+
+        if (node.getExpr1() != null)
+        {
+            node.getExpr1().apply(this);
+        }
+        if (node.getExpr2() != null)
+        {
+            node.getExpr2().apply(this);
+        }
+
+        // at this point, the boolean expression result is on the var. stack
+        boolean evaluateElseIf = TemplateUtils.evaluateAsBoolean(variableStack
+                .pop());
+
+        // we will throw an exception if it doesn't work
+        if (evaluateElseIf)
+        {
+            List<PEntity> copy = new ArrayList<PEntity>(node.getElseif());
+            for (PEntity e : copy)
+            {
+                e.apply(this);
+            }
+        }
+
+        // finally, this might be a hack, but push a var on the stack saying
+        // whether we evaluated
+        variableStack.push(evaluateElseIf);
+    }
+
+    @Override
     public void caseAIfBlock(AIfBlock node)
     {
         // if true, execute the entities
         // if false, and an else block exists, execute the else entities
 
         inAIfBlock(node);
+
         if (node.getExpr1() != null)
         {
             node.getExpr1().apply(this);
@@ -554,13 +683,34 @@ public class Interpreter extends DepthFirstAdapter
                 e.apply(this);
             }
         }
-        // otherwise, evaluate the else-clause
+        // otherwise, evaluate the elseifs and/or else-clause
         else
         {
-            List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
-            for (PEntity e : copy)
+            boolean evaluated = false;
+            LinkedList<PElseifBlock> elseif = node.getElseif();
+            if (elseif != null)
             {
-                e.apply(this);
+                for (PElseifBlock elseifBlock : elseif)
+                {
+                    elseifBlock.apply(this);
+
+                    // pop a boolean from the stack saying whether we excercised
+                    // the
+                    // elseif
+                    evaluated = TemplateUtils.evaluateAsBoolean(variableStack
+                            .pop());
+                    if (evaluated)
+                        break;
+                }
+            }
+
+            if (!evaluated && node.getElse() != null)
+            {
+                List<PEntity> copy = new ArrayList<PEntity>(node.getElse());
+                for (PEntity e : copy)
+                {
+                    e.apply(this);
+                }
             }
         }
         outAIfBlock(node);

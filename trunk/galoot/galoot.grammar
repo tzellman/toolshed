@@ -74,7 +74,8 @@ States
     template_tag,
     now_tag,
     macro_tag,
-    macro_var
+    macro_var,
+    binary_var
     ;
 
     
@@ -94,6 +95,24 @@ Tokens
     
     {if_var}
         kw_or           = 'or';
+    
+    {if_var->binary_var}
+        kw_gt           = '>';
+    
+    {if_var->binary_var}
+        kw_gte          = '>=';
+
+    {if_var->binary_var}
+        kw_lt           = '<';
+
+    {if_var->binary_var}
+        kw_lte          = '<=';
+    
+    {if_var->binary_var}
+        kw_eq          = '==';
+    
+    {if_var->binary_var}
+        kw_ne          = '!=';
 
     {default}
         simple_comment  = '{#' [any_char - '#']* '#'+ ([any_char - ['#' + '}']] [any_char - '#']* '#'+)* '}';
@@ -128,6 +147,9 @@ Tokens
     {default->if_var}
         if_start        = '{%' ws* 'if' ws+;
     
+    {default->if_var}
+        elseif_start    = '{%' ws* 'elseif' ws+;
+    
     {default->ifeq_var}
         ifeq_start      = '{%' ws* 'ifequal' ws+;
     
@@ -151,6 +173,9 @@ Tokens
     
     {default}
         else_tag        = '{%' ws* 'else' ws* '%}' eol?;
+    
+    {default}
+        elseif_tag      = '{%' ws* 'elseif' ws* '%}' eol?;
     
     {default}
         if_end          = '{%' ws* 'endif' ws* '%}';
@@ -195,8 +220,11 @@ Tokens
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
     load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
     firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var,
-    macro_var}
+    macro_var, binary_var->if_var}
         string_literal  = string;
+    
+    {binary_var->if_var}
+        decimal  = digit+ '.'? digit*;
     
     {var->var_member, with_var->with_member, load_var->load_member,
     if_var->if_member, ifeq_var->ifeq_member, for_var->for_member,
@@ -205,7 +233,7 @@ Tokens
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, for_var, block_tag,
     include_tag, for_tag, firstof_var, filter_var, template_tag, macro_tag,
-    macro_var}
+    macro_var, binary_var->if_var}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
@@ -216,7 +244,7 @@ Tokens
     {var, with_var, set_var, load_var, if_var, ifeq_var, block_tag, include_tag,
     for_var, for_tag, filter, with_filter, set_filter, load_filter, if_filter,
     extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag,
-    macro_var, macro_tag}
+    macro_var, macro_tag, binary_var}
         strip_ws        = ws+;
     
     {default}
@@ -304,9 +332,16 @@ Productions
     if_block {-> if_block} =
                         if_start [expr1]:boolean_expr [expr2]:boolean_op?
                             tag_end_eol [entities]:entity*
-                            [else]:else_block? if_end                   {-> New if_block(expr1, expr2, [entities.entity], [else.entity])}
+                            [elseif]:elseif_block*
+                            [else]:else_block? if_end                   {-> New if_block(expr1, expr2, [entities.entity], [elseif], [else.entity])}
         ;
-
+        
+    
+    elseif_block {-> elseif_block} =
+                        elseif_start [expr1]:boolean_expr [expr2]:boolean_op?
+                            tag_end_eol [entities]:entity*              {-> New elseif_block(expr1, expr2, [entities.entity])}
+        ;
+    
     ifequal_block {-> ifequal_block} =
                         ifeq_start [first]:argument
                             [remaining]:argument+
@@ -315,7 +350,17 @@ Productions
         ;
 
     boolean_expr {-> boolean_expr} =
-                        [not]:kw_not? [variable]:var_expression         {-> New boolean_expr(not, variable)}
+            {unary}     [not]:kw_not? [variable]:var_expression         {-> New boolean_expr.unary(not, variable)}
+        |   {binary}    [expr]:binary_expr                              {-> New boolean_expr.binary(expr)}
+        ;
+
+    binary_expr {-> binary_expr} =
+            {gt}        [lhs]:var_expression kw_gt [rhs]:argument       {-> New binary_expr.gt(lhs, rhs)}
+        |   {gte}       [lhs]:var_expression kw_gte [rhs]:argument      {-> New binary_expr.gte(lhs, rhs)}
+        |   {lt}        [lhs]:var_expression kw_lt [rhs]:argument       {-> New binary_expr.lt(lhs, rhs)}
+        |   {lte}       [lhs]:var_expression kw_lte [rhs]:argument      {-> New binary_expr.lte(lhs, rhs)}
+        |   {eq}        [lhs]:var_expression kw_eq [rhs]:argument       {-> New binary_expr.eq(lhs, rhs)}
+        |   {ne}        [lhs]:var_expression kw_ne [rhs]:argument       {-> New binary_expr.ne(lhs, rhs)}
         ;
 
     else_block {-> entity*} =
@@ -389,6 +434,7 @@ Productions
     
     argument {-> argument} =
             {string}    [string]:string_literal                         {-> New argument.string(string)}
+        |   {number}    [number]:decimal                                {-> New argument.number(number)}
         |   {variable}  [variable]:var_expression                       {-> New argument.variable(variable)}
         ;
     
@@ -445,7 +491,8 @@ Abstract Syntax Tree
     
     argument =
             {string}    [string]:string_literal
-        |   {variable}  [variable]:var_expression;
+        |   {variable}  [variable]:var_expression
+        |   {number}    [number]:decimal;
             
     block =             [id]:id? [entities]:entity*;
     
@@ -471,15 +518,29 @@ Abstract Syntax Tree
         |   {variable}  [variable]:var_expression;
 
     if_block =          [expr1]:boolean_expr [expr2]:boolean_op?
-                            [if]:entity* [else]:entity*;
+                            [if]:entity* [elseif]:elseif_block* [else]:entity*;
+    
+    elseif_block =      [expr1]:boolean_expr [expr2]:boolean_op?
+                            [elseif]:entity*;
     
     ifequal_block =     [arguments]:argument+ [ifequal]:entity* [else]:entity*;
 
-    boolean_expr =      [not]:kw_not? [variable]:var_expression;
+    boolean_expr =
+            {unary}    [not]:kw_not? [variable]:var_expression
+        |   {binary}   [expr]:binary_expr;
 
     boolean_op =
             {and}       [expression]:boolean_expr
         |   {or}        [expression]:boolean_expr;
+
+    binary_expr =
+            {gt}        [lhs]:var_expression [rhs]:argument
+        |   {gte}       [lhs]:var_expression [rhs]:argument
+        |   {lt}        [lhs]:var_expression [rhs]:argument
+        |   {lte}       [lhs]:var_expression [rhs]:argument
+        |   {eq}        [lhs]:var_expression [rhs]:argument
+        |   {ne}        [lhs]:var_expression [rhs]:argument;
+        
 
 
     filter =            [filter]:id [arg]:filter_arg?;
