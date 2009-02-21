@@ -19,6 +19,7 @@
  */
 package rover.impl;
 
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Deque;
@@ -28,6 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -236,6 +238,8 @@ public class QueryInput
         public Object[] values;
 
         public QueryData[] relatedQueries;
+
+        public Map<String, String> selectAliases;
     }
 
     public QueryData getQuery(int offset, int limit, Set<String> selectFields)
@@ -245,6 +249,7 @@ public class QueryInput
         Set<String> whereStatements = new LinkedHashSet<String>();
         Set<String> selectedTables = new LinkedHashSet<String>();
         List<Object> values = new LinkedList<Object>();
+        Map<String, String> selectAliases = new HashMap<String, String>();
         int id = 0;
         Map<String, List<String>> tableIds = new HashMap<String, List<String>>();
         for (Where where : wheres)
@@ -291,7 +296,13 @@ public class QueryInput
 
             String lastTableId = fkTableId;
             if (lastTableId == null)
-                lastTableId = tableIds.get(tables.getLast().getName()).get(0);
+            {
+                String tableName = tables.getLast().getName();
+                if (!tableIds.containsKey(tableName))
+                    tableIds.put(tableName, Arrays.asList(new String[] { String
+                            .format("o%d", id++) }));
+                lastTableId = tableIds.get(tableName).get(0);
+            }
 
             SQLOp op = where.op;
             String finalWhere = String.format("%s.%s %s", lastTableId,
@@ -354,8 +365,10 @@ public class QueryInput
             for (String field : table.getFields().keySet())
             {
                 // alias
-                selectStatements.add(String.format("%s.%s AS %s__%s", tableId,
-                        field, tableName, field));
+                String alias = newAlias(String.format("%s__%s", tableName,
+                        field), selectAliases);
+                selectStatements.add(String.format("%s.%s AS %s", tableId,
+                        field, alias));
             }
         }
 
@@ -399,9 +412,11 @@ public class QueryInput
                     for (String fieldName : fkTable.getFields().keySet())
                     {
                         // alias
-                        selectStatements.add(String.format(
-                                "%s.%s AS %s__%s__%s", fkTableId, fieldName,
-                                field.getTable(), fkTableName, fieldName));
+                        String alias = newAlias(String.format("%s__%s__%s",
+                                field.getTable(), fkTableName, fieldName),
+                                selectAliases);
+                        selectStatements.add(String.format("%s.%s AS %s",
+                                fkTableId, fieldName, alias));
                     }
                 }
             }
@@ -430,6 +445,52 @@ public class QueryInput
         q.table = tables.getLast().getName();
         q.query = queryBuf.toString();
         q.values = values.toArray();
+        q.selectAliases = selectAliases;
         return q;
     }
+
+    protected String newAlias(String value, Map<String, String> aliasMap)
+    {
+        String alias = RandomStringGenerator.randomstring();
+        while (aliasMap.containsKey(alias))
+            alias = RandomStringGenerator.randomstring();
+        aliasMap.put(alias, value);
+        return alias;
+    }
+
+    protected static class RandomStringGenerator
+    {
+        private static Random random = new Random();
+
+        public static int rand(int lo, int hi)
+        {
+            int n = hi - lo + 1;
+            int i = random.nextInt() % n;
+            if (i < 0)
+                i = -i;
+            return lo + i;
+        }
+
+        public static String randomstring(int lo, int hi)
+        {
+            int n = rand(lo, hi);
+            byte b[] = new byte[n];
+
+            b[0] = (byte) rand('a', 'z');
+            for (int i = 1; i < n; i++)
+            {
+                if (i % 2 == 0)
+                    b[i] = (byte) rand('a', 'z');
+                else
+                    b[i] = (byte) rand('0', '9');
+            }
+            return new String(b, Charset.defaultCharset());
+        }
+
+        public static String randomstring()
+        {
+            return randomstring(5, 30);
+        }
+    }
+
 }

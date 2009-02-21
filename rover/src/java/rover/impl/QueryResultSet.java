@@ -124,7 +124,8 @@ public class QueryResultSet implements IQueryResultSet
         return execute(queryInput, offset, limit, null);
     }
 
-    protected Map<String, Object> normalizeBean(DynaBean bean)
+    protected Map<String, Object> normalizeBean(DynaBean bean,
+            Map<String, String> aliasMap)
     {
         DynaBeanMapDecorator beanMap = new DynaBeanMapDecorator(bean);
 
@@ -133,7 +134,11 @@ public class QueryResultSet implements IQueryResultSet
         for (Object key : beanMap.keySet())
         {
             Object value = beanMap.get(key);
-            String sKey = key.toString();
+            String alias = key.toString();
+
+            String sKey = aliasMap.containsKey(alias) ? aliasMap.get(alias)
+                    .toLowerCase() : alias;
+
             Deque<String> parts = new LinkedList<String>(Arrays
                     .asList(StringUtils.splitByWholeSeparator(sKey, "__")));
 
@@ -215,7 +220,8 @@ public class QueryResultSet implements IQueryResultSet
             while (dynaIterator.hasNext())
             {
                 DynaBean rowBean = (DynaBean) dynaIterator.next();
-                Map<String, Object> normalized = normalizeBean(rowBean);
+                Map<String, Object> normalized = normalizeBean(rowBean,
+                        queryData.selectAliases);
                 results.add(normalized);
 
                 // we can't use the SQL rowBean after the Statement closes, so
