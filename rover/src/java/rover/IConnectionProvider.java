@@ -7,7 +7,7 @@ import java.sql.Connection;
  * 
  * @author tzellman
  */
-public interface ConnectionProvider
+public interface IConnectionProvider
 {
     Connection getConnection() throws Exception;
 }

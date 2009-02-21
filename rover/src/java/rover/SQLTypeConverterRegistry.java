@@ -8,15 +8,13 @@ import jester.IConverter;
 
 import org.apache.commons.lang.SerializationException;
 
-import rover.hood.SQLTypeConverters.CharConverter;
-import rover.hood.SQLTypeConverters.DateConverter;
-import rover.hood.SQLTypeConverters.DoubleConverter;
-import rover.hood.SQLTypeConverters.FloatConverter;
-import rover.hood.SQLTypeConverters.IntegerConverter;
-import rover.hood.SQLTypeConverters.SQLTypeConverter;
-import rover.hood.SQLTypeConverters.StringConverter;
-import rover.hood.SQLTypeConverters.TimestampConverter;
-
+import rover.SQLTypeConverters.DateConverter;
+import rover.SQLTypeConverters.DoubleConverter;
+import rover.SQLTypeConverters.FloatConverter;
+import rover.SQLTypeConverters.IntegerConverter;
+import rover.SQLTypeConverters.SQLTypeConverter;
+import rover.SQLTypeConverters.StringConverter;
+import rover.SQLTypeConverters.TimestampConverter;
 
 /**
  * Converts String data to Objects required for a prepared SQL statement, based
@@ -38,7 +36,6 @@ public class SQLTypeConverterRegistry implements IConverter<String, Object>
         registerTransformer(new StringConverter());
         registerTransformer(new DateConverter());
         registerTransformer(new TimestampConverter());
-        registerTransformer(new CharConverter());
         registerTransformer(new IntegerConverter());
         registerTransformer(new FloatConverter());
         registerTransformer(new DoubleConverter());

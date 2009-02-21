@@ -1,4 +1,4 @@
-package rover.hood;
+package rover;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import rover.QueryConstants;
 
 /**
  * Bean that holds database table metadata information.

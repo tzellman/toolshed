@@ -6,7 +6,7 @@ package rover;
  * 
  * @author tzellman
  */
-public abstract class QueryContext implements ConnectionProvider
+public abstract class QueryContext implements IConnectionProvider
 {
     protected SQLTypeConverterRegistry registry;
 
