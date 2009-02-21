@@ -1,4 +1,4 @@
-#labels Featured
+#labels Featured,Jester
 == Introduction ==
 
 Jester is a pluggable serialization library written in Java. You can use it to serialize Objects to/from an output/input streams. In addition, Jester provides tools that assist in the serialization process.
@@ -126,7 +126,7 @@ jester.out(myModel, System.out, null); //serialize to stdout
 If you got this far, congratulations, because the best is yet to come! Now, I wouldn't recommend that you go ahead and use the above example in your code. Instead, you should use the JSONJester and JSONUtils classes in the repository. Below is an example.
 
 {{{
-JSONJester jester = JSONJester.makeDefault();
+JSONJester jester = JSONJester();
 
 // ingest a map and spit out JSON
 Map data = new HashMap();
@@ -143,22 +143,34 @@ stream.flush();
 
 It's easy to provide your own serializers if you want.
 {{{
-jester.registerTransformer(new POJOTransformer<MyCustomModelClass>(MyCustomModelClass.class, "name", "email", "required"));
+jester.getSerializer().register(new POJOConverter<MyCustomModelClass>("name", "email", "required"));
 }}}
 
-Now, all MyCustomModelClass objects will serialize to a Map/Dictionary containing the values key/values for the name, email and required fields.
+Now, all MyCustomModelClass objects will use the serializer we just registered.
 
 Another example of registering a serializer, which really isn't very useful, but serves as an example:
 {{{
 // register an anonymous transformer for BigDecimal objects
-jester.registerTransformer(BigDecimal.class,
-        new NullTransformer<String, BigDecimal>()
+jester.getSerializer().register(
+        new IConverter<BigDecimal, String>()
         {
-            @Override
-            public String to(BigDecimal d, Map hints) throws Exception
+            public String convert(BigDecimal from, Map hints)
             {
-                return JSONUtils.toJSONString("BigDecimal: "
-                        + String.valueOf(d.doubleValue()));
+                return JSONSerializer.toJSONString("BigDecimal: "
+                        + from.floatValue());
             }
         });
+}}}
+
+If you don't want to serialize to a Stream, you can always just use a serializer independent of a Jester. For example:
+{{{
+JSONSerializer serializer = new JSONSerializer();
+
+System.out.println(serializer.convert("string"));
+System.out.println(serializer.convert(300));
+System.out.println(serializer.convert(3.14159));
+
+Object[] objects = new Object[] { "skateboard", "snowboard", "hack",
+        300 };
+System.out.println(serializer.convert(objects));
 }}}
