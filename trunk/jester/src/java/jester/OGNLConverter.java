@@ -170,10 +170,20 @@ public class OGNLConverter implements IConverter
                 else
                     object = null;
             }
-            // otherwise, it can't find the member object
             else
             {
-                object = null;
+                // maybe it has a DynaBean-like facade?
+                try
+                {
+                    Method method = object.getClass().getMethod("get",
+                            String.class);
+                    object = method.invoke(object, expression);
+                }
+                catch (Exception e)
+                {
+                    // otherwise, it can't find the member object
+                    object = null;
+                }
             }
         }
         return object;
