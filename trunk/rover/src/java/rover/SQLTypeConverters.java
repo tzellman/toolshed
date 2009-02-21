@@ -1,4 +1,4 @@
-package rover.hood;
+package rover;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -15,7 +15,6 @@ import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.DateUtils;
 
-import rover.QueryConstants;
 
 /**
  * SQL Transformers
@@ -106,26 +105,7 @@ public final class SQLTypeConverters
         public Integer[] getSupportedTypes()
         {
             return new Integer[] { Types.VARCHAR, Types.LONGVARCHAR,
-                    Types.NVARCHAR };
-        }
-    }
-
-    public static class CharConverter extends SQLTypeConverter<Character>
-    {
-
-        public Character convert(String from, Map hints)
-                throws SerializationException
-        {
-            if (from == null || from.length() == 0)
-                throw new SerializationException(
-                        "Empty String can't be serialized");
-            return from.charAt(0);
-        }
-
-        @Override
-        public Integer[] getSupportedTypes()
-        {
-            return new Integer[] { Types.CHAR };
+                    Types.NVARCHAR, Types.CHAR };
         }
     }
 

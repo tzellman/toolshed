@@ -1,4 +1,4 @@
-package rover.hood;
+package rover;
 
 /**
  * Simple bean for holding information regarding a foreign key.

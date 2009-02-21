@@ -33,6 +33,8 @@ public final class QueryConstants
 
     public static final String DATABASE_POSTGRES = "POSTGRES";
 
+    public static final String DATABASE_HSQLDB = "HSQL Database Engine";
+
     public static final String[] COMMON_DATE_PATTERNS = new String[] {
             "MM/dd/yy", "MM/dd/yyyy", "yyyyMMdd", "yyyy.MM.dd.HH.mm.ss",
             "yyyy-MM-dd'T'HH:mm:ss", // ISO datetime
