@@ -120,6 +120,10 @@ public class QuerySetTest extends TestCase
                 System.out.println(name);
                 System.out.println(project);
             }
+            
+            q = new QueryResultSet("release", context);
+            filter = q.filter("name=1.0");
+            System.out.println(filter.count());
 
         }
         catch (Exception e)
