@@ -135,6 +135,23 @@ public class JSONTest extends TestCase
         }
     }
 
+    public void testSerialize()
+    {
+        JSONSerializer serializer = new JSONSerializer();
+        assertEquals("300", serializer.convert(300));
+        assertEquals("\"string\"", serializer.convert("string"));
+
+        System.out.println(serializer.convert("string"));
+        System.out.println(serializer.convert(300));
+        System.out.println(serializer.convert(3.14159));
+
+        Object[] objects = new Object[] { "skateboard", "snowboard", "hack",
+                300 };
+
+        assertEquals("[\"skateboard\",\"snowboard\",\"hack\",300]", serializer
+                .convert(objects));
+    }
+
     public void xtestDeserialize()
     {
         IJester jester = new JSONJester();

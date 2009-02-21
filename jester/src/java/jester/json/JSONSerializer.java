@@ -9,7 +9,7 @@ import jester.utils.JesterUtils;
 
 import org.apache.commons.lang.SerializationException;
 
-public class JSONSerializer extends ConverterRegistry
+public class JSONSerializer extends ConverterRegistry<Object, String>
 {
 
     // ! Specify this hint along with a function name to get a jsonp result
@@ -52,9 +52,9 @@ public class JSONSerializer extends ConverterRegistry
     public static class CollectionConverter implements
             IConverter<Collection, String>
     {
-        protected ConverterRegistry registry;
+        protected JSONSerializer registry;
 
-        public CollectionConverter(ConverterRegistry registry)
+        public CollectionConverter(JSONSerializer registry)
         {
             this.registry = registry;
         }
@@ -120,9 +120,9 @@ public class JSONSerializer extends ConverterRegistry
      */
     public static class MapConverter implements IConverter<Map, String>
     {
-        protected ConverterRegistry registry;
+        protected JSONSerializer registry;
 
-        public MapConverter(ConverterRegistry registry)
+        public MapConverter(JSONSerializer registry)
         {
             this.registry = registry;
         }
@@ -167,9 +167,8 @@ public class JSONSerializer extends ConverterRegistry
         return convert(from.toString(), String.class, hints);
     }
 
-    @Override
-    public <T> T convert(Object from, Class<? extends T> toClass, Map hints)
-            throws SerializationException
+    public String convert(Object from, Class<? extends String> toClass,
+            Map hints) throws SerializationException
     {
         String jsonp = null;
         if (hints != null && hints.containsKey(HINT_JSONP))
@@ -178,9 +177,10 @@ public class JSONSerializer extends ConverterRegistry
             hints.remove(HINT_JSONP); // remove it so it doesn't get done twice
         }
 
-        T converted = super.convert(from, toClass, hints);
+        String converted = (String) super.convert(from, toClass, hints);
         if (jsonp != null && converted instanceof String)
-            return (T) String.format("%s(%s);", jsonp, ((String) converted));
+            return String.format("%s(%s);", jsonp, ((String) converted));
         return converted;
     }
+
 }

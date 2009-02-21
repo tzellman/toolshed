@@ -115,7 +115,7 @@ public class ConverterTest extends TestCase
         }
     }
 
-    public void testPOJOTransformer()
+    public void testPOJOConverter()
     {
         DumbJSONJester jester = new DumbJSONJester();
 

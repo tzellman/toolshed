@@ -15,17 +15,18 @@ import org.apache.commons.lang.SerializationException;
  * 
  * @author tzellman
  */
-public abstract class ConverterRegistry
+public abstract class ConverterRegistry<F extends Object, T extends Object>
+        implements IConverter<F, T>
 {
 
     // Mapping of IConverters
-    protected Map<String, Map<String, IConverter<? extends Object, ? extends Object>>> converters;
+    protected Map<String, Map<String, IConverter<F, T>>> converters;
 
     protected Map<String, Class<? extends Object>> classes;
 
     public ConverterRegistry()
     {
-        converters = new TreeMap<String, Map<String, IConverter<? extends Object, ? extends Object>>>();
+        converters = new TreeMap<String, Map<String, IConverter<F, T>>>();
         classes = new HashMap<String, Class<? extends Object>>();
     }
 
@@ -34,8 +35,7 @@ public abstract class ConverterRegistry
      * 
      * @param converter
      */
-    public void register(
-            IConverter<? extends Object, ? extends Object> converter)
+    public <G extends F, U extends T> void register(IConverter<G, U> converter)
     {
         List<GenericTypeInfo> genericTypeList = ReflectionUtils
                 .getGenericTypeClassesList(IConverter.class, converter);
@@ -48,12 +48,9 @@ public abstract class ConverterRegistry
 
         if (!converters.containsKey(fromName))
         {
-            converters
-                    .put(
-                            fromName,
-                            new TreeMap<String, IConverter<? extends Object, ? extends Object>>());
+            converters.put(fromName, new TreeMap<String, IConverter<F, T>>());
         }
-        converters.get(fromName).put(toName, converter);
+        converters.get(fromName).put(toName, (IConverter<F, T>) converter);
         classes.put(fromName, fromClass);
         classes.put(toName, toClass);
     }
@@ -66,8 +63,8 @@ public abstract class ConverterRegistry
      * @param toClass
      * @return
      */
-    protected IConverter<? extends Object, ? extends Object> getBestConverter(
-            Object from, Class<? extends Object> toClass)
+    protected IConverter<F, T> getBestConverter(Object from,
+            Class<? extends Object> toClass)
     {
         if (from == null)
             return null;
@@ -75,9 +72,9 @@ public abstract class ConverterRegistry
         Class<? extends Object> clazz = from.getClass();
         String clazzName = clazz.getName();
 
-        IConverter<? extends Object, ? extends Object> converter = null;
+        IConverter<F, T> converter = null;
 
-        Map<String, IConverter<? extends Object, ? extends Object>> toMap = null;
+        Map<String, IConverter<F, T>> toMap = null;
         // first, try an exact match
         if (converters.containsKey(clazzName))
         {
@@ -139,21 +136,32 @@ public abstract class ConverterRegistry
      * @param toClass
      * @return the converted Object, or null
      */
-    public <T extends Object> T convert(Object from,
-            Class<? extends T> toClass, Map hints)
-            throws SerializationException
+    public <S extends T> S convert(Object from, Class<? extends S> toClass,
+            Map hints) throws SerializationException
     {
         IConverter<Object, Object> bestConverter = (IConverter<Object, Object>) getBestConverter(
                 from, toClass);
         if (bestConverter == null)
-            return (T) defaultConvert(from, toClass, hints);
-        return (T) bestConverter.convert(from, hints);
+            return (S) defaultConvert(from, toClass, hints);
+        return (S) bestConverter.convert(from, hints);
     }
 
-    public <T extends Object> T convert(Object from, Class<? extends T> toClass)
+    public <S extends T> S convert(Object from, Class<? extends S> toClass)
             throws SerializationException
     {
         return convert(from, toClass, null);
+    }
+
+    public T convert(F from, Map hints) throws SerializationException
+    {
+        Class c = ReflectionUtils.getGenericTypeClassesList(IConverter.class,
+                this).get(1).getTypeClass();
+        return (T) convert(from, c, hints);
+    }
+
+    public T convert(F from) throws SerializationException
+    {
+        return convert(from, (Map) null);
     }
 
     /**
