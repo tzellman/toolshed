@@ -33,6 +33,8 @@ public interface IQueryResultSet
 
     IQueryResultSet distinct() throws Exception;
 
+    IQueryResultSet orderBy(String... fields) throws Exception;
+
     IQueryResultSet selectRelated(int depth) throws Exception;
 
     List<Map<String, ? extends Object>> list() throws Exception;

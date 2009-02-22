@@ -120,10 +120,20 @@ public class QuerySetTest extends TestCase
                 System.out.println(name);
                 System.out.println(project);
             }
-            
+
             q = new QueryResultSet("release", context);
             filter = q.filter("name=1.0");
             System.out.println(filter.count());
+
+            q = new QueryResultSet("project", context).orderBy("name");
+            Object obj = q.list(1).get(0);
+            System.out.println(OGNLConverter.evaluateExpression(obj,
+                    "project.name"));
+
+            q = new QueryResultSet("project", context).orderBy("-name");
+            obj = q.list(1).get(0);
+            System.out.println(OGNLConverter.evaluateExpression(obj,
+                    "project.name"));
 
         }
         catch (Exception e)

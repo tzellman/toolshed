@@ -37,7 +37,9 @@ import java.util.Set;
 
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaBeanMapDecorator;
+import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.LazyDynaBean;
+import org.apache.commons.beanutils.MutableDynaClass;
 import org.apache.commons.beanutils.ResultSetDynaClass;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -108,6 +110,13 @@ public class QueryResultSet implements IQueryResultSet
         return dolly;
     }
 
+    public IQueryResultSet orderBy(String... fields) throws Exception
+    {
+        QueryResultSet dolly = new QueryResultSet(this);
+        dolly.queryInput.addOrderBy(fields);
+        return dolly;
+    }
+
     public List<Map<String, ? extends Object>> list() throws Exception
     {
         return list(0, 0);
@@ -159,7 +168,13 @@ public class QueryResultSet implements IQueryResultSet
                         Object object = dynaBean.get(name);
                         // watch out for collision from FK fields...
                         if (!(object instanceof DynaBean))
+                        {
+                            DynaClass dynaClass = dynaBean.getDynaClass();
+                            if (dynaClass instanceof MutableDynaClass)
+                                ((MutableDynaClass) dynaClass).remove(name);
+                            dynaBean.remove(name, null);
                             throw new IllegalArgumentException();
+                        }
                     }
                     catch (IllegalArgumentException e)
                     {
