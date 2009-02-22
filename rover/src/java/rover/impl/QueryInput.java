@@ -37,6 +37,7 @@ import org.apache.commons.lang.StringUtils;
 import rover.DatabaseInfoCache;
 import rover.FieldInfoBean;
 import rover.ForeignKeyInfoBean;
+import rover.QueryConstants;
 import rover.QueryContext;
 import rover.SQLTypeConverterRegistry;
 import rover.TableInfoBean;
@@ -65,11 +66,20 @@ public class QueryInput
         public String value;
     }
 
+    protected static class OrderBy
+    {
+        public String fieldAlias;
+
+        public boolean ascending;
+    }
+
     protected Deque<TableInfoBean> tables;
 
     protected Deque<FKRelationship> fkRelationships;
 
     protected List<Where> wheres;
+
+    protected List<String> orderBy;
 
     protected QueryContext context;
 
@@ -229,6 +239,18 @@ public class QueryInput
         this.distinct = distinct;
     }
 
+    public void setOrderBy(List<String> orderBy)
+    {
+        this.orderBy = orderBy;
+    }
+
+    public void addOrderBy(String... fields)
+    {
+        if (this.orderBy == null)
+            this.orderBy = new LinkedList<String>();
+        this.orderBy.addAll(Arrays.asList(fields));
+    }
+
     public static final class QueryData
     {
         public String table;
@@ -250,8 +272,12 @@ public class QueryInput
         Set<String> selectedTables = new LinkedHashSet<String>();
         List<Object> values = new LinkedList<Object>();
         Map<String, String> selectAliases = new HashMap<String, String>();
+        Map<String, String> reverseSelectAliases = new HashMap<String, String>();
         int id = 0;
         Map<String, List<String>> tableIds = new HashMap<String, List<String>>();
+
+        Connection connection = null;
+
         for (Where where : wheres)
         {
             Map<String, Integer> innerTableCount = new HashMap<String, Integer>();
@@ -365,10 +391,12 @@ public class QueryInput
             for (String field : table.getFields().keySet())
             {
                 // alias
-                String alias = newAlias(String.format("%s__%s", tableName,
-                        field), selectAliases);
+                String selectAs = String.format("%s__%s", tableName, field)
+                        .toLowerCase();
+                String alias = newAlias(selectAs, selectAliases);
                 selectStatements.add(String.format("%s.%s AS %s", tableId,
                         field, alias));
+                reverseSelectAliases.put(selectAs, alias);
             }
         }
 
@@ -406,18 +434,53 @@ public class QueryInput
 
                     // now, add all of the FK fields
                     // this should make a recursive call here...
-                    Connection connection = context.getConnection();
+                    if (connection == null)
+                        connection = context.getConnection();
                     TableInfoBean fkTable = cache.getTableInfo(fkTableName,
                             connection);
                     for (String fieldName : fkTable.getFields().keySet())
                     {
                         // alias
-                        String alias = newAlias(String.format("%s__%s__%s",
-                                field.getTable(), fkTableName, fieldName),
-                                selectAliases);
+                        String selectAs = String.format("%s__%s__%s",
+                                field.getTable(), fkTableName, fieldName)
+                                .toLowerCase();
+                        String alias = newAlias(selectAs, selectAliases);
                         selectStatements.add(String.format("%s.%s AS %s",
                                 fkTableId, fieldName, alias));
+                        reverseSelectAliases.put(selectAs, alias);
                     }
+                }
+            }
+        }
+
+        List<String> ordering = new LinkedList<String>();
+        if (orderBy != null)
+        {
+            String lTable = tables.getLast().getName().toLowerCase();
+            for (String field : orderBy)
+            {
+                boolean ascending = true;
+                if (field.startsWith("-"))
+                {
+                    ascending = false;
+                    field = field.substring(1);
+                }
+
+                // the downside is that we currently require you to have
+                // selected
+                // the field you want to sort on. Maybe in the future we can
+                // auto-select it
+                String lField = String.format("%s__%s", lTable, field
+                        .toLowerCase());
+                if (reverseSelectAliases.containsKey(lField))
+                {
+                    String alias = reverseSelectAliases.get(lField);
+                    ordering.add(String.format("%s %s", alias,
+                            ascending ? "ASC" : "DESC"));
+                }
+                else
+                {
+                    // maybe warn that it was an invalid field to sort on
                 }
             }
         }
@@ -440,6 +503,59 @@ public class QueryInput
         if (!whereStatements.isEmpty())
             queryBuf.append(" where "
                     + StringUtils.join(whereStatements, " and "));
+
+        StringBuffer limitBuf = new StringBuffer();
+        String databaseTypeName = null;
+        if (limit > 0 || offset > 0)
+        {
+            if (connection == null)
+                connection = context.getConnection();
+            databaseTypeName = connection.getMetaData()
+                    .getDatabaseProductName();
+
+            if (StringUtils.equalsIgnoreCase(databaseTypeName,
+                    QueryConstants.DATABASE_ORACLE))
+            {
+                String limitStr = " rownum ";
+                if (limit > 0 && offset > 0)
+                    limitStr += " between " + (offset + 1) + " and "
+                            + (limit + 1);
+                else if (offset > 0)
+                    limitStr += "> " + (offset + 1);
+                else
+                    limitStr += "<= " + limit;
+                if (!whereStatements.isEmpty())
+                    limitBuf.append(" and " + limitStr);
+                else
+                    limitBuf.append(" where " + limitStr);
+            }
+            else
+            {
+                if (limit > 0)
+                    limitBuf.append(" limit " + limit);
+                if (offset > 0)
+                    limitBuf.append(" offset " + limit);
+            }
+        }
+
+        // Oracle limits go right w/the where clauses
+        if (limitBuf.length() > 0
+                && StringUtils.equalsIgnoreCase(databaseTypeName,
+                        QueryConstants.DATABASE_ORACLE))
+        {
+            queryBuf.append(limitBuf);
+        }
+
+        if (!ordering.isEmpty())
+            queryBuf.append(" order by " + StringUtils.join(ordering, ", "));
+
+        // other limits go at the end
+        if (limitBuf.length() > 0
+                && !StringUtils.equalsIgnoreCase(databaseTypeName,
+                        QueryConstants.DATABASE_ORACLE))
+        {
+            queryBuf.append(limitBuf);
+        }
 
         QueryData q = new QueryData();
         q.table = tables.getLast().getName();
