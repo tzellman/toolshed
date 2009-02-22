@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.NullArgumentException;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * An OGNLConverter evaluates an Object using the OGNL ideology.
@@ -208,6 +209,25 @@ public class OGNLConverter implements IConverter
     public static Object evaluate(Object object, String... expressions)
     {
         return evaluate(object, (Map) null, expressions);
+    }
+
+    /**
+     * Evaluates an expression, using periods '.' as separators.
+     * 
+     * @param object
+     * @param hints
+     * @param expression
+     * @return
+     */
+    public static Object evaluateExpression(Object object, Map hints,
+            String expression)
+    {
+        return evaluate(object, hints, StringUtils.split(expression, '.'));
+    }
+
+    public static Object evaluateExpression(Object object, String expression)
+    {
+        return evaluateExpression(object, (Map) null, expression);
     }
 
 }
