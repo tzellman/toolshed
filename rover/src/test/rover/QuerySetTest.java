@@ -98,7 +98,7 @@ public class QuerySetTest extends TestCase
         {
             connectionProvider = new IConnectionProvider()
             {
-                public Connection getConnection() throws Exception
+                public Connection newConnection() throws Exception
                 {
                     return connection;
                 }

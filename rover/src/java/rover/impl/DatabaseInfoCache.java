@@ -56,9 +56,9 @@ public class DatabaseInfoCache implements IDatabaseInfo
         this.connectionProvider = connectionProvider;
         tableCache = Collections
                 .synchronizedMap(new HashMap<String, TableInfoBean>());
-        Connection connection = connectionProvider.getConnection();
+        Connection connection = connectionProvider.newConnection();
         this.databaseType = connection.getMetaData().getDatabaseProductName();
-        // TODO possibly close the connection
+        connection.close();
     }
 
     public ITableInfo getTableInfo(String tableName) throws Exception
@@ -67,11 +67,10 @@ public class DatabaseInfoCache implements IDatabaseInfo
 
         if (!tableCache.containsKey(tableName))
         {
-            Connection connection = connectionProvider.getConnection();
+            Connection connection = connectionProvider.newConnection();
             tableCache.put(tableName, TableInfoBean.getTableInfo(tableName,
                     connection));
-
-            // TODO - close the connection, if I decide to change the API
+            connection.close();
         }
         return tableCache.get(tableName);
     }
