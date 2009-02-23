@@ -22,7 +22,8 @@ package rover.impl;
 import rover.IForeignKeyInfo;
 
 /**
- * Simple bean for holding information regarding a foreign key.
+ * Simple bean for holding information regarding a foreign key. Implements
+ * {@link IForeignKeyInfo}.
  * 
  * @author tzellman
  */

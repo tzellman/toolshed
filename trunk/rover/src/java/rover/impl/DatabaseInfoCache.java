@@ -34,7 +34,7 @@ import rover.ITableInfo;
 import rover.QueryConstants;
 
 /**
- * Simple cache for storing database metadata.
+ * Simple cache for storing database metadata. Implements {@link IDatabaseInfo}.
  * 
  * @author tzellman
  */
@@ -68,14 +68,13 @@ public class DatabaseInfoCache implements IDatabaseInfo
         if (!tableCache.containsKey(tableName))
         {
             Connection connection = connectionProvider.getConnection();
-            tableCache.put(tableName, TableInfoBean.getTableInfo(tableName, connection));
+            tableCache.put(tableName, TableInfoBean.getTableInfo(tableName,
+                    connection));
 
             // TODO - close the connection, if I decide to change the API
         }
         return tableCache.get(tableName);
     }
-
-   
 
     public String getDatabaseType()
     {

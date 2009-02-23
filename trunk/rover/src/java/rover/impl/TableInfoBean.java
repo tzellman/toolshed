@@ -31,9 +31,9 @@ import rover.IFieldInfo;
 import rover.ITableInfo;
 import rover.QueryConstants;
 
-
 /**
- * Bean that holds database table metadata information.
+ * Bean that holds database table metadata information. Implements
+ * {@link ITableInfo}.
  * 
  * @author tzellman
  */
@@ -116,7 +116,7 @@ public class TableInfoBean implements ITableInfo
             info.setTable(tableName.toUpperCase());
             info.setName(columnName);
             info.setSQLType(columnType);
-            //info.setSqlType(QueryConstants.SQL_TYPE_NAMES.get(columnType));
+            // info.setSqlType(QueryConstants.SQL_TYPE_NAMES.get(columnType));
 
             // if it's a FK column
             if (fkInfoMap.containsKey(columnName))

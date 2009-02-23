@@ -50,6 +50,12 @@ import rover.IQueryResultSet;
 import rover.QueryConstants;
 import rover.impl.QueryInput.QueryData;
 
+/**
+ * Implementation of {@link IQueryResultSet}.
+ * 
+ * @author tzellman
+ * 
+ */
 public class QueryResultSet implements IQueryResultSet
 {
     private static final Log log = LogFactory.getLog(QueryResultSet.class);
