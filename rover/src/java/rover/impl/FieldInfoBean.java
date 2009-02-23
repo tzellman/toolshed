@@ -24,6 +24,7 @@ import rover.IForeignKeyInfo;
 
 /**
  * Simple bean for holding information regarding a database field/column.
+ * Implements {@link IFieldInfo}.
  * 
  * @author tzellman
  */

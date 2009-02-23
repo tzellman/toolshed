@@ -60,8 +60,7 @@ public class SQLTypeConverter implements IConverter<String, Object>
         registerTransformer(new DoubleConverter());
     }
 
-    public void registerTransformer(
-            TypeConverter<? extends Object> transformer)
+    public void registerTransformer(TypeConverter<? extends Object> transformer)
     {
         for (Integer type : transformer.getSupportedTypes())
             transformers.put(type, transformer);
@@ -92,136 +91,135 @@ public class SQLTypeConverter implements IConverter<String, Object>
             return converter.convert(from, hints);
         throw new SerializationException("No serializer for type: " + sqlType);
     }
-    
+
     public abstract static class TypeConverter<T extends Object> implements
-    IConverter<String, T>
-{
-public abstract Integer[] getSupportedTypes();
-}
-
-public abstract static class SQLDateConverter<T> extends
-    TypeConverter<T>
-{
-protected List<String> datePatterns;
-
-public SQLDateConverter()
-{
-    datePatterns = new LinkedList<String>(Arrays
-            .asList(QueryConstants.COMMON_DATE_PATTERNS));
-}
-
-void addDatePatterns(String... patterns)
-{
-    datePatterns.addAll(Arrays.asList(patterns));
-}
-}
-
-public static class DateConverter extends SQLDateConverter<Date>
-{
-public Date convert(String from, Map hints)
-        throws SerializationException
-{
-    try
+            IConverter<String, T>
     {
-        return new Date(DateUtils.parseDate(from,
-                datePatterns.toArray(new String[0])).getTime());
+        public abstract Integer[] getSupportedTypes();
     }
-    catch (ParseException e)
+
+    public abstract static class SQLDateConverter<T> extends TypeConverter<T>
     {
-        throw new SerializationException(e);
+        protected List<String> datePatterns;
+
+        public SQLDateConverter()
+        {
+            datePatterns = new LinkedList<String>(Arrays
+                    .asList(QueryConstants.COMMON_DATE_PATTERNS));
+        }
+
+        void addDatePatterns(String... patterns)
+        {
+            datePatterns.addAll(Arrays.asList(patterns));
+        }
     }
-}
 
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.DATE };
-}
-}
-
-public static class TimestampConverter extends SQLDateConverter<Timestamp>
-{
-
-public Timestamp convert(String from, Map hints)
-        throws SerializationException
-{
-    try
+    public static class DateConverter extends SQLDateConverter<Date>
     {
-        return new Timestamp(DateUtils.parseDate(from,
-                datePatterns.toArray(new String[0])).getTime());
+        public Date convert(String from, Map hints)
+                throws SerializationException
+        {
+            try
+            {
+                return new Date(DateUtils.parseDate(from,
+                        datePatterns.toArray(new String[0])).getTime());
+            }
+            catch (ParseException e)
+            {
+                throw new SerializationException(e);
+            }
+        }
+
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.DATE };
+        }
     }
-    catch (ParseException e)
+
+    public static class TimestampConverter extends SQLDateConverter<Timestamp>
     {
-        throw new SerializationException(e);
+
+        public Timestamp convert(String from, Map hints)
+                throws SerializationException
+        {
+            try
+            {
+                return new Timestamp(DateUtils.parseDate(from,
+                        datePatterns.toArray(new String[0])).getTime());
+            }
+            catch (ParseException e)
+            {
+                throw new SerializationException(e);
+            }
+        }
+
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.TIME, Types.TIMESTAMP };
+        }
     }
-}
 
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.TIME, Types.TIMESTAMP };
-}
-}
+    public static class StringConverter extends TypeConverter<String>
+    {
+        public String convert(String from, Map hints)
+                throws SerializationException
+        {
+            return from;
+        }
 
-public static class StringConverter extends TypeConverter<String>
-{
-public String convert(String from, Map hints)
-        throws SerializationException
-{
-    return from;
-}
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.VARCHAR, Types.LONGVARCHAR,
+                    Types.NVARCHAR, Types.CHAR };
+        }
+    }
 
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.VARCHAR, Types.LONGVARCHAR,
-            Types.NVARCHAR, Types.CHAR };
-}
-}
+    public static class IntegerConverter extends TypeConverter<Integer>
+    {
+        public Integer convert(String from, Map hints)
+                throws SerializationException
+        {
+            return NumberUtils.createInteger(from);
+        }
 
-public static class IntegerConverter extends TypeConverter<Integer>
-{
-public Integer convert(String from, Map hints)
-        throws SerializationException
-{
-    return NumberUtils.createInteger(from);
-}
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.INTEGER };
+        }
+    }
 
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.INTEGER };
-}
-}
+    public static class FloatConverter extends TypeConverter<Float>
+    {
+        public Float convert(String from, Map hints)
+                throws SerializationException
+        {
+            return NumberUtils.createFloat(from);
+        }
 
-public static class FloatConverter extends TypeConverter<Float>
-{
-public Float convert(String from, Map hints)
-        throws SerializationException
-{
-    return NumberUtils.createFloat(from);
-}
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.FLOAT };
+        }
+    }
 
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.FLOAT };
-}
-}
+    public static class DoubleConverter extends TypeConverter<Double>
+    {
+        public Double convert(String from, Map hints)
+                throws SerializationException
+        {
+            return NumberUtils.createDouble(from);
+        }
 
-public static class DoubleConverter extends TypeConverter<Double>
-{
-public Double convert(String from, Map hints)
-        throws SerializationException
-{
-    return NumberUtils.createDouble(from);
-}
-
-@Override
-public Integer[] getSupportedTypes()
-{
-    return new Integer[] { Types.DOUBLE, Types.REAL, Types.DECIMAL };
-}
-}
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.DOUBLE, Types.REAL, Types.DECIMAL };
+        }
+    }
 
 }

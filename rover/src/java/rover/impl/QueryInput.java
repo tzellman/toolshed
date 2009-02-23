@@ -40,6 +40,12 @@ import rover.ITableInfo;
 import rover.QueryConstants;
 import rover.SQLTypeConverter;
 
+/**
+ * Internal class used for constructing a query.
+ * 
+ * @author tzellman
+ * 
+ */
 public class QueryInput
 {
     protected static class FKRelationship
