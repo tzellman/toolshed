@@ -20,7 +20,6 @@
 package rover.impl;
 
 import java.nio.charset.Charset;
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -34,23 +33,22 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
-import rover.DatabaseInfoCache;
-import rover.FieldInfoBean;
-import rover.ForeignKeyInfoBean;
+import rover.IFieldInfo;
+import rover.IForeignKeyInfo;
+import rover.IQueryContext;
+import rover.ITableInfo;
 import rover.QueryConstants;
-import rover.QueryContext;
-import rover.SQLTypeConverterRegistry;
-import rover.TableInfoBean;
+import rover.SQLTypeConverter;
 
 public class QueryInput
 {
     protected static class FKRelationship
     {
-        public TableInfoBean table;
+        public ITableInfo table;
 
         public String column;
 
-        public TableInfoBean fkTable;
+        public ITableInfo fkTable;
 
         public String fkColumn;
     }
@@ -59,21 +57,14 @@ public class QueryInput
     {
         public Deque<FKRelationship> fkRelationships;
 
-        public FieldInfoBean column;
+        public IFieldInfo column;
 
         public SQLOp op;
 
         public String value;
     }
 
-    protected static class OrderBy
-    {
-        public String fieldAlias;
-
-        public boolean ascending;
-    }
-
-    protected Deque<TableInfoBean> tables;
+    protected Deque<ITableInfo> tables;
 
     protected Deque<FKRelationship> fkRelationships;
 
@@ -81,9 +72,7 @@ public class QueryInput
 
     protected List<String> orderBy;
 
-    protected QueryContext context;
-
-    protected DatabaseInfoCache cache;
+    protected IQueryContext context;
 
     protected int selectRelatedDepth;
 
@@ -91,12 +80,10 @@ public class QueryInput
 
     protected Set<String> selectFields;
 
-    public QueryInput(String tableName, DatabaseInfoCache cache,
-            QueryContext context) throws Exception
+    public QueryInput(String tableName, IQueryContext context) throws Exception
     {
-        tables = new LinkedList<TableInfoBean>();
-        tables.push(cache.getTableInfo(tableName, context.getConnection()));
-        this.cache = cache;
+        tables = new LinkedList<ITableInfo>();
+        tables.push(context.getDatabaseInfo().getTableInfo(tableName));
         this.context = context;
 
         fkRelationships = new LinkedList<FKRelationship>();
@@ -107,7 +94,7 @@ public class QueryInput
 
     public QueryInput(QueryInput dolly) throws Exception
     {
-        this(dolly.tables.getLast().getName(), dolly.cache, dolly.context);
+        this(dolly.tables.getLast().getName(), dolly.context);
         tables.clear();
         tables.addAll(dolly.tables);
         fkRelationships.addAll(dolly.fkRelationships);
@@ -118,15 +105,13 @@ public class QueryInput
     public void addFK(String column) throws Exception
     {
         // try to get the field from the current table
-        TableInfoBean currentTable = tables.peekFirst();
-        Map<String, FieldInfoBean> currentFields = currentTable.getFields();
+        ITableInfo currentTable = tables.peekFirst();
+        Map<String, IFieldInfo> currentFields = currentTable.getFields();
 
-        FieldInfoBean fieldInfo = currentFields.get(column);
+        IFieldInfo fieldInfo = currentFields.get(column);
         // also, get the FK info
-        ForeignKeyInfoBean fkInfo = fieldInfo == null ? null : fieldInfo
+        IForeignKeyInfo fkInfo = fieldInfo == null ? null : fieldInfo
                 .getForeignKeyInfo();
-
-        Connection connection = context.getConnection();
 
         if (fkInfo == null)
         {
@@ -144,15 +129,16 @@ public class QueryInput
              */
 
             // see if the "field" was really a table name
-            TableInfoBean reverseInfo = cache.getTableInfo(column, connection);
+            ITableInfo reverseInfo = context.getDatabaseInfo().getTableInfo(
+                    column);
             if (reverseInfo != null)
             {
-                Iterator<FieldInfoBean> reverseFieldIter = reverseInfo
-                        .getFields().values().iterator();
+                Iterator<IFieldInfo> reverseFieldIter = reverseInfo.getFields()
+                        .values().iterator();
                 while (reverseFieldIter.hasNext())
                 {
-                    FieldInfoBean f = reverseFieldIter.next();
-                    ForeignKeyInfoBean reverseFKInfo = f.getForeignKeyInfo();
+                    IFieldInfo f = reverseFieldIter.next();
+                    IForeignKeyInfo reverseFKInfo = f.getForeignKeyInfo();
                     if (reverseFKInfo != null
                             && StringUtils.equalsIgnoreCase(reverseFKInfo
                                     .getTable(), currentTable.getName()))
@@ -167,8 +153,8 @@ public class QueryInput
 
                         // reverse lookup!
                         fkInfo = new ForeignKeyInfoBean();
-                        fkInfo.setColumn(f.getName());
-                        fkInfo.setTable(f.getTable());
+                        ((ForeignKeyInfoBean) fkInfo).setColumn(f.getName());
+                        ((ForeignKeyInfoBean) fkInfo).setTable(f.getTable());
 
                         // set the fieldInfo for THIS field - which
                         // is just the FK of the reverse FK info...
@@ -190,8 +176,8 @@ public class QueryInput
         if (fkInfo == null)
             throw new Exception("Invalid FK Column: " + column);
 
-        TableInfoBean fkTable = cache.getTableInfo(fkInfo.getTable(),
-                connection);
+        ITableInfo fkTable = context.getDatabaseInfo().getTableInfo(
+                fkInfo.getTable());
         tables.push(fkTable);
 
         FKRelationship fkRel = new FKRelationship();
@@ -206,7 +192,7 @@ public class QueryInput
             throws Exception
     {
         // make sure the column is a field in the current table
-        TableInfoBean currentTable = tables.peekFirst();
+        ITableInfo currentTable = tables.peekFirst();
         if (!currentTable.getFields().containsKey(column))
             throw new Exception("Invalid Column: " + column);
 
@@ -223,7 +209,7 @@ public class QueryInput
 
     protected void reset()
     {
-        TableInfoBean firstTable = tables.pollLast();
+        ITableInfo firstTable = tables.pollLast();
         tables.clear();
         tables.push(firstTable);
         fkRelationships.clear();
@@ -275,8 +261,6 @@ public class QueryInput
         Map<String, String> reverseSelectAliases = new HashMap<String, String>();
         int id = 0;
         Map<String, List<String>> tableIds = new HashMap<String, List<String>>();
-
-        Connection connection = null;
 
         for (Where where : wheres)
         {
@@ -339,22 +323,24 @@ public class QueryInput
 
             if (!op.isUnary())
             {
-                Integer sqlType = where.column.getSqlType();
+                String sqlTypeName = where.column.getSQLType();
+                Integer sqlType = QueryConstants.SQL_TYPE_NAMES
+                        .get(sqlTypeName);
 
                 // add a hint for the dispatcher
                 Map hints = new HashMap();
-                hints.put(SQLTypeConverterRegistry.HINT_SQL_TYPE, sqlType);
+                hints.put(SQLTypeConverter.HINT_SQL_TYPE, sqlType);
 
                 // turn the String value into an Object for the query
-                Object sqlValue = context.getRegistry().convert(where.value,
-                        hints);
+                Object sqlValue = context.getSQLTypeConverter().convert(
+                        where.value, hints);
                 values.add(sqlValue);
             }
         }
 
         {
             // must at least select one table
-            TableInfoBean table = tables.getLast();
+            ITableInfo table = tables.getLast();
             String tableName = table.getName();
             List<String> idList = tableIds.get(tableName);
             if (idList == null || idList.isEmpty())
@@ -385,7 +371,7 @@ public class QueryInput
         if (selectStatements.isEmpty())
         {
             // select all from first table by default
-            TableInfoBean table = tables.getLast();
+            ITableInfo table = tables.getLast();
             String tableName = table.getName();
             String tableId = tableIds.get(tableName).get(0);
             for (String field : table.getFields().keySet())
@@ -403,14 +389,14 @@ public class QueryInput
         if (selectRelatedDepth > 0 && selectFields == null)
         {
             // get more data - this needs to be a recursive func I think...
-            TableInfoBean table = tables.getLast();
+            ITableInfo table = tables.getLast();
 
             int depth = 1;
 
             // for now, only support 1 deep
-            for (FieldInfoBean field : table.getFields().values())
+            for (IFieldInfo field : table.getFields().values())
             {
-                ForeignKeyInfoBean fkInfo = field.getForeignKeyInfo();
+                IForeignKeyInfo fkInfo = field.getForeignKeyInfo();
                 if (fkInfo != null)
                 {
                     String fkTableName = fkInfo.getTable();
@@ -434,10 +420,8 @@ public class QueryInput
 
                     // now, add all of the FK fields
                     // this should make a recursive call here...
-                    if (connection == null)
-                        connection = context.getConnection();
-                    TableInfoBean fkTable = cache.getTableInfo(fkTableName,
-                            connection);
+                    ITableInfo fkTable = context.getDatabaseInfo()
+                            .getTableInfo(fkTableName);
                     for (String fieldName : fkTable.getFields().keySet())
                     {
                         // alias
@@ -505,14 +489,9 @@ public class QueryInput
                     + StringUtils.join(whereStatements, " and "));
 
         StringBuffer limitBuf = new StringBuffer();
-        String databaseTypeName = null;
+        String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
         if (limit > 0 || offset > 0)
         {
-            if (connection == null)
-                connection = context.getConnection();
-            databaseTypeName = connection.getMetaData()
-                    .getDatabaseProductName();
-
             if (StringUtils.equalsIgnoreCase(databaseTypeName,
                     QueryConstants.DATABASE_ORACLE))
             {

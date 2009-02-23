@@ -45,29 +45,29 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import rover.IQueryContext;
 import rover.IQueryResultSet;
 import rover.QueryConstants;
-import rover.QueryContext;
 import rover.impl.QueryInput.QueryData;
 
 public class QueryResultSet implements IQueryResultSet
 {
     private static final Log log = LogFactory.getLog(QueryResultSet.class);
 
-    protected QueryContext queryContext;
+    protected IQueryContext context;
 
     protected QueryInput queryInput;
 
-    public QueryResultSet(String tableName, QueryContext context)
+    public QueryResultSet(String tableName, IQueryContext context)
             throws Exception
     {
-        this.queryContext = context;
-        queryInput = new QueryInput(tableName, context.getCache(), context);
+        this.context = context;
+        queryInput = new QueryInput(tableName, context);
     }
 
     public QueryResultSet(QueryResultSet dolly) throws Exception
     {
-        this.queryContext = dolly.queryContext;
+        this.context = dolly.context;
         this.queryInput = new QueryInput(dolly.queryInput);
     }
 
@@ -75,9 +75,7 @@ public class QueryResultSet implements IQueryResultSet
     {
         // clone the input
         QueryInput dolly = new QueryInput(queryInput);
-        Connection connection = queryContext.getConnection();
-        String databaseTypeName = connection.getMetaData()
-                .getDatabaseProductName();
+        String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
 
         String countVar = "count";
         String countStmt = "COUNT(*) AS " + countVar;
@@ -214,7 +212,8 @@ public class QueryResultSet implements IQueryResultSet
 
         try
         {
-            Connection connection = queryContext.getConnection();
+            Connection connection = context.getConnectionProvider()
+                    .getConnection();
             preparedStatement = connection.prepareStatement(queryData.query);
 
             // bind the data to the statement

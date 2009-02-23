@@ -17,7 +17,7 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package rover;
+package rover.impl;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -27,18 +27,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import rover.IFieldInfo;
+import rover.ITableInfo;
+import rover.QueryConstants;
+
 
 /**
  * Bean that holds database table metadata information.
  * 
  * @author tzellman
  */
-public class TableInfoBean
+public class TableInfoBean implements ITableInfo
 {
 
     protected String name;
 
-    protected Map<String, FieldInfoBean> fields;
+    protected Map<String, IFieldInfo> fields;
 
     public String getName()
     {
@@ -50,12 +54,12 @@ public class TableInfoBean
         this.name = name;
     }
 
-    public Map<String, FieldInfoBean> getFields()
+    public Map<String, IFieldInfo> getFields()
     {
         return fields;
     }
 
-    public void setFields(Map<String, FieldInfoBean> fields)
+    public void setFields(Map<String, IFieldInfo> fields)
     {
         this.fields = fields;
     }
@@ -72,7 +76,7 @@ public class TableInfoBean
     {
         TableInfoBean tableInfo = new TableInfoBean();
         tableInfo.setName(tableName.toUpperCase());
-        Map<String, FieldInfoBean> infos = new TreeMap<String, FieldInfoBean>();
+        Map<String, IFieldInfo> infos = new TreeMap<String, IFieldInfo>();
 
         DatabaseMetaData metaData = connection.getMetaData();
 
@@ -111,8 +115,8 @@ public class TableInfoBean
             FieldInfoBean info = new FieldInfoBean();
             info.setTable(tableName.toUpperCase());
             info.setName(columnName);
-            info.setSqlTypeName(columnType);
-            info.setSqlType(QueryConstants.SQL_TYPE_NAMES.get(columnType));
+            info.setSQLType(columnType);
+            //info.setSqlType(QueryConstants.SQL_TYPE_NAMES.get(columnType));
 
             // if it's a FK column
             if (fkInfoMap.containsKey(columnName))
