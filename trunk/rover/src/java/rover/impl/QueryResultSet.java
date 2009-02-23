@@ -216,10 +216,10 @@ public class QueryResultSet implements IQueryResultSet
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
 
+        Connection connection = null;
         try
         {
-            Connection connection = context.getConnectionProvider()
-                    .getConnection();
+            connection = context.getConnectionProvider().newConnection();
             preparedStatement = connection.prepareStatement(queryData.query);
 
             // bind the data to the statement
@@ -256,6 +256,8 @@ public class QueryResultSet implements IQueryResultSet
                 resultSet.close();
             if (preparedStatement != null)
                 preparedStatement.close();
+            if (connection != null)
+                connection.close();
         }
 
         return results;
