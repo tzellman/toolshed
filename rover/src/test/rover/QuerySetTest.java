@@ -27,10 +27,15 @@ import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Map;
 
+import jester.IConverter;
 import jester.OGNLConverter;
+import jester.json.JSONSerializer;
 import junit.framework.TestCase;
 
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaBeanMapDecorator;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import rover.impl.DatabaseInfoCache;
@@ -41,11 +46,11 @@ import rover.impl.QueryResultSet;
  */
 public class QuerySetTest extends TestCase
 {
-    protected Connection connection;
+    // protected Connection connection;
 
     protected File tempFile;
 
-    protected void execute(String sql) throws Exception
+    protected void execute(String sql, Connection connection) throws Exception
     {
         PreparedStatement stmt = connection.prepareStatement(sql);
         stmt.execute();
@@ -64,8 +69,8 @@ public class QuerySetTest extends TestCase
             fail("ERROR: failed to load HSQLDB JDBC driver.");
         }
 
-        connection = DriverManager.getConnection("jdbc:hsqldb:mem:test", "sa",
-                "");
+        Connection connection = DriverManager.getConnection(
+                "jdbc:hsqldb:mem:test", "sa", "");
 
         URL resource = getClass().getResource("test.sql");
         tempFile = File.createTempFile("test", "file.sql");
@@ -73,7 +78,7 @@ public class QuerySetTest extends TestCase
 
         String createSQL = FileUtils.readFileToString(tempFile);
 
-        execute(createSQL);
+        execute(createSQL, connection);
 
         connection.commit();
     }
@@ -81,7 +86,7 @@ public class QuerySetTest extends TestCase
     @Override
     protected void tearDown() throws Exception
     {
-        connection.close();
+        // connection.close();
         if (tempFile != null)
             tempFile.delete();
     }
@@ -100,7 +105,8 @@ public class QuerySetTest extends TestCase
             {
                 public Connection newConnection() throws Exception
                 {
-                    return connection;
+                    return DriverManager.getConnection("jdbc:hsqldb:mem:test",
+                            "sa", "");
                 }
             };
             cache = new DatabaseInfoCache(connectionProvider);
@@ -125,6 +131,18 @@ public class QuerySetTest extends TestCase
 
     public void testIt()
     {
+        final JSONSerializer serializer = new JSONSerializer();
+        // add a converter that can handle DynaBeans
+        serializer.register(new IConverter<DynaBean, String>()
+        {
+            public String convert(DynaBean from, Map hints)
+                    throws SerializationException
+            {
+                return serializer.convert(new DynaBeanMapDecorator(from),
+                        String.class);
+            }
+        });
+
         try
         {
             IQueryContext context = new HSQLDBQueryContext();
@@ -138,7 +156,7 @@ public class QuerySetTest extends TestCase
 
             System.out.println(filter.count());
 
-            results = filter.selectRelated(1).list();
+            results = filter.selectRelated(2).list();
 
             for (Object result : results)
             {
@@ -149,6 +167,9 @@ public class QuerySetTest extends TestCase
                 System.out.println(name);
                 System.out.println(project);
             }
+
+            // or, this is easier...
+            System.out.println(serializer.convert(results));
 
             q = new QueryResultSet("release", context);
             filter = q.filter("name=1.0");
@@ -164,11 +185,12 @@ public class QuerySetTest extends TestCase
             System.out.println(OGNLConverter.evaluateExpression(obj,
                     "project.name"));
 
+            System.out.println(serializer.convert(q.list(1)));
+
         }
         catch (Exception e)
         {
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
-
 }
