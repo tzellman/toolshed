@@ -17,20 +17,28 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package rover;
+package rover.impl;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
+import rover.IConnectionProvider;
+import rover.IDatabaseInfo;
+import rover.ITableInfo;
+import rover.QueryConstants;
 
 /**
  * Simple cache for storing database metadata.
  * 
  * @author tzellman
  */
-public class DatabaseInfoCache
+public class DatabaseInfoCache implements IDatabaseInfo
 {
 
     /**
@@ -38,36 +46,40 @@ public class DatabaseInfoCache
      */
     protected Map<String, TableInfoBean> tableCache;
 
-    public DatabaseInfoCache()
+    protected IConnectionProvider connectionProvider;
+
+    protected String databaseType;
+
+    public DatabaseInfoCache(IConnectionProvider connectionProvider)
+            throws Exception
     {
+        this.connectionProvider = connectionProvider;
         tableCache = Collections
                 .synchronizedMap(new HashMap<String, TableInfoBean>());
+        Connection connection = connectionProvider.getConnection();
+        this.databaseType = connection.getMetaData().getDatabaseProductName();
+        // TODO possibly close the connection
     }
 
-    /**
-     * Gets the TableInfo for the given table
-     * 
-     * @param tableName
-     * @param connection
-     * @return
-     * @throws Exception
-     */
-    public TableInfoBean getTableInfo(String tableName, Connection connection)
-            throws Exception
+    public ITableInfo getTableInfo(String tableName) throws Exception
     {
         tableName = tableName.toUpperCase();
 
         if (!tableCache.containsKey(tableName))
         {
-            tableCache.put(tableName, TableInfoBean.getTableInfo(tableName,
-                    connection));
+            Connection connection = connectionProvider.getConnection();
+            tableCache.put(tableName, TableInfoBean.getTableInfo(tableName, connection));
+
+            // TODO - close the connection, if I decide to change the API
         }
         return tableCache.get(tableName);
     }
 
-    public boolean hasTable(String tableName)
+   
+
+    public String getDatabaseType()
     {
-        return tableCache.containsKey(tableName.toUpperCase());
+        return databaseType;
     }
 
     /**

@@ -33,6 +33,7 @@ import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
+import rover.impl.DatabaseInfoCache;
 import rover.impl.QueryResultSet;
 
 /**
@@ -85,20 +86,48 @@ public class QuerySetTest extends TestCase
             tempFile.delete();
     }
 
-    class HSQLDBQueryContext extends QueryContext
+    class HSQLDBQueryContext implements IQueryContext
     {
-        public Connection getConnection() throws Exception
+        IConnectionProvider connectionProvider;
+
+        DatabaseInfoCache cache;
+
+        SQLTypeConverter converter;
+
+        public HSQLDBQueryContext() throws Exception
         {
-            return connection;
+            connectionProvider = new IConnectionProvider()
+            {
+                public Connection getConnection() throws Exception
+                {
+                    return connection;
+                }
+            };
+            cache = new DatabaseInfoCache(connectionProvider);
+            converter = new SQLTypeConverter();
+        }
+
+        public IConnectionProvider getConnectionProvider()
+        {
+            return connectionProvider;
+        }
+
+        public IDatabaseInfo getDatabaseInfo()
+        {
+            return cache;
+        }
+
+        public SQLTypeConverter getSQLTypeConverter()
+        {
+            return converter;
         }
     }
 
     public void testIt()
     {
-        QueryContext context = new HSQLDBQueryContext();
-
         try
         {
+            IQueryContext context = new HSQLDBQueryContext();
             IQueryResultSet q = new QueryResultSet("requirement", context);
 
             IQueryResultSet filter = q.filter("release__name=1.0");

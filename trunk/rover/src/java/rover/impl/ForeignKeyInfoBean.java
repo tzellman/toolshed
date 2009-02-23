@@ -17,14 +17,16 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package rover;
+package rover.impl;
+
+import rover.IForeignKeyInfo;
 
 /**
  * Simple bean for holding information regarding a foreign key.
  * 
  * @author tzellman
  */
-public class ForeignKeyInfoBean
+public class ForeignKeyInfoBean implements IForeignKeyInfo
 {
     protected String table;
 

@@ -17,24 +17,25 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package rover;
+package rover.impl;
+
+import rover.IFieldInfo;
+import rover.IForeignKeyInfo;
 
 /**
  * Simple bean for holding information regarding a database field/column.
  * 
  * @author tzellman
  */
-public class FieldInfoBean
+public class FieldInfoBean implements IFieldInfo
 {
     protected String table;
 
     protected String name;
 
-    protected String sqlTypeName;
+    protected String sqlType;
 
-    protected Integer sqlType;
-
-    protected ForeignKeyInfoBean foreignKeyInfo;
+    protected IForeignKeyInfo foreignKeyInfo;
 
     public FieldInfoBean()
     {
@@ -50,32 +51,22 @@ public class FieldInfoBean
         this.name = name;
     }
 
-    public String getSqlTypeName()
-    {
-        return sqlTypeName;
-    }
-
-    public void setSqlTypeName(String sqlTypeName)
-    {
-        this.sqlTypeName = sqlTypeName;
-    }
-
-    public Integer getSqlType()
+    public String getSQLType()
     {
         return sqlType;
     }
 
-    public void setSqlType(Integer sqlType)
+    public void setSQLType(String sqlType)
     {
         this.sqlType = sqlType;
     }
 
-    public ForeignKeyInfoBean getForeignKeyInfo()
+    public IForeignKeyInfo getForeignKeyInfo()
     {
         return foreignKeyInfo;
     }
 
-    public void setForeignKeyInfo(ForeignKeyInfoBean foreignKeyInfo)
+    public void setForeignKeyInfo(IForeignKeyInfo foreignKeyInfo)
     {
         this.foreignKeyInfo = foreignKeyInfo;
     }
