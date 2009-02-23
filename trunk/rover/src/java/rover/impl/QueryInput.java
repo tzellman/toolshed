@@ -256,17 +256,90 @@ public class QueryInput
         public Map<String, String> selectAliases;
     }
 
+    protected static final class ProcessData
+    {
+        protected Set<String> selectStatements;
+
+        protected Set<String> whereStatements;
+
+        protected Set<String> selectedTables;
+
+        protected List<Object> values;
+
+        protected Map<String, String> selectAliases;
+
+        protected Map<String, String> reverseSelectAliases;
+
+        protected int id;
+
+        protected Map<String, List<String>> tableIds;
+
+        public ProcessData()
+        {
+            selectStatements = new LinkedHashSet<String>();
+            whereStatements = new LinkedHashSet<String>();
+            selectedTables = new LinkedHashSet<String>();
+            values = new LinkedList<Object>();
+            selectAliases = new HashMap<String, String>();
+            reverseSelectAliases = new HashMap<String, String>();
+            id = 0;
+            tableIds = new HashMap<String, List<String>>();
+        }
+    }
+
+    protected void processRelated(ITableInfo table, int depth, String lastId,
+            String prefix, ProcessData p) throws Exception
+    {
+        for (IFieldInfo field : table.getFields().values())
+        {
+            IForeignKeyInfo fkInfo = field.getForeignKeyInfo();
+            if (fkInfo != null)
+            {
+                String fkTableName = fkInfo.getTable();
+                if (!p.tableIds.containsKey(fkTableName))
+                    p.tableIds.put(fkTableName, new LinkedList<String>());
+
+                String fkTableId = null;
+                List<String> idList = p.tableIds.get(fkTableName);
+                if (idList.size() < depth)
+                {
+                    fkTableId = String.format("o%d", p.id++);
+                    p.tableIds.get(fkTableName).add(fkTableId);
+                }
+                else
+                    fkTableId = idList.get(depth - 1);
+
+                p.whereStatements.add(String.format("%s.%s=%s.%s", lastId,
+                        field.getName(), fkTableId, fkInfo.getColumn()));
+
+                // now, add all of the FK fields
+                ITableInfo fkTable = context.getDatabaseInfo().getTableInfo(
+                        fkTableName);
+                for (String fieldName : fkTable.getFields().keySet())
+                {
+                    // alias
+                    String selectAs = String.format("%s__%s__%s", prefix,
+                            fkTableName, fieldName).toLowerCase();
+                    String alias = newAlias(selectAs, p.selectAliases);
+                    p.selectStatements.add(String.format("%s.%s AS %s",
+                            fkTableId, fieldName, alias));
+                    p.reverseSelectAliases.put(selectAs, alias);
+                }
+
+                // recursive...
+                if (depth < selectRelatedDepth)
+                    processRelated(fkTable, depth + 1, fkTableId, String
+                            .format("%s__%s", prefix, fkTable.getName())
+                            .toLowerCase(), p);
+            }
+        }
+
+    }
+
     public QueryData getQuery(int offset, int limit, Set<String> selectFields)
             throws Exception
     {
-        Set<String> selectStatements = new LinkedHashSet<String>();
-        Set<String> whereStatements = new LinkedHashSet<String>();
-        Set<String> selectedTables = new LinkedHashSet<String>();
-        List<Object> values = new LinkedList<Object>();
-        Map<String, String> selectAliases = new HashMap<String, String>();
-        Map<String, String> reverseSelectAliases = new HashMap<String, String>();
-        int id = 0;
-        Map<String, List<String>> tableIds = new HashMap<String, List<String>>();
+        ProcessData p = new ProcessData();
 
         for (Where where : wheres)
         {
@@ -290,23 +363,23 @@ public class QueryInput
                 // now, get/create the table Ids for both
                 Integer tableCount = innerTableCount.get(tableName);
 
-                if (!tableIds.containsKey(tableName))
-                    tableIds.put(tableName, new LinkedList<String>());
-                if (!tableIds.containsKey(fkTableName))
-                    tableIds.put(fkTableName, new LinkedList<String>());
+                if (!p.tableIds.containsKey(tableName))
+                    p.tableIds.put(tableName, new LinkedList<String>());
+                if (!p.tableIds.containsKey(fkTableName))
+                    p.tableIds.put(fkTableName, new LinkedList<String>());
 
-                List<String> tableIdList = tableIds.get(tableName);
-                List<String> fkTableIdList = tableIds.get(fkTableName);
+                List<String> tableIdList = p.tableIds.get(tableName);
+                List<String> fkTableIdList = p.tableIds.get(fkTableName);
 
                 while (tableCount > tableIdList.size())
-                    tableIdList.add(String.format("o%d", id++));
+                    tableIdList.add(String.format("o%d", p.id++));
                 while (fkCount > fkTableIdList.size())
-                    fkTableIdList.add(String.format("o%d", id++));
+                    fkTableIdList.add(String.format("o%d", p.id++));
 
                 String tableId = tableIdList.get(tableCount - 1);
                 fkTableId = fkTableIdList.get(fkCount - 1);
 
-                whereStatements.add(String.format("%s.%s=%s.%s", tableId,
+                p.whereStatements.add(String.format("%s.%s=%s.%s", tableId,
                         rel.column, fkTableId, rel.fkColumn));
             }
 
@@ -314,10 +387,11 @@ public class QueryInput
             if (lastTableId == null)
             {
                 String tableName = tables.getLast().getName();
-                if (!tableIds.containsKey(tableName))
-                    tableIds.put(tableName, Arrays.asList(new String[] { String
-                            .format("o%d", id++) }));
-                lastTableId = tableIds.get(tableName).get(0);
+                if (!p.tableIds.containsKey(tableName))
+                    p.tableIds.put(tableName,
+                            Arrays.asList(new String[] { String.format("o%d",
+                                    p.id++) }));
+                lastTableId = p.tableIds.get(tableName).get(0);
             }
 
             SQLOp op = where.op;
@@ -325,7 +399,7 @@ public class QueryInput
                     where.column.getName(), op.getOperator());
             if (!op.isUnary())
                 finalWhere = finalWhere + " ?";
-            whereStatements.add(finalWhere);
+            p.whereStatements.add(finalWhere);
 
             if (!op.isUnary())
             {
@@ -340,7 +414,7 @@ public class QueryInput
                 // turn the String value into an Object for the query
                 Object sqlValue = context.getSQLTypeConverter().convert(
                         where.value, hints);
-                values.add(sqlValue);
+                p.values.add(sqlValue);
             }
         }
 
@@ -348,12 +422,12 @@ public class QueryInput
             // must at least select one table
             ITableInfo table = tables.getLast();
             String tableName = table.getName();
-            List<String> idList = tableIds.get(tableName);
+            List<String> idList = p.tableIds.get(tableName);
             if (idList == null || idList.isEmpty())
             {
-                String tableId = String.format("o%d", id++);
-                tableIds
-                        .put(tableName, Arrays.asList(new String[] { tableId }));
+                String tableId = String.format("o%d", p.id++);
+                p.tableIds.put(tableName, Arrays
+                        .asList(new String[] { tableId }));
             }
         }
 
@@ -364,7 +438,7 @@ public class QueryInput
                 if (select.matches(".*[ .].*"))
                 {
                     // add it as-is - the user better know what they're doing
-                    selectStatements.add(select);
+                    p.selectStatements.add(select);
                 }
                 else
                 {
@@ -374,73 +448,29 @@ public class QueryInput
             }
         }
 
-        if (selectStatements.isEmpty())
+        if (p.selectStatements.isEmpty())
         {
             // select all from first table by default
             ITableInfo table = tables.getLast();
             String tableName = table.getName();
-            String tableId = tableIds.get(tableName).get(0);
+            String tableId = p.tableIds.get(tableName).get(0);
             for (String field : table.getFields().keySet())
             {
                 // alias
                 String selectAs = String.format("%s__%s", tableName, field)
                         .toLowerCase();
-                String alias = newAlias(selectAs, selectAliases);
-                selectStatements.add(String.format("%s.%s AS %s", tableId,
+                String alias = newAlias(selectAs, p.selectAliases);
+                p.selectStatements.add(String.format("%s.%s AS %s", tableId,
                         field, alias));
-                reverseSelectAliases.put(selectAs, alias);
+                p.reverseSelectAliases.put(selectAs, alias);
             }
         }
 
         if (selectRelatedDepth > 0 && selectFields == null)
         {
-            // get more data - this needs to be a recursive func I think...
             ITableInfo table = tables.getLast();
-
-            int depth = 1;
-
-            // for now, only support 1 deep
-            for (IFieldInfo field : table.getFields().values())
-            {
-                IForeignKeyInfo fkInfo = field.getForeignKeyInfo();
-                if (fkInfo != null)
-                {
-                    String fkTableName = fkInfo.getTable();
-                    if (!tableIds.containsKey(fkTableName))
-                        tableIds.put(fkTableName, new LinkedList<String>());
-
-                    String fkTableId = null;
-                    List<String> idList = tableIds.get(fkTableName);
-                    if (idList.size() < depth)
-                    {
-                        fkTableId = String.format("o%d", id++);
-                        tableIds.get(fkTableName).add(fkTableId);
-                    }
-                    else
-                        fkTableId = idList.get(depth - 1);
-
-                    String tableId = tableIds.get(field.getTable()).get(
-                            depth - 1);
-                    whereStatements.add(String.format("%s.%s=%s.%s", tableId,
-                            field.getName(), fkTableId, fkInfo.getColumn()));
-
-                    // now, add all of the FK fields
-                    // this should make a recursive call here...
-                    ITableInfo fkTable = context.getDatabaseInfo()
-                            .getTableInfo(fkTableName);
-                    for (String fieldName : fkTable.getFields().keySet())
-                    {
-                        // alias
-                        String selectAs = String.format("%s__%s__%s",
-                                field.getTable(), fkTableName, fieldName)
-                                .toLowerCase();
-                        String alias = newAlias(selectAs, selectAliases);
-                        selectStatements.add(String.format("%s.%s AS %s",
-                                fkTableId, fieldName, alias));
-                        reverseSelectAliases.put(selectAs, alias);
-                    }
-                }
-            }
+            String id = p.tableIds.get(table.getName()).get(0);
+            processRelated(table, 1, id, table.getName().toLowerCase(), p);
         }
 
         List<String> ordering = new LinkedList<String>();
@@ -462,9 +492,9 @@ public class QueryInput
                 // auto-select it
                 String lField = String.format("%s__%s", lTable, field
                         .toLowerCase());
-                if (reverseSelectAliases.containsKey(lField))
+                if (p.reverseSelectAliases.containsKey(lField))
                 {
-                    String alias = reverseSelectAliases.get(lField);
+                    String alias = p.reverseSelectAliases.get(lField);
                     ordering.add(String.format("%s %s", alias,
                             ascending ? "ASC" : "DESC"));
                 }
@@ -475,24 +505,25 @@ public class QueryInput
             }
         }
 
-        for (String tableName : tableIds.keySet())
+        for (String tableName : p.tableIds.keySet())
         {
-            List<String> idList = tableIds.get(tableName);
+            List<String> idList = p.tableIds.get(tableName);
             for (String tableId : idList)
-                selectedTables.add(String.format("%s %s", tableName, tableId));
+                p.selectedTables
+                        .add(String.format("%s %s", tableName, tableId));
         }
 
         StringBuffer queryBuf = new StringBuffer();
         queryBuf.append("select ");
         if (distinct)
             queryBuf.append("distinct ");
-        queryBuf.append(StringUtils.join(selectStatements.toArray(), ","));
+        queryBuf.append(StringUtils.join(p.selectStatements.toArray(), ","));
         queryBuf.append(" from ");
-        queryBuf.append(StringUtils.join(selectedTables, ", "));
+        queryBuf.append(StringUtils.join(p.selectedTables, ", "));
 
-        if (!whereStatements.isEmpty())
+        if (!p.whereStatements.isEmpty())
             queryBuf.append(" where "
-                    + StringUtils.join(whereStatements, " and "));
+                    + StringUtils.join(p.whereStatements, " and "));
 
         StringBuffer limitBuf = new StringBuffer();
         String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
@@ -509,7 +540,7 @@ public class QueryInput
                     limitStr += "> " + (offset + 1);
                 else
                     limitStr += "<= " + limit;
-                if (!whereStatements.isEmpty())
+                if (!p.whereStatements.isEmpty())
                     limitBuf.append(" and " + limitStr);
                 else
                     limitBuf.append(" where " + limitStr);
@@ -545,8 +576,8 @@ public class QueryInput
         QueryData q = new QueryData();
         q.table = tables.getLast().getName();
         q.query = queryBuf.toString();
-        q.values = values.toArray();
-        q.selectAliases = selectAliases;
+        q.values = p.values.toArray();
+        q.selectAliases = p.selectAliases;
         return q;
     }
 
