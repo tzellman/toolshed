@@ -84,8 +84,6 @@ public class QueryInput
 
     protected boolean distinct;
 
-    protected Set<String> selectFields;
-
     public QueryInput(String tableName, IQueryContext context) throws Exception
     {
         tables = new LinkedList<ITableInfo>();
@@ -431,10 +429,16 @@ public class QueryInput
             }
         }
 
+        // select all from first table by default
+        ITableInfo table = tables.getLast();
+        String tableName = table.getName();
+        String tableId = p.tableIds.get(tableName).get(0);
+
         if (selectFields != null)
         {
             for (String select : selectFields)
             {
+                select = select.trim();
                 if (select.matches(".*[ .].*"))
                 {
                     // add it as-is - the user better know what they're doing
@@ -443,7 +447,16 @@ public class QueryInput
                 else
                 {
                     // it's a field they want to add
-                    // TODO - not supported yet...
+                    // for now, only support fields in the top table
+                    if (table.getFields().containsKey(select.toUpperCase()))
+                    {
+                        // alias
+                        String selectAs = select.toLowerCase();
+                        String alias = newAlias(selectAs, p.selectAliases);
+                        p.selectStatements.add(String.format("%s.%s AS %s",
+                                tableId, select.toUpperCase(), alias));
+                        p.reverseSelectAliases.put(selectAs, alias);
+                    }
                 }
             }
         }
@@ -451,9 +464,6 @@ public class QueryInput
         if (p.selectStatements.isEmpty())
         {
             // select all from first table by default
-            ITableInfo table = tables.getLast();
-            String tableName = table.getName();
-            String tableId = p.tableIds.get(tableName).get(0);
             for (String field : table.getFields().keySet())
             {
                 // alias
@@ -466,11 +476,10 @@ public class QueryInput
             }
         }
 
-        if (selectRelatedDepth > 0 && selectFields == null)
+        if (selectRelatedDepth > 0
+                && (selectFields == null || selectFields.isEmpty()))
         {
-            ITableInfo table = tables.getLast();
-            String id = p.tableIds.get(table.getName()).get(0);
-            processRelated(table, 1, id, table.getName().toLowerCase(), p);
+            processRelated(table, 1, tableId, table.getName().toLowerCase(), p);
         }
 
         List<String> ordering = new LinkedList<String>();
@@ -505,12 +514,11 @@ public class QueryInput
             }
         }
 
-        for (String tableName : p.tableIds.keySet())
+        for (String tName : p.tableIds.keySet())
         {
-            List<String> idList = p.tableIds.get(tableName);
-            for (String tableId : idList)
-                p.selectedTables
-                        .add(String.format("%s %s", tableName, tableId));
+            List<String> idList = p.tableIds.get(tName);
+            for (String tId : idList)
+                p.selectedTables.add(String.format("%s %s", tName, tId));
         }
 
         StringBuffer queryBuf = new StringBuffer();

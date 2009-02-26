@@ -65,6 +65,17 @@ public interface IQueryResultSet
     IQueryResultSet orderBy(String... fields) throws Exception;
 
     /**
+     * Allows you to specify field names to which the SELECT should be limited.
+     * If no fields are provided, this has no effect.
+     * 
+     * @param fields
+     *            fields to with the SELECT should be limited to
+     * @return
+     * @throws Exception
+     */
+    IQueryResultSet values(String... fields) throws Exception;
+
+    /**
      * Selects related objects up to the given depth level.
      * 
      * @param depth

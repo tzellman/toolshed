@@ -38,7 +38,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-import rover.impl.DatabaseInfoCache;
 import rover.impl.QueryResultSet;
 
 /**
@@ -50,6 +49,12 @@ public class QuerySetTest extends TestCase
 
     protected File tempFile;
 
+    protected IQueryContext queryContext;
+
+    protected JSONSerializer serializer;
+
+    protected static Boolean firstTime = true;
+
     protected void execute(String sql, Connection connection) throws Exception
     {
         PreparedStatement stmt = connection.prepareStatement(sql);
@@ -59,6 +64,34 @@ public class QuerySetTest extends TestCase
 
     @Override
     protected void setUp() throws Exception
+    {
+        synchronized (firstTime)
+        {
+            if (firstTime)
+            {
+                firstTime = false;
+                initDB();
+            }
+        }
+
+        // create a context that we'll use for all tests
+        queryContext = new HSQLDBQueryContext();
+
+        serializer = new JSONSerializer();
+
+        // add a converter that can handle DynaBeans
+        serializer.register(new IConverter<DynaBean, String>()
+        {
+            public String convert(DynaBean from, Map hints)
+                    throws SerializationException
+            {
+                return serializer.convert(new DynaBeanMapDecorator(from),
+                        String.class);
+            }
+        });
+    }
+
+    protected void initDB() throws Exception
     {
         try
         {
@@ -77,9 +110,7 @@ public class QuerySetTest extends TestCase
         FileUtils.copyURLToFile(resource, tempFile);
 
         String createSQL = FileUtils.readFileToString(tempFile);
-
         execute(createSQL, connection);
-
         connection.commit();
     }
 
@@ -91,106 +122,84 @@ public class QuerySetTest extends TestCase
             tempFile.delete();
     }
 
-    class HSQLDBQueryContext implements IQueryContext
+    public void testCount()
     {
-        IConnectionProvider connectionProvider;
-
-        DatabaseInfoCache cache;
-
-        SQLTypeConverter converter;
-
-        public HSQLDBQueryContext() throws Exception
-        {
-            connectionProvider = new IConnectionProvider()
-            {
-                public Connection newConnection() throws Exception
-                {
-                    return DriverManager.getConnection("jdbc:hsqldb:mem:test",
-                            "sa", "");
-                }
-            };
-            cache = new DatabaseInfoCache(connectionProvider);
-            converter = new SQLTypeConverter();
-        }
-
-        public IConnectionProvider getConnectionProvider()
-        {
-            return connectionProvider;
-        }
-
-        public IDatabaseInfo getDatabaseInfo()
-        {
-            return cache;
-        }
-
-        public SQLTypeConverter getSQLTypeConverter()
-        {
-            return converter;
-        }
-    }
-
-    public void testIt()
-    {
-        final JSONSerializer serializer = new JSONSerializer();
-        // add a converter that can handle DynaBeans
-        serializer.register(new IConverter<DynaBean, String>()
-        {
-            public String convert(DynaBean from, Map hints)
-                    throws SerializationException
-            {
-                return serializer.convert(new DynaBeanMapDecorator(from),
-                        String.class);
-            }
-        });
-
         try
         {
-            IQueryContext context = new HSQLDBQueryContext();
-            IQueryResultSet q = new QueryResultSet("requirement", context);
-
-            IQueryResultSet filter = q.filter("release__name=1.0");
-            System.out.println(filter);
-
-            List<Map<String, ? extends Object>> results = filter.list();
-            System.out.println(results.size());
-
-            System.out.println(filter.count());
-
-            results = filter.selectRelated(2).list();
-
-            for (Object result : results)
-            {
-                Object name = OGNLConverter.evaluate(result,
-                        "requirement.release.name".split("[.]"));
-                Object project = OGNLConverter.evaluate(result,
-                        "requirement.release.project".split("[.]"));
-                System.out.println(name);
-                System.out.println(project);
-            }
-
-            // or, this is easier...
-            System.out.println(serializer.convert(results));
-
-            q = new QueryResultSet("release", context);
-            filter = q.filter("name=1.0");
-            System.out.println(filter.count());
-
-            q = new QueryResultSet("project", context).orderBy("name");
-            Object obj = q.list(1).get(0);
-            System.out.println(OGNLConverter.evaluateExpression(obj,
-                    "project.name"));
-
-            q = new QueryResultSet("project", context).orderBy("-name");
-            obj = q.list(1).get(0);
-            System.out.println(OGNLConverter.evaluateExpression(obj,
-                    "project.name"));
-
-            System.out.println(serializer.convert(q.list(1)));
-
+            IQueryResultSet q = new QueryResultSet("release", queryContext);
+            q = q.filter("name=1.0");
+            System.out.println(q.count());
         }
         catch (Exception e)
         {
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
+
+    public void testRelated()
+    {
+        try
+        {
+            IQueryResultSet q = new QueryResultSet("requirement", queryContext);
+            q = q.filter("release__name=1.0");
+            List results = q.selectRelated(2).list();
+
+            // loop over the objects
+            for (Object result : results)
+            {
+                // use the OGNLConverter to dig down and get some values
+                String relName = (String) OGNLConverter.evaluate(result,
+                        "requirement.release.name".split("[.]"));
+                String projectName = (String) OGNLConverter.evaluate(result,
+                        "requirement.release.project.name".split("[.]"));
+                System.out.println(String.format(
+                        "Release: [%s], Project: [%s]", relName, projectName));
+            }
+
+            // or, this is easier...
+            System.out.println(serializer.convert(results));
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testOrderBy()
+    {
+        try
+        {
+            IQueryResultSet q = new QueryResultSet("project", queryContext)
+                    .orderBy("name");
+            Object obj = q.list(1).get(0);
+            System.out.println(OGNLConverter.evaluateExpression(obj,
+                    "project.name"));
+
+            q = new QueryResultSet("project", queryContext).orderBy("-name");
+            obj = q.list(1).get(0);
+            System.out.println(OGNLConverter.evaluateExpression(obj,
+                    "project.name"));
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testValues()
+    {
+        try
+        {
+            IQueryResultSet q = new QueryResultSet("project", queryContext);
+            List results = q.values("name").list();
+
+            // should just have the names of all projects
+            System.out.println(serializer.convert(results));
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
 }
