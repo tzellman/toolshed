@@ -64,17 +64,21 @@ public class QueryResultSet implements IQueryResultSet
 
     protected QueryInput queryInput;
 
+    protected Set<String> selectFields;
+
     public QueryResultSet(String tableName, IQueryContext context)
             throws Exception
     {
         this.context = context;
         queryInput = new QueryInput(tableName, context);
+        selectFields = new HashSet<String>();
     }
 
     public QueryResultSet(QueryResultSet dolly) throws Exception
     {
         this.context = dolly.context;
         this.queryInput = new QueryInput(dolly.queryInput);
+        this.selectFields = new HashSet<String>(dolly.selectFields);
     }
 
     public int count() throws Exception
@@ -90,8 +94,12 @@ public class QueryResultSet implements IQueryResultSet
         {
             countStmt = String.format("COUNT(*) \"%s\"", countVar);
         }
-        List<Map<String, ? extends Object>> results = execute(dolly, 0, 0,
-                new HashSet<String>(Arrays.asList(new String[] { countStmt })));
+
+        // only select the count
+        selectFields.clear();
+        selectFields.add(countStmt);
+
+        List<Map<String, ? extends Object>> results = execute(dolly, 0, 0);
 
         Object count = results.get(0).get(countVar);
         // one of these two better work
@@ -121,6 +129,15 @@ public class QueryResultSet implements IQueryResultSet
         return dolly;
     }
 
+    // currently, getting spanned table values back is not possible
+    // only values from the top table specified
+    public IQueryResultSet values(String... fields) throws Exception
+    {
+        QueryResultSet dolly = new QueryResultSet(this);
+        dolly.selectFields.addAll(Arrays.asList(fields));
+        return dolly;
+    }
+
     public List<Map<String, ? extends Object>> list() throws Exception
     {
         return list(0, 0);
@@ -134,7 +151,7 @@ public class QueryResultSet implements IQueryResultSet
     public List<Map<String, ? extends Object>> list(int offset, int limit)
             throws Exception
     {
-        return execute(queryInput, offset, limit, null);
+        return execute(queryInput, offset, limit);
     }
 
     protected Map<String, Object> normalizeBean(DynaBean bean,
@@ -206,7 +223,7 @@ public class QueryResultSet implements IQueryResultSet
     }
 
     protected List<Map<String, ? extends Object>> execute(QueryInput input,
-            int offset, int limit, Set<String> selectFields) throws Exception
+            int offset, int limit) throws Exception
     {
         List<Map<String, ? extends Object>> results = new LinkedList<Map<String, ? extends Object>>();
 
