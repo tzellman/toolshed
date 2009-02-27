@@ -535,50 +535,64 @@ public class QueryInput
 
         StringBuffer limitBuf = new StringBuffer();
         String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
-        if (limit > 0 || offset > 0)
+
+        if (StringUtils.equalsIgnoreCase(databaseTypeName,
+                QueryConstants.DATABASE_ORACLE))
         {
-            if (StringUtils.equalsIgnoreCase(databaseTypeName,
-                    QueryConstants.DATABASE_ORACLE))
+            if (limit > 0 && offset <= 0)
             {
-                String limitStr = " rownum ";
-                if (limit > 0 && offset > 0)
-                    limitStr += " between " + (offset + 1) + " and "
-                            + (limit + 1);
-                else if (offset > 0)
-                    limitStr += "> " + (offset + 1);
-                else
-                    limitStr += "<= " + limit;
+                String limitStr = " rownum <= " + limit;
                 if (!p.whereStatements.isEmpty())
-                    limitBuf.append(" and " + limitStr);
+                    queryBuf.append(" and " + limitStr);
                 else
-                    limitBuf.append(" where " + limitStr);
-            }
-            else
-            {
-                if (limit > 0)
-                    limitBuf.append(" limit " + limit);
-                if (offset > 0)
-                    limitBuf.append(" offset " + limit);
+                    queryBuf.append(" where " + limitStr);
             }
         }
-
-        // Oracle limits go right w/the where clauses
-        if (limitBuf.length() > 0
-                && StringUtils.equalsIgnoreCase(databaseTypeName,
-                        QueryConstants.DATABASE_ORACLE))
+        else
         {
-            queryBuf.append(limitBuf);
+            if (limit > 0)
+                limitBuf.append(" limit " + limit);
+            if (offset > 0)
+                limitBuf.append(" offset " + limit);
         }
 
         if (!ordering.isEmpty())
             queryBuf.append(" order by " + StringUtils.join(ordering, ", "));
 
         // other limits go at the end
-        if (limitBuf.length() > 0
-                && !StringUtils.equalsIgnoreCase(databaseTypeName,
-                        QueryConstants.DATABASE_ORACLE))
+        if (limitBuf.length() > 0)
         {
             queryBuf.append(limitBuf);
+        }
+
+        // finally, if the user supplied an offset - we have to do something
+        // sick for Oracle...
+        if (StringUtils.equalsIgnoreCase(databaseTypeName,
+                QueryConstants.DATABASE_ORACLE)
+                && offset > 0)
+        {
+            // get the current query
+            String query = queryBuf.toString();
+
+            queryBuf = new StringBuffer();
+            queryBuf.append("select * from (select rownum rnum");
+
+            if (p.selectAliases != null && p.selectAliases.size() > 0)
+            {
+                queryBuf.append(", ");
+
+                // get all aliases and add them
+                queryBuf.append(StringUtils
+                        .join(p.selectAliases.keySet(), ", "));
+            }
+
+            // add the original query...
+            queryBuf.append(" from (" + query + ")");
+
+            if (limit > 0)
+                queryBuf.append(" where rownum <= " + (limit + offset));
+
+            queryBuf.append(") where rnum > " + offset);
         }
 
         QueryData q = new QueryData();

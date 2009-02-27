@@ -229,6 +229,7 @@ public class QueryResultSet implements IQueryResultSet
 
         QueryData queryData = input.getQuery(offset, limit, selectFields);
         log.debug(queryData.query);
+        System.out.println(queryData.query);
 
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;

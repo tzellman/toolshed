@@ -201,5 +201,21 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
+    
+    public void testOffsetLimit()
+    {
+        try
+        {
+            IQueryResultSet q = new QueryResultSet("release", queryContext);
+            q = q.filter("name=1.0");
+            System.out.println(q.list(0, 10).size());
+            System.out.println(q.list(1, 1).size());
+            System.out.println(q.list(2).size());
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 
 }
