@@ -114,8 +114,7 @@ public class JSONTest extends TestCase
         {
             JSONSerializer serializer = new JSONSerializer()
             {
-                @Override
-                public Object defaultConvert(Object from,
+                public String defaultConvert(Object from,
                         Class<? extends Object> toClass, Map hints)
                 {
                     return JSONSerializer.toJSONString("Default: "
@@ -124,7 +123,7 @@ public class JSONTest extends TestCase
             };
 
             // Override a JSONJester inline, providing the defaultOut method
-            JSONJester jester = new JSONJester(serializer);
+            JSONJester jester = new JSONJester(serializer, null);
 
             assertEquals("\"Default: java.lang.Exception: test\"", JesterUtils
                     .serializeToString(new Exception("test"), jester));

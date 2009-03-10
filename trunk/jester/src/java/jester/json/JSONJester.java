@@ -25,7 +25,7 @@ import java.util.Map;
 
 import jester.IJester;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationException;
 
 /**
@@ -40,24 +40,29 @@ public class JSONJester implements IJester
 
     protected JSONSerializer serializer;
 
+    protected JSONDeserializer deserializer;
+
     /**
      * NOTE: This will change to also take in a JSONDeserializer.
      * 
      * @param serializer
      */
-    public JSONJester(JSONSerializer serializer)
+    public JSONJester(JSONSerializer serializer, JSONDeserializer deserializer)
     {
         if (serializer == null)
             serializer = new JSONSerializer();
+        if (deserializer == null)
+            deserializer = new JSONDeserializer();
         this.serializer = serializer;
+        this.deserializer = deserializer;
     }
 
     /**
-     * Create a new JSONSerializer
+     * Create a new JSONJester
      */
     public JSONJester()
     {
-        this(null);
+        this(null, null);
     }
 
     public String getContentType()
@@ -81,6 +86,7 @@ public class JSONJester implements IJester
 
     public Object in(InputStream stream, Map hints) throws Exception
     {
-        throw new NotImplementedException();
+        String string = IOUtils.toString(stream);
+        return deserializer.convert(string, hints);
     }
 }
