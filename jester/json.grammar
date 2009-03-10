@@ -1,0 +1,169 @@
+// =============================================================================
+// This file is part of Jester
+// =============================================================================
+// (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
+//
+// Jester is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either 
+// version 3 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public 
+// License along with this library.  If not, see <http://www.gnu.org/licenses/>.
+// 
+//
+Package jester.json.parse;
+
+///////////////////////////////////////////////////////////////////////////////
+Helpers
+///////////////////////////////////////////////////////////////////////////////
+
+    digit           = ['0' .. '9'];
+    alpha           = [['A' .. 'Z'] + ['a' .. 'z']];
+    alpha_num       = alpha | digit;
+    any_char        = [0x0 .. 0xfffff];
+
+    //whitespace
+    ht              = 9;
+    lf              = 10;
+    ff              = 12;
+    cr              = 13;
+    ws              = ht| lf | ff | cr | ' ';
+    eol             = cr | lf | cr lf;  //end of line
+    
+    no_ws_char      = [[[any_char - [ht + lf]] - [ff + cr]] - ' '];
+    
+    variable_id     = (alpha | '_') (alpha_num | '_')*;
+    member_id       = (alpha_num | '_')+;
+    
+    //the following helpers deal with characters that are allowed in
+    //expressions, statements, etc. (program flow characters)
+    input_char      = [any_char - [cr + lf]];
+    single_char     = [input_char - [''' + '\']];
+    hex_digit     = [['0'..'7'] + [['A' .. 'F'] + ['a' .. 'f']]];
+    hex_escape    = '\u' hex_digit hex_digit hex_digit;
+    escape_sequence = '\b' | '\t' | '\n' | '\f' | '\r' | '\"'  | '\\' | '\/' | hex_escape;
+    dq_string_char  = [input_char - ['"' + '\']] | escape_sequence;
+    string          = '"' dq_string_char* '"';
+    
+///////////////////////////////////////////////////////////////////////////////
+States
+///////////////////////////////////////////////////////////////////////////////
+    default,        //the default state
+    comment_block   //{% comment %} foo bar {% endcomment %}
+    ;
+
+    
+///////////////////////////////////////////////////////////////////////////////
+Tokens
+///////////////////////////////////////////////////////////////////////////////
+
+    //put higher precedence keywords here
+    
+    {default}
+        object_start    = '{';
+    {default}
+        object_end      = '}';
+    {default}
+        array_start     = '[';
+    {default}
+        array_end       = ']';
+    {default}
+        simple_comment  = '//' input_char* eol;
+    {default->comment_block}
+        comment_start   = '/*';
+    {comment_block->default}
+        comment_end     = '*/';
+    {comment_block}
+        comment_text    = any_char;
+    {default}
+        string_literal  = string;
+    {default}
+        strip_ws        = ws+;
+    {default}
+        kw_null         = 'null';
+    {default}
+        kw_true         = 'true';
+    {default}
+        kw_false        = 'false';
+    {default}
+        decimal         = '-'? digit+ '.'? digit* (['e' + 'E'] ['+' + '-'] digit+)?;
+    {default}
+        comma           = ',';
+    {default}
+        colon           = ':';
+
+///////////////////////////////////////////////////////////////////////////////
+Ignored Tokens
+///////////////////////////////////////////////////////////////////////////////
+    strip_ws,           //ignore whitespace (for certain states)
+    simple_comment,     //ignore simple comments, in the default state
+    comment_start,      //ignore the start of a comment block
+    comment_end,        //ignore the end of a comment block
+    comment_text        //ignore comment text
+    ;
+
+
+///////////////////////////////////////////////////////////////////////////////
+Productions
+///////////////////////////////////////////////////////////////////////////////
+
+    json {-> json} =
+        [value]:value                                                   {->New json(value)}
+        ;
+    
+    value {-> value} =
+            {string}    [string]:string_literal                         {-> New value.string(string)}
+        |   {object}    [object]:object                                 {-> New value.object(object)}
+        |   {array}     [array]:array                                   {-> New value.array(array)}
+        |   {null}      kw_null                                         {-> New value.null()}
+        |   {true}      kw_true                                         {-> New value.true()}
+        |   {false}     kw_false                                        {-> New value.false()}
+        |   {number}    [number]:decimal                                {-> New value.number(number)}
+        ;
+    
+    object {->object} =
+        object_start [fields]:field_list? object_end                    {-> New object([fields.field])}
+        ;
+    
+    array {->array} =
+        array_start [values]:value_list? array_end                      {-> New array([values.value])}
+        ;
+    
+    field {-> field} =
+            [key]:string_literal colon [value]:value                    {-> New field(key, value)}
+        ;
+    
+    field_list {-> field+} =
+            {single}    [field]:field                                   {-> [field]}
+        |   {multiple}  [field]:field comma [rest]:field_list           {-> [field, rest.field]}
+        ;
+    
+    value_list {-> value+} =
+            {single}    [value]:value                                   {-> [value]}
+        |   {multiple}  [value]:value comma [rest]:value_list           {-> [value, rest.value]}
+        ;
+    
+    
+///////////////////////////////////////////////////////////////////////////////
+Abstract Syntax Tree
+///////////////////////////////////////////////////////////////////////////////
+
+    json            = [value]:value;
+    value           =
+            {string}  [string]:string_literal
+        |   {object}  [object]:object
+        |   {array}   [array]:array
+        |   {number}  [number]:decimal
+        |   {null}
+        |   {true}
+        |   {false}
+        ;
+    field           = [key]:string_literal [value]:value;
+    object          = [fields]:field*;
+    array           = [values]:value*;
