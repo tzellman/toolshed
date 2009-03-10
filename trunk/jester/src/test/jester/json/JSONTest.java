@@ -151,7 +151,7 @@ public class JSONTest extends TestCase
                 .convert(objects));
     }
 
-    public void xtestDeserialize()
+    public void testDeserialize()
     {
         IJester jester = new JSONJester();
 
@@ -167,12 +167,34 @@ public class JSONTest extends TestCase
             assertEquals(12.42f, n.floatValue());
 
             assertNull(jester.in(IOUtils.toInputStream("null"), null));
+            assertTrue((Boolean) jester.in(IOUtils.toInputStream("true"), null));
+            assertFalse((Boolean) jester.in(IOUtils.toInputStream("false"),
+                    null));
 
+            assertEquals(jester.in(
+                    IOUtils.toInputStream("[[],{},[{},[{},{}]]]"), null)
+                    .toString(), "[[], {}, [{}, [{}, {}]]]");
+
+            assertEquals(
+                    jester
+                            .in(
+                                    IOUtils
+                                            .toInputStream("[\"string\", 15, false, {\"key\": \"value\"}, []]"),
+                                    null).toString(),
+                    "[string, 15, false, {\"key\"=value}, []]");
+
+            try
+            {
+                jester.in(IOUtils.toInputStream("[], []"), null);
+                fail("Should've thrown");
+            }
+            catch (Exception e)
+            {
+            }
         }
         catch (Exception e)
         {
-            // TODO
+            fail(ExceptionUtils.getStackTrace(e));
         }
     }
-
 }
