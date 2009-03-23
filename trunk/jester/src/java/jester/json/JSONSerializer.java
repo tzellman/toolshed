@@ -198,7 +198,7 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
 
         String converted = (String) super.convert(from, toClass, hints);
         if (jsonp != null && converted instanceof String)
-            return String.format("%s(%s);", jsonp, ((String) converted));
+            return String.format("%s(%s)", jsonp, ((String) converted));
         return converted;
     }
 
