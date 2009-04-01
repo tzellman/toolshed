@@ -186,8 +186,9 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
         return convert(from.toString(), String.class, hints);
     }
 
-    public String convert(Object from, Class<? extends String> toClass,
-            Map hints) throws SerializationException
+    @Override
+    public String convert(Object from, Class toClass, Map hints)
+            throws SerializationException
     {
         String jsonp = null;
         if (hints != null && hints.containsKey(HINT_JSONP))
