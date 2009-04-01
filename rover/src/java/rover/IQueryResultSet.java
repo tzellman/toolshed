@@ -20,7 +20,6 @@
 package rover;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Interface outlining a query resultset.
@@ -95,15 +94,14 @@ public interface IQueryResultSet
      * @return
      * @throws Exception
      */
-    List<Map<String, ? extends Object>> list(int offset, int limit)
-            throws Exception;
+    List<Object> list(int offset, int limit) throws Exception;
 
     /**
      * @see IQueryResultSet#list(int, int)
      * @return
      * @throws Exception
      */
-    List<Map<String, ? extends Object>> list() throws Exception;
+    List<Object> list() throws Exception;
 
     /**
      * @see IQueryResultSet#list(int, int)
@@ -111,6 +109,6 @@ public interface IQueryResultSet
      * @return
      * @throws Exception
      */
-    List<Map<String, ? extends Object>> list(int limit) throws Exception;
+    List<Object> list(int limit) throws Exception;
 
 }

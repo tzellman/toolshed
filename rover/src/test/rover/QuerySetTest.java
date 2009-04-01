@@ -38,7 +38,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-import rover.impl.QueryResultSet;
+import rover.impl.sql.SQLQueryResultSet;
 
 /**
  * @author tzellman
@@ -126,7 +126,7 @@ public class QuerySetTest extends TestCase
     {
         try
         {
-            IQueryResultSet q = new QueryResultSet("release", queryContext);
+            IQueryResultSet q = new SQLQueryResultSet("release", queryContext);
             q = q.filter("name=1.0");
             System.out.println(q.count());
         }
@@ -140,7 +140,8 @@ public class QuerySetTest extends TestCase
     {
         try
         {
-            IQueryResultSet q = new QueryResultSet("requirement", queryContext);
+            IQueryResultSet q = new SQLQueryResultSet("requirement",
+                    queryContext);
             q = q.filter("release__name=1.0");
             List results = q.selectRelated(2).list();
 
@@ -169,13 +170,13 @@ public class QuerySetTest extends TestCase
     {
         try
         {
-            IQueryResultSet q = new QueryResultSet("project", queryContext)
+            IQueryResultSet q = new SQLQueryResultSet("project", queryContext)
                     .orderBy("name");
             Object obj = q.list(1).get(0);
             System.out.println(OGNLConverter.evaluateExpression(obj,
                     "project.name"));
 
-            q = new QueryResultSet("project", queryContext).orderBy("-name");
+            q = new SQLQueryResultSet("project", queryContext).orderBy("-name");
             obj = q.list(1).get(0);
             System.out.println(OGNLConverter.evaluateExpression(obj,
                     "project.name"));
@@ -190,7 +191,7 @@ public class QuerySetTest extends TestCase
     {
         try
         {
-            IQueryResultSet q = new QueryResultSet("project", queryContext);
+            IQueryResultSet q = new SQLQueryResultSet("project", queryContext);
             List results = q.values("name").list();
 
             // should just have the names of all projects
@@ -201,12 +202,12 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
-    
+
     public void testOffsetLimit()
     {
         try
         {
-            IQueryResultSet q = new QueryResultSet("release", queryContext);
+            IQueryResultSet q = new SQLQueryResultSet("release", queryContext);
             q = q.filter("name=1.0");
             System.out.println(q.list(0, 10).size());
             System.out.println(q.list(1, 1).size());

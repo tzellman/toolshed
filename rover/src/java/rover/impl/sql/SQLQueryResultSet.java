@@ -17,7 +17,7 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package rover.impl;
+package rover.impl.sql;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -48,7 +48,8 @@ import org.apache.commons.logging.LogFactory;
 import rover.IQueryContext;
 import rover.IQueryResultSet;
 import rover.QueryConstants;
-import rover.impl.QueryInput.QueryData;
+import rover.impl.FilterInput;
+import rover.impl.sql.SQLQueryInput.QueryData;
 
 /**
  * Implementation of {@link IQueryResultSet}.
@@ -56,35 +57,35 @@ import rover.impl.QueryInput.QueryData;
  * @author tzellman
  * 
  */
-public class QueryResultSet implements IQueryResultSet
+public class SQLQueryResultSet implements IQueryResultSet
 {
-    private static final Log log = LogFactory.getLog(QueryResultSet.class);
+    private static final Log log = LogFactory.getLog(SQLQueryResultSet.class);
 
     protected IQueryContext context;
 
-    protected QueryInput queryInput;
+    protected SQLQueryInput queryInput;
 
     protected Set<String> selectFields;
 
-    public QueryResultSet(String tableName, IQueryContext context)
+    public SQLQueryResultSet(String tableName, IQueryContext context)
             throws Exception
     {
         this.context = context;
-        queryInput = new QueryInput(tableName, context);
+        queryInput = new SQLQueryInput(tableName, context);
         selectFields = new HashSet<String>();
     }
 
-    public QueryResultSet(QueryResultSet dolly) throws Exception
+    public SQLQueryResultSet(SQLQueryResultSet dolly) throws Exception
     {
         this.context = dolly.context;
-        this.queryInput = new QueryInput(dolly.queryInput);
+        this.queryInput = new SQLQueryInput(dolly.queryInput);
         this.selectFields = new HashSet<String>(dolly.selectFields);
     }
 
     public int count() throws Exception
     {
         // clone the input
-        QueryInput dolly = new QueryInput(queryInput);
+        SQLQueryInput dolly = new SQLQueryInput(queryInput);
         String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
 
         String countVar = "count";
@@ -99,9 +100,9 @@ public class QueryResultSet implements IQueryResultSet
         selectFields.clear();
         selectFields.add(countStmt);
 
-        List<Map<String, ? extends Object>> results = execute(dolly, 0, 0);
+        List<Object> results = execute(dolly, 0, 0);
 
-        Object count = results.get(0).get(countVar);
+        Object count = ((Map) results.get(0)).get(countVar);
         // one of these two better work
         if (count instanceof Number)
             return ((Number) count).intValue();
@@ -110,21 +111,21 @@ public class QueryResultSet implements IQueryResultSet
 
     public IQueryResultSet distinct() throws Exception
     {
-        QueryResultSet dolly = new QueryResultSet(this);
+        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
         dolly.queryInput.setDistinct(true);
         return dolly;
     }
 
     public IQueryResultSet filter(String... clauses) throws Exception
     {
-        QueryResultSet dolly = new QueryResultSet(this);
-        dolly.parseFilters(clauses);
+        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
+        FilterInput.parseFilters(dolly.queryInput, clauses);
         return dolly;
     }
 
     public IQueryResultSet orderBy(String... fields) throws Exception
     {
-        QueryResultSet dolly = new QueryResultSet(this);
+        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
         dolly.queryInput.addOrderBy(fields);
         return dolly;
     }
@@ -133,23 +134,22 @@ public class QueryResultSet implements IQueryResultSet
     // only values from the top table specified
     public IQueryResultSet values(String... fields) throws Exception
     {
-        QueryResultSet dolly = new QueryResultSet(this);
+        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
         dolly.selectFields.addAll(Arrays.asList(fields));
         return dolly;
     }
 
-    public List<Map<String, ? extends Object>> list() throws Exception
+    public List<Object> list() throws Exception
     {
         return list(0, 0);
     }
 
-    public List<Map<String, ? extends Object>> list(int limit) throws Exception
+    public List<Object> list(int limit) throws Exception
     {
         return list(0, limit);
     }
 
-    public List<Map<String, ? extends Object>> list(int offset, int limit)
-            throws Exception
+    public List<Object> list(int offset, int limit) throws Exception
     {
         return execute(queryInput, offset, limit);
     }
@@ -222,10 +222,10 @@ public class QueryResultSet implements IQueryResultSet
         return map;
     }
 
-    protected List<Map<String, ? extends Object>> execute(QueryInput input,
-            int offset, int limit) throws Exception
+    protected List<Object> execute(SQLQueryInput input, int offset, int limit)
+            throws Exception
     {
-        List<Map<String, ? extends Object>> results = new LinkedList<Map<String, ? extends Object>>();
+        List<Object> results = new LinkedList<Object>();
 
         QueryData queryData = input.getQuery(offset, limit, selectFields);
         log.debug(queryData.query);
@@ -282,91 +282,9 @@ public class QueryResultSet implements IQueryResultSet
 
     public IQueryResultSet selectRelated(int depth) throws Exception
     {
-        QueryResultSet dolly = new QueryResultSet(this);
+        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
         dolly.queryInput.setSelectRelatedDepth(depth);
         return dolly;
-    }
-
-    protected static class FilterInput
-    {
-        Deque<String> fields;
-
-        SQLOp op;
-
-        String value;
-    }
-
-    protected static List<FilterInput> transformFilters(String... clauses)
-            throws Exception
-    {
-        List<FilterInput> filterInputs = new LinkedList<FilterInput>();
-        for (String clause : clauses)
-        {
-            String[] parts = StringUtils.split(clause, "=", 2);
-            String fieldString = null, valueString = null;
-            fieldString = parts[0];
-            if (parts.length == 2)
-                valueString = parts[1];
-
-            String[] fields = StringUtils.splitByWholeSeparator(fieldString,
-                    QueryConstants.QUERY_SEP);
-            Deque<String> fieldList = new LinkedList<String>();
-
-            // filter out empty fields
-            for (String f : fields)
-            {
-                if (StringUtils.isEmpty(f))
-                    throw new Exception("Invalid field expression");
-                fieldList.add(f.toUpperCase());
-            }
-
-            // check to see if they provided a SQL op
-            SQLOp op = SQLOp.EXACT;
-            int numFields = fieldList.size();
-            if (numFields > 1)
-            {
-                String lastField = fieldList.peekLast();
-                op = SQLOp.getOp(lastField);
-                if (op != null)
-                    fieldList.pollLast();
-                else
-                    op = SQLOp.EXACT;
-            }
-
-            if (valueString == null && !op.isUnary())
-                throw new Exception(
-                        "Invalid field expression: must have value for binary operation");
-            if (valueString != null && op.isUnary())
-                throw new Exception(
-                        "Invalid field expression: unary operation does not take a value");
-
-            FilterInput filterInput = new FilterInput();
-            filterInput.fields = fieldList;
-            filterInput.op = op;
-            filterInput.value = valueString;
-            filterInputs.add(filterInput);
-        }
-        return filterInputs;
-    }
-
-    protected void parseFilters(String... clauses) throws Exception
-    {
-        List<FilterInput> filterClauses = transformFilters(clauses);
-        for (FilterInput filterInput : filterClauses)
-        {
-            Deque<String> fieldList = filterInput.fields;
-            if (!fieldList.isEmpty())
-            {
-                String lastField = fieldList.pollLast();
-                while (!fieldList.isEmpty())
-                {
-                    String field = fieldList.pop();
-                    queryInput.addFK(field);
-                }
-                queryInput.addWhere(lastField, filterInput.op,
-                        filterInput.value);
-            }
-        }
     }
 
     /**
