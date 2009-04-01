@@ -155,7 +155,7 @@ public abstract class ConverterRegistry<F extends Object, T extends Object>
      * @param toClass
      * @return the converted Object, or null
      */
-    public <S extends T> S convert(F from, Class<? extends S> toClass, Map hints)
+    public <S extends T> S convert(F from, Class toClass, Map hints)
             throws SerializationException
     {
         IConverter<Object, Object> bestConverter = (IConverter<Object, Object>) getBestConverter(
