@@ -19,6 +19,7 @@
  */
 package rover;
 
+
 /**
  * The context required to make a query.
  * 
@@ -35,13 +36,13 @@ public interface IQueryContext
 
     /**
      * 
-     * @return a SQLTypeConverter
-     */
-    SQLTypeConverter getSQLTypeConverter();
-
-    /**
-     * 
      * @return an IDatabaseInfo object
      */
     IDatabaseInfo getDatabaseInfo();
+    
+    /**
+     * 
+     * @return a SQLTypeConverter
+     */
+    SQLTypeConverter getSQLTypeConverter();
 }
