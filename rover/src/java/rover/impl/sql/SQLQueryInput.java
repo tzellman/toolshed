@@ -38,6 +38,7 @@ import rover.IForeignKeyInfo;
 import rover.IQueryContext;
 import rover.ITableInfo;
 import rover.QueryConstants;
+import rover.RoverUtils;
 import rover.SQLTypeConverter;
 import rover.impl.QueryInput;
 import rover.impl.SQLOp;
@@ -159,6 +160,9 @@ public class SQLQueryInput extends QueryInput
     {
         ProcessData p = new ProcessData();
 
+        boolean isOracleDB = RoverUtils.isOracleDB(context.getDatabaseInfo());
+        boolean isHSQLDB = RoverUtils.isHSQLDB(context.getDatabaseInfo());
+
         for (Where where : wheres)
         {
             Map<String, Integer> innerTableCount = new HashMap<String, Integer>();
@@ -212,28 +216,74 @@ public class SQLQueryInput extends QueryInput
                 lastTableId = p.tableIds.get(tableName).get(0);
             }
 
+            // this is a little hacky - I'd rather abstract this type of stuff
+            // out into database specific info providers...
             SQLOp op = where.op;
-            String finalWhere = String.format("%s.%s %s", lastTableId,
-                    where.column.getName(), op.getOperator());
-            if (!op.isUnary())
-                finalWhere = finalWhere + " ?";
-            p.whereStatements.add(finalWhere);
-
-            if (!op.isUnary())
+            String finalWhere = null;
+            if (isOracleDB
+                    && (op.equals(SQLOp.ICONTAINS) || op.equals(SQLOp.IEXACT) || op
+                            .equals(SQLOp.CONTAINS)))
             {
-                String sqlTypeName = where.column.getSQLType();
-                Integer sqlType = QueryConstants.SQL_TYPE_NAMES
-                        .get(sqlTypeName);
-
-                // add a hint for the dispatcher
-                Map hints = new HashMap();
-                hints.put(SQLTypeConverter.HINT_SQL_TYPE, sqlType);
-
-                // turn the String value into an Object for the query
-                Object sqlValue = context.getSQLTypeConverter().convert(
-                        where.value, hints);
-                p.values.add(sqlValue);
+                String wrap = op.getValueWrap() == null ? "" : op
+                        .getValueWrap();
+                if (op.equals(SQLOp.CONTAINS))
+                {
+                    finalWhere = String.format("%s.%s LIKE '%s%s%s'",
+                            lastTableId, where.column.getName(), wrap,
+                            where.value, wrap);
+                }
+                else
+                {
+                    finalWhere = String.format(
+                            "UPPER(%s.%s) LIKE UPPER('%s%s%s')", lastTableId,
+                            where.column.getName(), wrap, where.value, wrap);
+                }
             }
+            else if (isHSQLDB
+                    && (op.equals(SQLOp.ICONTAINS) || op.equals(SQLOp.IEXACT) || op
+                            .equals(SQLOp.CONTAINS)))
+            {
+                String wrap = op.getValueWrap() == null ? "" : op
+                        .getValueWrap();
+                if (op.equals(SQLOp.CONTAINS))
+                {
+                    finalWhere = String.format("%s.%s LIKE '%s%s%s'",
+                            lastTableId, where.column.getName(), wrap,
+                            where.value, wrap);
+                }
+                else
+                {
+                    finalWhere = String.format(
+                            "UCASE(%s.%s) LIKE UCASE('%s%s%s')", lastTableId,
+                            where.column.getName(), wrap, where.value, wrap);
+                }
+            }
+            else
+            {
+                finalWhere = String.format("%s.%s %s", lastTableId,
+                        where.column.getName(), op.getOperator());
+                if (!op.isUnary())
+                {
+                    String wrap = op.getValueWrap() == null ? "" : op
+                            .getValueWrap();
+                    finalWhere = finalWhere
+                            + String.format(" %s?%s", wrap, wrap);
+
+                    String sqlTypeName = where.column.getSQLType();
+                    Integer sqlType = QueryConstants.SQL_TYPE_NAMES
+                            .get(sqlTypeName);
+
+                    // add a hint for the dispatcher
+                    Map hints = new HashMap();
+                    hints.put(SQLTypeConverter.HINT_SQL_TYPE, sqlType);
+
+                    // turn the String value into an Object for the query
+                    Object sqlValue = context.getSQLTypeConverter().convert(
+                            where.value, hints);
+                    p.values.add(sqlValue);
+                }
+            }
+            p.whereStatements.add(finalWhere);
         }
 
         {
@@ -354,10 +404,8 @@ public class SQLQueryInput extends QueryInput
                     + StringUtils.join(p.whereStatements, " and "));
 
         StringBuffer limitBuf = new StringBuffer();
-        String databaseTypeName = context.getDatabaseInfo().getDatabaseType();
 
-        if (StringUtils.equalsIgnoreCase(databaseTypeName,
-                QueryConstants.DATABASE_ORACLE))
+        if (isOracleDB)
         {
             if (limit > 0 && offset <= 0)
             {
@@ -387,9 +435,7 @@ public class SQLQueryInput extends QueryInput
 
         // finally, if the user supplied an offset - we have to do something
         // sick for Oracle...
-        if (StringUtils.equalsIgnoreCase(databaseTypeName,
-                QueryConstants.DATABASE_ORACLE)
-                && offset > 0)
+        if (isOracleDB && offset > 0)
         {
             // get the current query
             String query = queryBuf.toString();

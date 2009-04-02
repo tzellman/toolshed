@@ -218,5 +218,21 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
+    
+    public void testContains()
+    {
+        try
+        {
+            IQueryResultSet q = new SQLQueryResultSet("requirement", queryContext);
+            assertEquals(2, q.filter("descr__icontains=END").count());
+            assertEquals(2, q.filter("descr__icontains=end").count());
+            assertEquals(2, q.filter("descr__contains=end").count());
+            assertEquals(1, q.filter("descr__iexact=BACKend").count());
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 
 }
