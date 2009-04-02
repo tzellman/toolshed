@@ -89,6 +89,7 @@ public abstract class QueryInput
 
         fkRelationships = new LinkedList<FKRelationship>();
         wheres = new LinkedList<Where>();
+        orderBy = new LinkedList<String>();
         selectRelatedDepth = 0; // no select related, by default
         distinct = false;
     }
@@ -100,6 +101,7 @@ public abstract class QueryInput
         tables.addAll(dolly.tables);
         fkRelationships.addAll(dolly.fkRelationships);
         wheres.addAll(dolly.wheres);
+        orderBy.addAll(dolly.orderBy);
         distinct = dolly.distinct;
     }
 
@@ -219,6 +221,18 @@ public abstract class QueryInput
         tables.clear();
         tables.push(firstTable);
         fkRelationships.clear();
+        // wheres.clear();
+        // orderBy.clear();
+    }
+
+    /**
+     * Returns true if the query is empty
+     * 
+     * @return
+     */
+    public boolean isEmpty()
+    {
+        return fkRelationships.isEmpty() && wheres.isEmpty();
     }
 
     public void setSelectRelatedDepth(int depth)
