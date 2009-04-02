@@ -413,6 +413,11 @@ public class SQLQueryInput extends QueryInput
                 queryBuf.append(" where rownum <= " + (limit + offset));
 
             queryBuf.append(") where rnum > " + offset);
+
+            // need to re-add the ordering constraints
+            if (!ordering.isEmpty())
+                queryBuf
+                        .append(" order by " + StringUtils.join(ordering, ", "));
         }
 
         QueryData q = new QueryData();
