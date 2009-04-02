@@ -28,12 +28,15 @@ import org.apache.commons.lang.StringUtils;
  */
 public enum SQLOp {
 
-    EXACT("="), GT(">"), GTE(">="), LT("<"), LTE("<="), ISNULL("IS NULL", true), NOTNULL(
-            "IS NOT NULL", true), NOT("!=");
+    EXACT("="), IEXACT("ILIKE"), GT(">"), GTE(">="), LT("<"), LTE("<="), ISNULL(
+            "IS NULL", true), NOTNULL("IS NOT NULL", true), NOT("!="), CONTAINS(
+            "LIKE", "%"), ICONTAINS("ILIKE", "%");
 
     private String operator;
 
     private boolean unary;
+
+    private String valueWrap = null;
 
     SQLOp(String operator)
     {
@@ -44,6 +47,12 @@ public enum SQLOp {
     {
         this.operator = operator;
         this.unary = unary;
+    }
+
+    SQLOp(String operator, String valueWrap)
+    {
+        this.operator = operator;
+        this.valueWrap = valueWrap;
     }
 
     @Override
@@ -76,6 +85,16 @@ public enum SQLOp {
     public String getOperator()
     {
         return operator;
+    }
+
+    /**
+     * If the value should be wrapped (by say, %), this is what to wrap with.
+     * 
+     * @return
+     */
+    public String getValueWrap()
+    {
+        return valueWrap;
     }
 
     /**
