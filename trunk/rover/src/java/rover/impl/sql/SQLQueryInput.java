@@ -405,18 +405,7 @@ public class SQLQueryInput extends QueryInput
 
         StringBuffer limitBuf = new StringBuffer();
 
-        if (isOracleDB)
-        {
-            if (limit > 0 && offset <= 0)
-            {
-                String limitStr = " rownum <= " + limit;
-                if (!p.whereStatements.isEmpty())
-                    queryBuf.append(" and " + limitStr);
-                else
-                    queryBuf.append(" where " + limitStr);
-            }
-        }
-        else
+        if (!isOracleDB)
         {
             if (limit > 0)
                 limitBuf.append(" limit " + limit);
@@ -435,7 +424,7 @@ public class SQLQueryInput extends QueryInput
 
         // finally, if the user supplied an offset - we have to do something
         // sick for Oracle...
-        if (isOracleDB && offset > 0)
+        if (isOracleDB && (limit > 0 || offset > 0))
         {
             // get the current query
             String query = queryBuf.toString();
