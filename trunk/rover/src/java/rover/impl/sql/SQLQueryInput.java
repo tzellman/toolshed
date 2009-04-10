@@ -405,7 +405,14 @@ public class SQLQueryInput extends QueryInput
 
         StringBuffer limitBuf = new StringBuffer();
 
-        if (!isOracleDB)
+        if (isOracleDB)
+        {
+            if (offset > 0 || limit > 0)
+            {
+                ordering.add("rownum ASC");
+            }
+        }
+        else
         {
             if (limit > 0)
                 limitBuf.append(" limit " + limit);
@@ -422,9 +429,8 @@ public class SQLQueryInput extends QueryInput
             queryBuf.append(limitBuf);
         }
 
-        // finally, if the user supplied an offset - we have to do something
-        // sick for Oracle...
-        if (isOracleDB && (limit > 0 || offset > 0))
+        // finally, we have to do something sick for Oracle...
+        if (isOracleDB && (offset > 0 || limit > 0))
         {
             // get the current query
             String query = queryBuf.toString();
