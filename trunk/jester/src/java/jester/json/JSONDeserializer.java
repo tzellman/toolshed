@@ -27,17 +27,25 @@ import java.util.Map;
 
 import jester.ConverterRegistry;
 import jester.json.parse.Interpreter;
+import jester.json.parse.Interpreter.MapType;
 import jester.json.parse.lexer.Lexer;
 import jester.json.parse.lexer.LexerException;
 import jester.json.parse.node.Start;
 import jester.json.parse.parser.Parser;
 import jester.json.parse.parser.ParserException;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.SerializationException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 public class JSONDeserializer extends ConverterRegistry<String, Object>
 {
+    public static final String HINT_MAPTYPE = "mapType";
+
+    public static final String HINT_MAPTYPE_DYNABEAN = "dynabean";
+
+    public static final String HINT_MAPTYPE_MAP = "map";
 
     public JSONDeserializer()
     {
@@ -73,10 +81,16 @@ public class JSONDeserializer extends ConverterRegistry<String, Object>
             // we know the input is a string since it really can't be anything
             // else
             String input = (String) from;
-
             StringReader reader = new StringReader(input);
             Start ast = getAST(reader);
-            Interpreter interpreter = new Interpreter();
+
+            String mapTypeHint = (hints != null && hints
+                    .containsKey(HINT_MAPTYPE)) ? ObjectUtils.toString(hints
+                    .get(HINT_MAPTYPE)) : HINT_MAPTYPE_MAP;
+            MapType mapType = StringUtils.equals(mapTypeHint,
+                    HINT_MAPTYPE_DYNABEAN) ? MapType.DYNABEAN : MapType.MAP;
+
+            Interpreter interpreter = new Interpreter(mapType);
             ast.apply(interpreter);
             return interpreter.getObject();
         }
@@ -85,5 +99,4 @@ public class JSONDeserializer extends ConverterRegistry<String, Object>
             throw new SerializationException(e);
         }
     }
-
 }

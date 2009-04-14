@@ -181,7 +181,7 @@ public class JSONTest extends TestCase
                                     IOUtils
                                             .toInputStream("[\"string\", 15, false, {\"key\": \"value\"}, []]"),
                                     null).toString(),
-                    "[string, 15, false, {\"key\"=value}, []]");
+                    "[string, 15, false, {key=value}, []]");
 
             try
             {
