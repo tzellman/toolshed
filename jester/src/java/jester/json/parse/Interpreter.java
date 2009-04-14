@@ -16,19 +16,33 @@ import jester.json.parse.node.AObject;
 import jester.json.parse.node.AStringValue;
 import jester.json.parse.node.ATrueValue;
 
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.LazyDynaMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 
 public class Interpreter extends DepthFirstAdapter
 {
+    public enum MapType {
+        MAP, DYNABEAN
+    }
+
     private Stack<Object> containerStack;
 
     private Object jsonObject;
 
     private Stack<String> fieldStack;
 
+    private MapType mapType;
+
     public Interpreter()
     {
+        this(MapType.MAP);
+    }
+
+    public Interpreter(MapType mapType)
+    {
+        this.mapType = mapType;
         jsonObject = null;
         containerStack = new Stack<Object>();
         fieldStack = new Stack<String>();
@@ -50,8 +64,13 @@ public class Interpreter extends DepthFirstAdapter
         {
             if (fieldStack.isEmpty())
                 throw new UnsupportedOperationException();
-            ((Map<String, Object>) containerStack.peek()).put(fieldStack.pop(),
-                    list);
+            ((Map) containerStack.peek()).put(fieldStack.pop(), list);
+        }
+        else if (containerStack.peek() instanceof DynaBean)
+        {
+            if (fieldStack.isEmpty())
+                throw new UnsupportedOperationException();
+            ((DynaBean) containerStack.peek()).set(fieldStack.pop(), list);
         }
         else
             throw new UnsupportedOperationException();
@@ -60,7 +79,17 @@ public class Interpreter extends DepthFirstAdapter
 
     protected void pushMap()
     {
-        Map<String, Object> map = new TreeMap<String, Object>();
+        Object map = null;
+        switch (mapType)
+        {
+        case DYNABEAN:
+            map = new LazyDynaMap();
+            break;
+        case MAP:
+        default:
+            map = new TreeMap<String, Object>();
+        }
+
         if (containerStack.isEmpty())
             jsonObject = map;
         else if (containerStack.peek() instanceof List)
@@ -69,8 +98,13 @@ public class Interpreter extends DepthFirstAdapter
         {
             if (fieldStack.isEmpty())
                 throw new UnsupportedOperationException();
-            ((Map<String, Object>) containerStack.peek()).put(fieldStack.pop(),
-                    map);
+            ((Map) containerStack.peek()).put(fieldStack.pop(), map);
+        }
+        else if (containerStack.peek() instanceof DynaBean)
+        {
+            if (fieldStack.isEmpty())
+                throw new UnsupportedOperationException();
+            ((DynaBean) containerStack.peek()).set(fieldStack.pop(), map);
         }
         else
             throw new UnsupportedOperationException();
@@ -87,8 +121,13 @@ public class Interpreter extends DepthFirstAdapter
         {
             if (fieldStack.isEmpty())
                 throw new UnsupportedOperationException();
-            ((Map<String, Object>) containerStack.peek()).put(fieldStack.pop(),
-                    value);
+            ((Map) containerStack.peek()).put(fieldStack.pop(), value);
+        }
+        else if (containerStack.peek() instanceof DynaBean)
+        {
+            if (fieldStack.isEmpty())
+                throw new UnsupportedOperationException();
+            ((DynaBean) containerStack.peek()).set(fieldStack.pop(), value);
         }
         else
             throw new UnsupportedOperationException();
@@ -156,7 +195,10 @@ public class Interpreter extends DepthFirstAdapter
     @Override
     public void caseAField(AField node)
     {
-        fieldStack.push(node.getKey().getText());
+        String key = node.getKey().getText();
+        if (key.startsWith("\"") && key.startsWith("\""))
+            key = StringUtils.strip(key, "\"");
+        fieldStack.push(key);
         node.getValue().apply(this);
     }
 

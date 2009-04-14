@@ -26,6 +26,8 @@ import jester.ConverterRegistry;
 import jester.IConverter;
 import jester.utils.JesterUtils;
 
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaBeanMapDecorator;
 import org.apache.commons.lang.SerializationException;
 
 public class JSONSerializer extends ConverterRegistry<Object, String>
@@ -36,11 +38,20 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
 
     public JSONSerializer()
     {
-        register(new CollectionConverter(this));
+        register(new CollectionConverter());
         register(new StringConverter());
         register(new NumberConverter());
         register(new BooleanConverter());
-        register(new MapConverter(this));
+        register(new MapConverter());
+        register(new IConverter<DynaBean, String>()
+        {
+            public String convert(DynaBean from, Map hints)
+                    throws SerializationException
+            {
+                return JSONSerializer.this.convert(new DynaBeanMapDecorator(
+                        from), String.class);
+            }
+        });
     }
 
     /**
@@ -68,16 +79,8 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     /**
      * Converts a Collection to a JSON String
      */
-    public static class CollectionConverter implements
-            IConverter<Collection, String>
+    public class CollectionConverter implements IConverter<Collection, String>
     {
-        protected JSONSerializer registry;
-
-        public CollectionConverter(JSONSerializer registry)
-        {
-            this.registry = registry;
-        }
-
         public String convert(Collection from, Map hints)
                 throws SerializationException
         {
@@ -88,7 +91,8 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
             for (int i = 0, size = vals.length; i < size; ++i)
             {
                 Object val = vals[i];
-                String converted = registry.convert(val, String.class, hints);
+                String converted = JSONSerializer.this.convert(val,
+                        String.class, hints);
                 buffer.append(converted);
                 if (i < size - 1)
                     buffer.append(",");
@@ -101,7 +105,7 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     /**
      * Converts a String to a JSON String
      */
-    public static class StringConverter implements IConverter<String, String>
+    public class StringConverter implements IConverter<String, String>
     {
         public String convert(String from, Map hints)
                 throws SerializationException
@@ -113,7 +117,7 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     /**
      * Converts a Number to a JSON String
      */
-    public static class NumberConverter implements IConverter<Number, String>
+    public class NumberConverter implements IConverter<Number, String>
     {
         public String convert(Number from, Map hints)
                 throws SerializationException
@@ -125,7 +129,7 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     /**
      * Converts a Boolean to a JSON String
      */
-    public static class BooleanConverter implements IConverter<Boolean, String>
+    public class BooleanConverter implements IConverter<Boolean, String>
     {
         public String convert(Boolean from, Map hints)
                 throws SerializationException
@@ -137,15 +141,8 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     /**
      * Converts a Map to a JSON String
      */
-    public static class MapConverter implements IConverter<Map, String>
+    public class MapConverter implements IConverter<Map, String>
     {
-        protected JSONSerializer registry;
-
-        public MapConverter(JSONSerializer registry)
-        {
-            this.registry = registry;
-        }
-
         public String convert(Map from, Map hints)
                 throws SerializationException
         {
@@ -155,14 +152,15 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
             for (int i = 0, size = keys.length; i < size; ++i)
             {
                 Object key = keys[i];
-                String keyString = registry.convert(key, String.class, hints);
+                String keyString = JSONSerializer.this.convert(key,
+                        String.class, hints);
                 if (!keyString.startsWith("\"") && !keyString.endsWith("\""))
                     keyString = toJSONString(keyString);
 
                 buffer.append(keyString);
                 buffer.append(":");
-                buffer.append(registry.convert(from.get(key), String.class,
-                        hints));
+                buffer.append(JSONSerializer.this.convert(from.get(key),
+                        String.class, hints));
                 if (i < size - 1)
                     buffer.append(",");
             }

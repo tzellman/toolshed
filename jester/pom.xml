@@ -5,7 +5,7 @@
 	<groupId>toolshed</groupId>
 	<artifactId>jester</artifactId>
 	<packaging>jar</packaging>
-	<version>0.2.1</version>
+	<version>0.2.2</version>
 	<inceptionYear>2009</inceptionYear>
 	<name>Ingestion/Serialization API</name>
 	<url>http://code.google.com/p/toolshed/</url>
@@ -35,25 +35,27 @@
 			<id>tzellman</id>
 		</developer>
 	</developers>
-	
-	<!-- By default, http://repo1.maven.org/maven2/ is used, but some jars 
-        aren't available there, so we add the local lib path where we have some
-        jars under version control -->
-    <repositories>
-        <repository>
-            <id>local</id>
-            <name>local</name>
-            <url>file://${basedir}/libs</url>
-        </repository>
-    </repositories>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>local</id>
-            <name>local</name>
-            <url>file://${basedir}/libs</url>
-        </pluginRepository>
-    </pluginRepositories>
+	<!--
+		By default, http://repo1.maven.org/maven2/ is used, but some jars
+		aren't available there, so we add the local lib path where we have
+		some jars under version control
+	-->
+	<repositories>
+		<repository>
+			<id>local</id>
+			<name>local</name>
+			<url>file://${basedir}/libs</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>local</id>
+			<name>local</name>
+			<url>file://${basedir}/libs</url>
+		</pluginRepository>
+	</pluginRepositories>
 
 	<dependencies>
 		<dependency>
@@ -69,17 +71,17 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-            <scope>compile</scope>
-        </dependency>
-		<!--dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.1.1</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>commons-beanutils</groupId>
 			<artifactId>commons-beanutils</artifactId>
 			<version>1.8.0</version>
 			<scope>compile</scope>
-		</dependency-->
+		</dependency>
 		<dependency>
 			<groupId>servletapi</groupId>
 			<artifactId>servletapi</artifactId>
@@ -112,87 +114,87 @@
 					</configuration>
 				</plugin>
 				<plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>sablecc-maven-plugin</artifactId>
-                    <version>2.0.1-galoot</version>
-                    <executions>
-                        <execution>
-                            <phase>generate-sources</phase>
-                            <goals>
-                                <goal>generate</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <sourceDirectory>${basedir}</sourceDirectory>
-                        <outputDirectory>
-                            ${basedir}/src/java/
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>sablecc-maven-plugin</artifactId>
+					<version>2.0.1-galoot</version>
+					<executions>
+						<execution>
+							<phase>generate-sources</phase>
+							<goals>
+								<goal>generate</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<sourceDirectory>${basedir}</sourceDirectory>
+						<outputDirectory>
+							${basedir}/src/java/
                         </outputDirectory>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>sablecc</groupId>
-                            <artifactId>sablecc</artifactId>
-                            <version>3.2</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <configuration>
-                        <filesets>
-                            <fileset>
-                                <directory>
-                                    src/java/jester/json/parse/analysis
+					</configuration>
+					<dependencies>
+						<dependency>
+							<groupId>sablecc</groupId>
+							<artifactId>sablecc</artifactId>
+							<version>3.2</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+				<plugin>
+					<artifactId>maven-clean-plugin</artifactId>
+					<configuration>
+						<filesets>
+							<fileset>
+								<directory>
+									src/java/jester/json/parse/analysis
                                 </directory>
-                                <followSymlinks>false</followSymlinks>
-                            </fileset>
-                            <fileset>
-                                <directory>
-                                    src/java/jester/json/parse/lexer
+								<followSymlinks>false</followSymlinks>
+							</fileset>
+							<fileset>
+								<directory>
+									src/java/jester/json/parse/lexer
                                 </directory>
-                                <followSymlinks>false</followSymlinks>
-                            </fileset>
-                            <fileset>
-                                <directory>
-                                    src/java/jester/json/parse/node
+								<followSymlinks>false</followSymlinks>
+							</fileset>
+							<fileset>
+								<directory>
+									src/java/jester/json/parse/node
                                 </directory>
-                                <followSymlinks>false</followSymlinks>
-                            </fileset>
-                            <fileset>
-                                <directory>
-                                    src/java/jester/json/parse/parser
+								<followSymlinks>false</followSymlinks>
+							</fileset>
+							<fileset>
+								<directory>
+									src/java/jester/json/parse/parser
                                 </directory>
-                                <followSymlinks>false</followSymlinks>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
+								<followSymlinks>false</followSymlinks>
+							</fileset>
+						</filesets>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<sourceDirectory>src/java</sourceDirectory>
 		<testSourceDirectory>src/test</testSourceDirectory>
-		
-		<resources>
-            <resource>
-                <!-- Include the lexer.dat file -->
-                <directory>${basedir}/src/java</directory>
-                <includes>
-                    <include>**/*.dat</include>
-                    <include>**/*.config</include>
-                </includes>
 
-                <excludes>
-                    <exclude>**/.svn/**</exclude>
-                </excludes>
-            </resource>
-            <resource>
-                <directory>${basedir}</directory>
-                <includes>
-                    <include>*.grammar</include>
-                </includes>
-            </resource>
-        </resources>
+		<resources>
+			<resource>
+				<!-- Include the lexer.dat file -->
+				<directory>${basedir}/src/java</directory>
+				<includes>
+					<include>**/*.dat</include>
+					<include>**/*.config</include>
+				</includes>
+
+				<excludes>
+					<exclude>**/.svn/**</exclude>
+				</excludes>
+			</resource>
+			<resource>
+				<directory>${basedir}</directory>
+				<includes>
+					<include>*.grammar</include>
+				</includes>
+			</resource>
+		</resources>
 	</build>
 
 	<properties></properties>
