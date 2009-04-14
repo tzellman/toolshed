@@ -24,11 +24,13 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import jester.IConverter;
 import jester.OGNLConverter;
+import jester.json.JSONDeserializer;
 import jester.json.JSONSerializer;
 import junit.framework.TestCase;
 
@@ -39,6 +41,7 @@ import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import rover.impl.sql.SQLQueryResultSet;
+import rover.impl.sql.SQLStatementConverter;
 
 /**
  * @author tzellman
@@ -52,6 +55,8 @@ public class QuerySetTest extends TestCase
     protected IQueryContext queryContext;
 
     protected JSONSerializer serializer;
+
+    protected JSONDeserializer deserializer;
 
     protected static Boolean firstTime = true;
 
@@ -78,6 +83,7 @@ public class QuerySetTest extends TestCase
         queryContext = new HSQLDBQueryContext();
 
         serializer = new JSONSerializer();
+        deserializer = new JSONDeserializer();
 
         // add a converter that can handle DynaBeans
         serializer.register(new IConverter<DynaBean, String>()
@@ -218,12 +224,13 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
-    
+
     public void testContains()
     {
         try
         {
-            IQueryResultSet q = new SQLQueryResultSet("requirement", queryContext);
+            IQueryResultSet q = new SQLQueryResultSet("requirement",
+                    queryContext);
             assertEquals(2, q.filter("descr__icontains=END").count());
             assertEquals(2, q.filter("descr__icontains=end").count());
             assertEquals(2, q.filter("descr__contains=end").count());
@@ -233,6 +240,66 @@ public class QuerySetTest extends TestCase
         {
             fail(ExceptionUtils.getStackTrace(e));
         }
+    }
+
+    public void testSerialization()
+    {
+        try
+        {
+            IQueryResultSet q = new SQLQueryResultSet("project", queryContext)
+                    .orderBy("name");
+            List<Object> objects = q.list();
+            System.out.println(OGNLConverter.evaluateExpression(objects,
+                    "0.project.name"));
+
+            // Let's get it as JSON
+            String json = serializer.convert(objects);
+            System.out.println(json);
+
+            // Now, let's turn the JSON back into an object
+            // this time, I want to use DynaBeans
+            Map hints = new HashMap();
+            hints.put(JSONDeserializer.HINT_MAPTYPE,
+                    JSONDeserializer.HINT_MAPTYPE_DYNABEAN);
+            Object jsonObject = deserializer.convert(json, hints);
+            System.out.println(OGNLConverter.evaluateExpression(objects,
+                    "0.project.name"));
+            System.out.println(jsonObject);
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testSQLStatementConverter()
+    {
+        String json = "{\"project\":{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"mt\"}}";
+        Object jsonData = deserializer.convert(json);
+
+        SQLStatementConverter converter = new SQLStatementConverter();
+        String sqlStatement1 = converter.convert(jsonData);
+        System.out.println(sqlStatement1);
+
+        // now, try by passing a hint of the table name
+        json = "{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"mt\"}";
+        jsonData = deserializer.convert(json);
+
+        Map hints = new HashMap();
+        hints.put(SQLStatementConverter.HINT_TABLE_NAME, "project");
+        String sqlStatement2 = converter.convert(jsonData, hints);
+        System.out.println(sqlStatement2);
+        assertEquals(sqlStatement1, sqlStatement2);
+
+        // test the update functionality
+        json = "{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"newName\"}";
+        jsonData = deserializer.convert(json);
+
+        hints = new HashMap();
+        hints.put(SQLStatementConverter.HINT_TABLE_NAME, "project");
+        hints.put(SQLStatementConverter.HINT_UPDATE_WHERE, "name='mt'");
+        String sqlStatement3 = converter.convert(jsonData, hints);
+        System.out.println(sqlStatement3);
     }
 
 }

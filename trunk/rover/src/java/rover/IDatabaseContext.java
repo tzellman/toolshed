@@ -20,17 +20,23 @@
 package rover;
 
 /**
- * The context required to make a query.
+ * Database context.
  * 
  * @author tzellman
  * 
  */
-public interface IQueryContext extends IDatabaseContext
+public interface IDatabaseContext
 {
+    /**
+     * 
+     * @return an IConnectionProvider
+     */
+    IConnectionProvider getConnectionProvider();
 
     /**
      * 
-     * @return a SQLTypeConverter
+     * @return an IDatabaseInfo object
      */
-    SQLTypeConverter getSQLTypeConverter();
+    IDatabaseInfo getDatabaseInfo();
+
 }
