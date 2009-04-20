@@ -1,109 +1,117 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>toolshed</groupId>
-	<artifactId>rover</artifactId>
-	<packaging>jar</packaging>
-	<version>0.2.1</version>
-	<inceptionYear>2009</inceptionYear>
-	<name>Database Queryset API</name>
-	<url>http://code.google.com/p/toolshed/</url>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>toolshed</groupId>
+    <artifactId>rover</artifactId>
+    <packaging>jar</packaging>
+    <version>0.2.2</version>
+    <inceptionYear>2009</inceptionYear>
+    <name>Database Queryset API</name>
+    <url>http://code.google.com/p/toolshed/</url>
 
-	<description>
-		Rover is a database interface layer that fetches querysets.
+    <description>
+  Rover is a database interface layer that fetches querysets.
     </description>
 
-	<licenses>
-		<license>
-			<name>GNU Lesser General Public License, Version 3</name>
-			<url>http://www.gnu.org/licenses/lgpl.txt</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 3</name>
+            <url>http://www.gnu.org/licenses/lgpl.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-	<scm>
-		<connection>
-			svcm:svn:http://toolshed.googlecode.com/svn/trunk/rover/
+    <scm>
+        <connection>
+   svcm:svn:http://toolshed.googlecode.com/svn/trunk/rover/
         </connection>
-		<url>http://code.google.com/p/toolshed/source</url>
-	</scm>
+        <url>http://code.google.com/p/toolshed/source</url>
+    </scm>
 
-	<developers>
-		<developer>
-			<name>Tom Zellman</name>
-			<id>tzellman</id>
-		</developer>
-	</developers>
+    <developers>
+        <developer>
+            <name>Tom Zellman</name>
+            <id>tzellman</id>
+        </developer>
+    </developers>
 
-	<dependencies>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.4</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>1.4</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>commons-beanutils</groupId>
-			<artifactId>commons-beanutils</artifactId>
-			<version>1.8.0</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>toolshed</groupId>
-			<artifactId>jester</artifactId>
-			<version>0.2.2</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.4</version>
-			<scope>test</scope>
-		</dependency>
-		<!--dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.15</version>
-			<scope>test</scope>
-		</dependency-->
-		<dependency>
-			<groupId>hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<version>1.8.0.7</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.4</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>toolshed</groupId>
+            <artifactId>jester</artifactId>
+            <version>0.2.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.4</version>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            dependency> <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId> <version>1.2.15</version>
+            <scope>test</scope> </dependency
+        -->
+        <dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.7</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<inherited>true</inherited>
-					<configuration>
-						<source>1.5</source>
-						<target>1.5</target>
-						<debug>false</debug>
-						<optimize>true</optimize>
-						<showDeprecation>true</showDeprecation>
-						<showWarnings>true</showWarnings>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<sourceDirectory>src/java</sourceDirectory>
-		<testSourceDirectory>src/test</testSourceDirectory>
-	</build>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <source>1.5</source>
+                        <target>1.5</target>
+                        <debug>false</debug>
+                        <optimize>true</optimize>
+                        <showDeprecation>true</showDeprecation>
+                        <showWarnings>true</showWarnings>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <sourceDirectory>src/java</sourceDirectory>
+        <testSourceDirectory>src/test</testSourceDirectory>
 
-	<properties></properties>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/test</directory>
+                <includes>
+                    <include>**/*.sql</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+
+    <properties></properties>
 
 </project>

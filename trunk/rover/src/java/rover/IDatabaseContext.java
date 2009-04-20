@@ -39,4 +39,10 @@ public interface IDatabaseContext
      */
     IDatabaseInfo getDatabaseInfo();
 
+    /**
+     * 
+     * @return a SQLTypeConverter
+     */
+    SQLTypeConverter getSQLTypeConverter();
+
 }

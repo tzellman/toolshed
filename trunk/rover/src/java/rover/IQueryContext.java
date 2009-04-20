@@ -28,9 +28,5 @@ package rover;
 public interface IQueryContext extends IDatabaseContext
 {
 
-    /**
-     * 
-     * @return a SQLTypeConverter
-     */
-    SQLTypeConverter getSQLTypeConverter();
+    // For now, nothing different from IDatabaseContext... but this may change
 }
