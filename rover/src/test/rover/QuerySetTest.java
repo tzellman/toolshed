@@ -40,8 +40,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
+import rover.impl.sql.PreparedStatementConverter;
 import rover.impl.sql.SQLQueryResultSet;
-import rover.impl.sql.SQLStatementConverter;
 
 /**
  * @author tzellman
@@ -272,34 +272,20 @@ public class QuerySetTest extends TestCase
         }
     }
 
-    public void testSQLStatementConverter()
+    public void testPreparedStatementConverter() throws Exception
     {
-        String json = "{\"project\":{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"mt\"}}";
+        Map hints = new HashMap();
+        hints.put(PreparedStatementConverter.HINT_TABLE_NAME, "project");
+        String json = "{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"mt\"}";
         Object jsonData = deserializer.convert(json);
 
-        SQLStatementConverter converter = new SQLStatementConverter();
-        String sqlStatement1 = converter.convert(jsonData);
-        System.out.println(sqlStatement1);
+        PreparedStatementConverter converter = new PreparedStatementConverter(
+                queryContext);
+        PreparedStatement ps = converter.convert(jsonData, hints);
+        System.out.println("ps: " + ps);
 
-        // now, try by passing a hint of the table name
-        json = "{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"mt\"}";
-        jsonData = deserializer.convert(json);
-
-        Map hints = new HashMap();
-        hints.put(SQLStatementConverter.HINT_TABLE_NAME, "project");
-        String sqlStatement2 = converter.convert(jsonData, hints);
-        System.out.println(sqlStatement2);
-        assertEquals(sqlStatement1, sqlStatement2);
-
-        // test the update functionality
-        json = "{\"summary\":\"threading module\",\"updated\":\"2009-04-13 00:00:00.0\",\"name\":\"newName\"}";
-        jsonData = deserializer.convert(json);
-
-        hints = new HashMap();
-        hints.put(SQLStatementConverter.HINT_TABLE_NAME, "project");
-        hints.put(SQLStatementConverter.HINT_UPDATE_WHERE, "name='mt'");
-        String sqlStatement3 = converter.convert(jsonData, hints);
-        System.out.println(sqlStatement3);
+        ps.getConnection().close();
+        ps.close();
     }
 
 }

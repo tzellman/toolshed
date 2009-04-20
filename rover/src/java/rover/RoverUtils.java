@@ -19,6 +19,11 @@
  */
 package rover;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+
 import org.apache.commons.lang.StringUtils;
 
 public final class RoverUtils
@@ -46,6 +51,32 @@ public final class RoverUtils
     {
         return StringUtils.equalsIgnoreCase(dbInfo.getDatabaseType(),
                 QueryConstants.DATABASE_HSQLDB);
+    }
+
+    /**
+     * Set the correct (typed) field in a PreparedStatement
+     * 
+     * @param ps
+     * @param field
+     * @param i
+     * @param object
+     * @throws SQLException
+     */
+    public static void setPreparedStatementField(PreparedStatement ps, int i,
+            Object object) throws SQLException
+    {
+        if (object instanceof Integer)
+            ps.setInt(i, (Integer) object);
+        else if (object instanceof Float)
+            ps.setFloat(i, (Float) object);
+        else if (object instanceof Double)
+            ps.setDouble(i, (Double) object);
+        else if (object instanceof Date)
+            ps.setDate(i, (Date) object);
+        else if (object instanceof Timestamp)
+            ps.setTimestamp(i, (Timestamp) object);
+        else
+            ps.setString(i, object.toString());
     }
 
     private RoverUtils()

@@ -20,11 +20,8 @@
 package rover.impl.sql;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -48,6 +45,7 @@ import org.apache.commons.logging.LogFactory;
 import rover.IQueryContext;
 import rover.IQueryResultSet;
 import rover.QueryConstants;
+import rover.RoverUtils;
 import rover.impl.FilterInput;
 import rover.impl.sql.SQLQueryInput.QueryData;
 
@@ -245,7 +243,8 @@ public class SQLQueryResultSet implements IQueryResultSet
                 int i = 1;
                 for (Object value : queryData.values)
                 {
-                    setPreparedStatementField(preparedStatement, i++, value);
+                    RoverUtils.setPreparedStatementField(preparedStatement,
+                            i++, value);
                 }
             }
             preparedStatement.execute();
@@ -285,32 +284,6 @@ public class SQLQueryResultSet implements IQueryResultSet
         SQLQueryResultSet dolly = new SQLQueryResultSet(this);
         dolly.queryInput.setSelectRelatedDepth(depth);
         return dolly;
-    }
-
-    /**
-     * Set the correct (typed) field in a PreparedStatement
-     * 
-     * @param ps
-     * @param field
-     * @param i
-     * @param object
-     * @throws SQLException
-     */
-    protected void setPreparedStatementField(PreparedStatement ps, int i,
-            Object object) throws SQLException
-    {
-        if (object instanceof Integer)
-            ps.setInt(i, (Integer) object);
-        else if (object instanceof Float)
-            ps.setFloat(i, (Float) object);
-        else if (object instanceof Double)
-            ps.setDouble(i, (Double) object);
-        else if (object instanceof Date)
-            ps.setDate(i, (Date) object);
-        else if (object instanceof Timestamp)
-            ps.setTimestamp(i, (Timestamp) object);
-        else
-            ps.setString(i, object.toString());
     }
 
 }
