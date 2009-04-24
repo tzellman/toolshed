@@ -112,14 +112,39 @@ public abstract class QueryInput
 
     public void addFK(String column) throws Exception
     {
+        IForeignKeyInfo fkInfo = null;
+        final String[] parts = StringUtils.splitByWholeSeparator(column, "$$",
+                3);
+        if (parts.length > 1)
+        {
+            column = parts[0];
+            final String table = parts[1];
+            final String col = parts.length == 2 ? column : parts[2];
+            fkInfo = new IForeignKeyInfo()
+            {
+                public String getColumn()
+                {
+                    return col;
+                }
+
+                public String getTable()
+                {
+                    return table;
+                }
+            };
+        }
+
         // try to get the field from the current table
         ITableInfo currentTable = tables.peekFirst();
         Map<String, IFieldInfo> currentFields = currentTable.getFields();
 
         IFieldInfo fieldInfo = currentFields.get(column);
-        // also, get the FK info
-        IForeignKeyInfo fkInfo = fieldInfo == null ? null : fieldInfo
-                .getForeignKeyInfo();
+
+        if (fkInfo == null)
+        {
+            // also, get the FK info
+            fkInfo = fieldInfo == null ? null : fieldInfo.getForeignKeyInfo();
+        }
 
         if (fkInfo == null)
         {
