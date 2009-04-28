@@ -75,15 +75,6 @@ public interface IQueryResultSet
     IQueryResultSet values(String... fields) throws Exception;
 
     /**
-     * Selects related objects up to the given depth level.
-     * 
-     * @param depth
-     * @return
-     * @throws Exception
-     */
-    IQueryResultSet selectRelated(int depth) throws Exception;
-
-    /**
      * Executes the query and returns a List of Maps. Each Map contains a named
      * objects, according to what was requested.
      * 

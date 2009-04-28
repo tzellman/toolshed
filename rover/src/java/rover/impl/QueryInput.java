@@ -74,7 +74,7 @@ public abstract class QueryInput
 
     protected IQueryContext context;
 
-    protected int selectRelatedDepth;
+    // protected int selectRelatedDepth;
 
     protected boolean distinct;
 
@@ -90,7 +90,7 @@ public abstract class QueryInput
         fkRelationships = new LinkedList<FKRelationship>();
         wheres = new LinkedList<Where>();
         orderBy = new LinkedList<String>();
-        selectRelatedDepth = 0; // no select related, by default
+        // selectRelatedDepth = 0; // no select related, by default
         distinct = false;
     }
 
@@ -260,10 +260,10 @@ public abstract class QueryInput
         return fkRelationships.isEmpty() && wheres.isEmpty();
     }
 
-    public void setSelectRelatedDepth(int depth)
-    {
-        this.selectRelatedDepth = depth;
-    }
+    // public void setSelectRelatedDepth(int depth)
+    // {
+    // this.selectRelatedDepth = depth;
+    // }
 
     public void setDistinct(boolean distinct)
     {

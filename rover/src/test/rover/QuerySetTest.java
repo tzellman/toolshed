@@ -142,65 +142,65 @@ public class QuerySetTest extends TestCase
         }
     }
 
-    public void testRelated()
-    {
-        try
-        {
-            IQueryResultSet q = new SQLQueryResultSet("requirement",
-                    queryContext);
-            q = q.filter("release__name=1.0");
-            List results = q.selectRelated(2).list();
+    // public void testRelated()
+    // {
+    // try
+    // {
+    // IQueryResultSet q = new SQLQueryResultSet("requirement",
+    // queryContext);
+    // q = q.filter("release__name=1.0");
+    // List results = q.selectRelated(2).list();
+    //
+    // // loop over the objects
+    // for (Object result : results)
+    // {
+    // // use the OGNLConverter to dig down and get some values
+    // String relName = (String) OGNLConverter.evaluate(result,
+    // "requirement.release.name".split("[.]"));
+    // String projectName = (String) OGNLConverter.evaluate(result,
+    // "requirement.release.project.name".split("[.]"));
+    // System.out.println(String.format(
+    // "Release: [%s], Project: [%s]", relName, projectName));
+    // }
+    //
+    // // or, this is easier...
+    // System.out.println(serializer.convert(results));
+    // }
+    // catch (Exception e)
+    // {
+    // fail(ExceptionUtils.getStackTrace(e));
+    // }
+    // }
 
-            // loop over the objects
-            for (Object result : results)
-            {
-                // use the OGNLConverter to dig down and get some values
-                String relName = (String) OGNLConverter.evaluate(result,
-                        "requirement.release.name".split("[.]"));
-                String projectName = (String) OGNLConverter.evaluate(result,
-                        "requirement.release.project.name".split("[.]"));
-                System.out.println(String.format(
-                        "Release: [%s], Project: [%s]", relName, projectName));
-            }
-
-            // or, this is easier...
-            System.out.println(serializer.convert(results));
-        }
-        catch (Exception e)
-        {
-            fail(ExceptionUtils.getStackTrace(e));
-        }
-    }
-
-    public void testRelated2()
-    {
-        try
-        {
-            IQueryResultSet q = new SQLQueryResultSet("requirement",
-                    queryContext);
-            q = q.filter("release$$release$$id__name=1.0");
-            List results = q.selectRelated(2).list();
-
-            // loop over the objects
-            for (Object result : results)
-            {
-                // use the OGNLConverter to dig down and get some values
-                String relName = (String) OGNLConverter.evaluate(result,
-                        "requirement.release.name".split("[.]"));
-                String projectName = (String) OGNLConverter.evaluate(result,
-                        "requirement.release.project.name".split("[.]"));
-                System.out.println(String.format(
-                        "Release: [%s], Project: [%s]", relName, projectName));
-            }
-
-            // or, this is easier...
-            System.out.println(serializer.convert(results));
-        }
-        catch (Exception e)
-        {
-            fail(ExceptionUtils.getStackTrace(e));
-        }
-    }
+    // public void testRelated2()
+    // {
+    // try
+    // {
+    // IQueryResultSet q = new SQLQueryResultSet("requirement",
+    // queryContext);
+    // q = q.filter("release$$release$$id__name=1.0");
+    // List results = q.selectRelated(2).list();
+    //
+    // // loop over the objects
+    // for (Object result : results)
+    // {
+    // // use the OGNLConverter to dig down and get some values
+    // String relName = (String) OGNLConverter.evaluate(result,
+    // "requirement.release.name".split("[.]"));
+    // String projectName = (String) OGNLConverter.evaluate(result,
+    // "requirement.release.project.name".split("[.]"));
+    // System.out.println(String.format(
+    // "Release: [%s], Project: [%s]", relName, projectName));
+    // }
+    //
+    // // or, this is easier...
+    // System.out.println(serializer.convert(results));
+    // }
+    // catch (Exception e)
+    // {
+    // fail(ExceptionUtils.getStackTrace(e));
+    // }
+    // }
 
     public void testOrderBy()
     {

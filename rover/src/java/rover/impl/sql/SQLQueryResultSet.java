@@ -279,11 +279,11 @@ public class SQLQueryResultSet implements IQueryResultSet
         return results;
     }
 
-    public IQueryResultSet selectRelated(int depth) throws Exception
-    {
-        SQLQueryResultSet dolly = new SQLQueryResultSet(this);
-        dolly.queryInput.setSelectRelatedDepth(depth);
-        return dolly;
-    }
+    // public IQueryResultSet selectRelated(int depth) throws Exception
+    // {
+    // SQLQueryResultSet dolly = new SQLQueryResultSet(this);
+    // dolly.queryInput.setSelectRelatedDepth(depth);
+    // return dolly;
+    // }
 
 }
