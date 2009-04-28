@@ -33,8 +33,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
-import rover.IFieldInfo;
-import rover.IForeignKeyInfo;
 import rover.IQueryContext;
 import rover.ITableInfo;
 import rover.QueryConstants;
@@ -105,54 +103,54 @@ public class SQLQueryInput extends QueryInput
         }
     }
 
-    protected void processRelated(ITableInfo table, int depth, String lastId,
-            String prefix, ProcessData p) throws Exception
-    {
-        for (IFieldInfo field : table.getFields().values())
-        {
-            IForeignKeyInfo fkInfo = field.getForeignKeyInfo();
-            if (fkInfo != null)
-            {
-                String fkTableName = fkInfo.getTable();
-                if (!p.tableIds.containsKey(fkTableName))
-                    p.tableIds.put(fkTableName, new LinkedList<String>());
-
-                String fkTableId = null;
-                List<String> idList = p.tableIds.get(fkTableName);
-                if (idList.size() < depth)
-                {
-                    fkTableId = String.format("o%d", p.id++);
-                    p.tableIds.get(fkTableName).add(fkTableId);
-                }
-                else
-                    fkTableId = idList.get(depth - 1);
-
-                p.whereStatements.add(String.format("%s.%s=%s.%s", lastId,
-                        field.getName(), fkTableId, fkInfo.getColumn()));
-
-                // now, add all of the FK fields
-                ITableInfo fkTable = context.getDatabaseInfo().getTableInfo(
-                        fkTableName);
-                for (String fieldName : fkTable.getFields().keySet())
-                {
-                    // alias
-                    String selectAs = String.format("%s__%s__%s", prefix,
-                            fkTableName, fieldName).toLowerCase();
-                    String alias = newAlias(selectAs, p.selectAliases);
-                    p.selectStatements.add(String.format("%s.%s AS %s",
-                            fkTableId, fieldName, alias));
-                    p.reverseSelectAliases.put(selectAs, alias);
-                }
-
-                // recursive...
-                if (depth < selectRelatedDepth)
-                    processRelated(fkTable, depth + 1, fkTableId, String
-                            .format("%s__%s", prefix, fkTable.getName())
-                            .toLowerCase(), p);
-            }
-        }
-
-    }
+    // protected void processRelated(ITableInfo table, int depth, String lastId,
+    // String prefix, ProcessData p) throws Exception
+    // {
+    // for (IFieldInfo field : table.getFields().values())
+    // {
+    // IForeignKeyInfo fkInfo = field.getForeignKeyInfo();
+    // if (fkInfo != null)
+    // {
+    // String fkTableName = fkInfo.getTable();
+    // if (!p.tableIds.containsKey(fkTableName))
+    // p.tableIds.put(fkTableName, new LinkedList<String>());
+    //
+    // String fkTableId = null;
+    // List<String> idList = p.tableIds.get(fkTableName);
+    // if (idList.size() < depth)
+    // {
+    // fkTableId = String.format("o%d", p.id++);
+    // p.tableIds.get(fkTableName).add(fkTableId);
+    // }
+    // else
+    // fkTableId = idList.get(depth - 1);
+    //
+    // p.whereStatements.add(String.format("%s.%s=%s.%s", lastId,
+    // field.getName(), fkTableId, fkInfo.getColumn()));
+    //
+    // // now, add all of the FK fields
+    // ITableInfo fkTable = context.getDatabaseInfo().getTableInfo(
+    // fkTableName);
+    // for (String fieldName : fkTable.getFields().keySet())
+    // {
+    // // alias
+    // String selectAs = String.format("%s__%s__%s", prefix,
+    // fkTableName, fieldName).toLowerCase();
+    // String alias = newAlias(selectAs, p.selectAliases);
+    // p.selectStatements.add(String.format("%s.%s AS %s",
+    // fkTableId, fieldName, alias));
+    // p.reverseSelectAliases.put(selectAs, alias);
+    // }
+    //
+    // // recursive...
+    // if (depth < selectRelatedDepth)
+    // processRelated(fkTable, depth + 1, fkTableId, String
+    // .format("%s__%s", prefix, fkTable.getName())
+    // .toLowerCase(), p);
+    // }
+    // }
+    //
+    // }
 
     @Override
     public QueryData getQuery(int offset, int limit, Set<String> selectFields)
@@ -346,11 +344,11 @@ public class SQLQueryInput extends QueryInput
             }
         }
 
-        if (selectRelatedDepth > 0
-                && (selectFields == null || selectFields.isEmpty()))
-        {
-            processRelated(table, 1, tableId, table.getName().toLowerCase(), p);
-        }
+        // if (selectRelatedDepth > 0
+        // && (selectFields == null || selectFields.isEmpty()))
+        // {
+        // processRelated(table, 1, tableId, table.getName().toLowerCase(), p);
+        // }
 
         List<String> ordering = new LinkedList<String>();
         if (orderBy != null)
