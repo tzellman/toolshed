@@ -271,6 +271,22 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
+    
+    public void testIn()
+    {
+        try
+        {
+            IQueryResultSet q = new SQLQueryResultSet("requirement",
+                    queryContext);
+            assertEquals(2, q.filter("number__in=200,201").count());
+            assertEquals(3, q.filter("number__in=100").count());
+            assertEquals(0, q.filter("number__in=1000,2000,3000").count());
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 
     public void testSerialization()
     {

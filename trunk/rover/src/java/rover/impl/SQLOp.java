@@ -30,13 +30,11 @@ public enum SQLOp {
 
     EXACT("="), IEXACT("ILIKE"), GT(">"), GTE(">="), LT("<"), LTE("<="), ISNULL(
             "IS NULL", true), NOTNULL("IS NOT NULL", true), NOT("!="), CONTAINS(
-            "LIKE", "%"), ICONTAINS("ILIKE", "%");
+            "LIKE"), ICONTAINS("ILIKE"), IN("IN");
 
     private String operator;
 
     private boolean unary;
-
-    private String valueWrap = null;
 
     SQLOp(String operator)
     {
@@ -47,12 +45,6 @@ public enum SQLOp {
     {
         this.operator = operator;
         this.unary = unary;
-    }
-
-    SQLOp(String operator, String valueWrap)
-    {
-        this.operator = operator;
-        this.valueWrap = valueWrap;
     }
 
     @Override
@@ -92,9 +84,13 @@ public enum SQLOp {
      * 
      * @return
      */
-    public String getValueWrap()
+    public String wrapValue(String value)
     {
-        return valueWrap;
+        if (this.equals(SQLOp.CONTAINS) || this.equals(SQLOp.ICONTAINS))
+            return "%" + value + "%";
+        else if (this.equals(SQLOp.IN))
+            return "(" + value + ")";
+        return value;
     }
 
     /**
