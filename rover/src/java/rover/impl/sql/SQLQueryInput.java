@@ -222,38 +222,32 @@ public class SQLQueryInput extends QueryInput
                     && (op.equals(SQLOp.ICONTAINS) || op.equals(SQLOp.IEXACT) || op
                             .equals(SQLOp.CONTAINS)))
             {
-                String wrap = op.getValueWrap() == null ? "" : op
-                        .getValueWrap();
+                String wrappedValue = op.wrapValue(where.value);
                 if (op.equals(SQLOp.CONTAINS))
                 {
-                    finalWhere = String.format("%s.%s LIKE '%s%s%s'",
-                            lastTableId, where.column.getName(), wrap,
-                            where.value, wrap);
+                    finalWhere = String.format("%s.%s LIKE '%s'", lastTableId,
+                            where.column.getName(), wrappedValue);
                 }
                 else
                 {
-                    finalWhere = String.format(
-                            "UPPER(%s.%s) LIKE UPPER('%s%s%s')", lastTableId,
-                            where.column.getName(), wrap, where.value, wrap);
+                    finalWhere = String.format("UPPER(%s.%s) LIKE UPPER('%s')",
+                            lastTableId, where.column.getName(), wrappedValue);
                 }
             }
             else if (isHSQLDB
                     && (op.equals(SQLOp.ICONTAINS) || op.equals(SQLOp.IEXACT) || op
                             .equals(SQLOp.CONTAINS)))
             {
-                String wrap = op.getValueWrap() == null ? "" : op
-                        .getValueWrap();
+                String wrappedValue = op.wrapValue(where.value);
                 if (op.equals(SQLOp.CONTAINS))
                 {
-                    finalWhere = String.format("%s.%s LIKE '%s%s%s'",
-                            lastTableId, where.column.getName(), wrap,
-                            where.value, wrap);
+                    finalWhere = String.format("%s.%s LIKE '%s'", lastTableId,
+                            where.column.getName(), wrappedValue);
                 }
                 else
                 {
-                    finalWhere = String.format(
-                            "UCASE(%s.%s) LIKE UCASE('%s%s%s')", lastTableId,
-                            where.column.getName(), wrap, where.value, wrap);
+                    finalWhere = String.format("UCASE(%s.%s) LIKE UCASE('%s')",
+                            lastTableId, where.column.getName(), wrappedValue);
                 }
             }
             else
@@ -262,10 +256,14 @@ public class SQLQueryInput extends QueryInput
                         where.column.getName(), op.getOperator());
                 if (!op.isUnary())
                 {
-                    String wrap = op.getValueWrap() == null ? "" : op
-                            .getValueWrap();
-                    finalWhere = finalWhere
-                            + String.format(" %s?%s", wrap, wrap);
+                    List<String> whereVals = new LinkedList<String>();
+                    if (op.equals(SQLOp.IN))
+                    {
+                        whereVals.addAll(Arrays.asList(StringUtils
+                                .splitByWholeSeparator(where.value, ",")));
+                    }
+                    else
+                        whereVals.add(where.value);
 
                     String sqlTypeName = where.column.getSQLType();
                     Integer sqlType = QueryConstants.SQL_TYPE_NAMES
@@ -275,10 +273,18 @@ public class SQLQueryInput extends QueryInput
                     Map hints = new HashMap();
                     hints.put(SQLTypeConverter.HINT_SQL_TYPE, sqlType);
 
-                    // turn the String value into an Object for the query
-                    Object sqlValue = context.getSQLTypeConverter().convert(
-                            where.value, hints);
-                    p.values.add(sqlValue);
+                    String whereQs = "";
+                    for (String value : whereVals)
+                    {
+                        whereQs += "?,";
+                        // turn the String value into an Object for the query
+                        Object sqlValue = context.getSQLTypeConverter()
+                                .convert(value, hints);
+                        p.values.add(sqlValue);
+                    }
+                    whereQs = StringUtils.stripEnd(whereQs, ",");
+
+                    finalWhere += (" " + op.wrapValue(whereQs));
                 }
             }
             p.whereStatements.add(finalWhere);
