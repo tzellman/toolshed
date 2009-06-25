@@ -34,6 +34,10 @@
             <name>Tom Zellman</name>
             <id>tzellman</id>
         </developer>
+        <developer>
+            <name>Adam Beauchamp</name>
+            <id>adam.beauchamp</id>
+        </developer>
     </developers>
 
     <!--
@@ -80,6 +84,12 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
             <version>1.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

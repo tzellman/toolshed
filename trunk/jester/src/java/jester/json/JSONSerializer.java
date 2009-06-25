@@ -23,9 +23,11 @@ import java.util.Collection;
 import java.util.Map;
 
 import jester.ConverterRegistry;
+import jester.IBean;
 import jester.IConverter;
 import jester.utils.JesterUtils;
 
+import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaBeanMapDecorator;
 import org.apache.commons.lang.SerializationException;
@@ -49,6 +51,16 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
                     throws SerializationException
             {
                 return JSONSerializer.this.convert(new DynaBeanMapDecorator(
+                        from), String.class);
+            }
+        });
+        
+        register(new IConverter<IBean, String>()
+        {
+            public String convert(IBean from, Map hints)
+                    throws SerializationException
+            {
+                return JSONSerializer.this.convert(new BeanMap(
                         from), String.class);
             }
         });
