@@ -27,6 +27,8 @@ import java.util.Map;
 
 import jester.IConverter;
 import jester.IJester;
+import jester.POJOConverter;
+import jester.json.JSONSerializer.MapConverter;
 import jester.utils.JesterUtils;
 import junit.framework.TestCase;
 
@@ -191,6 +193,58 @@ public class JSONTest extends TestCase
             catch (Exception e)
             {
             }
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+    
+    
+    /**
+     * Tests registering a custom transformer
+     */
+    public void testRegisterCustom2()
+    {
+        try
+        {
+        	
+            class MyCustomModelClass
+            {
+                public String name;
+
+                protected int id;
+
+                public boolean required;
+
+                public String email;
+
+                @Override
+                public String toString()
+                {
+                    return name;
+                }
+            }
+            
+            final JSONSerializer serializer = new JSONSerializer();
+            final POJOConverter converter = new POJOConverter("name", "email", "required",
+                    "toString", "class.simpleName");
+            serializer.register(
+                    new IConverter<MyCustomModelClass, String>()
+                    {
+                        public String convert(MyCustomModelClass from, Map hints)
+                        {
+                        	return serializer.convert(converter.convert(from, hints));
+                        }
+                    });
+            
+            
+            MyCustomModelClass model = new MyCustomModelClass();
+            model.name = "Jeff";
+            model.required = true;
+            model.email = "kgriffey@fanboy.com";
+            System.out.println(serializer.convert(model));
+
         }
         catch (Exception e)
         {

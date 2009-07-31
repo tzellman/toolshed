@@ -77,7 +77,6 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
         StringBuffer b = new StringBuffer("\"");
         string = string.replace("\\", "\\\\");
         string = string.replace("\"", "\\\"");
-        string = string.replace("\"", "\\\"");
         string = string.replace("\b", "\\b");
         string = string.replace("\f", "\\f");
         string = string.replace("\n", "\\n");

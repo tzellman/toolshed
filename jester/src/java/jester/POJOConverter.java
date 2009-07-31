@@ -29,15 +29,16 @@ import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Simple Converter that takes in any POJO, along with some OGNL-like
- * expressions, and produces a String that contains the Object and it's desired
- * fields, serialized. The passed-in IJester must be able to serialize a Map.
+ * Simple Converter that takes in any POJO, along with some OGNL-like expressions, and produces a String that contains
+ * the Object and it's desired fields, serialized. The passed-in IJester must be able to serialize a Map.
  */
 public class POJOConverter<F> implements IConverter<F, Map<String, Object>>
 {
     public static final String DEFAULT_SPLITTER = ".";
 
     protected Map<String, String> expressions;
+
+    protected boolean skipNulls;
 
     protected String expressionSplitter = DEFAULT_SPLITTER;
 
@@ -56,6 +57,7 @@ public class POJOConverter<F> implements IConverter<F, Map<String, Object>>
         this.expressions = new TreeMap<String, String>();
         for (String e : expressions)
             this.expressions.put(e, e);
+        skipNulls = false;
     }
 
     public String getExpressionSplitter()
@@ -66,6 +68,16 @@ public class POJOConverter<F> implements IConverter<F, Map<String, Object>>
     public void setExpressionSplitter(String expressionSplitter)
     {
         this.expressionSplitter = expressionSplitter;
+    }
+
+    public void setSkipNulls(boolean skipNulls)
+    {
+        this.skipNulls = skipNulls;
+    }
+
+    public boolean isSkipNulls()
+    {
+        return skipNulls;
     }
 
     /**
@@ -88,7 +100,9 @@ public class POJOConverter<F> implements IConverter<F, Map<String, Object>>
             String expression = expressions.get(name);
             String[] splitExpression = StringUtils.splitByWholeSeparator(
                     expression, expressionSplitter);
-            data.put(name, OGNLConverter.evaluate(from, splitExpression));
+            Object value = OGNLConverter.evaluate(from, splitExpression);
+            if (value != null || !skipNulls)
+                data.put(name, value);
         }
         return data;
     }
