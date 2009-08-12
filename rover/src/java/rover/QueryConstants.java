@@ -61,7 +61,7 @@ public final class QueryConstants
             "yyyy-MM-dd", // ISO date
             "yyyy-MM-ddZZ", // ISO date TZ
             "EEE, dd MMM yyyy HH:mm:ss Z", // SMTP datetime
-            "yyyy-MM-dd HH:mm:ss.S" //common Oracle DB format
+            "yyyy-MM-dd HH:mm:ss.S" // common Oracle DB format
     };
 
     /**
@@ -88,6 +88,7 @@ public final class QueryConstants
         // plus, add some custom ones
         typeNames.put("VARCHAR2", Types.VARCHAR);
         typeNames.put("TIMESTAMP(6)", Types.TIMESTAMP);
+        typeNames.put("NUMBER", Types.NUMERIC);
 
         return typeNames;
     }
