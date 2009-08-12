@@ -35,10 +35,8 @@ import org.apache.commons.lang.SerializationException;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.DateUtils;
 
-
 /**
- * Converts String data to Objects required for a prepared SQL statement, based
- * on the SQL Type.
+ * Converts String data to Objects required for a prepared SQL statement, based on the SQL Type.
  * 
  * @author tzellman
  */
@@ -53,6 +51,7 @@ public class SQLTypeConverter implements IConverter<String, Object>
         transformers = new HashMap<Integer, TypeConverter<? extends Object>>();
 
         // load some defaults
+        registerTransformer(new NumberConverter());
         registerTransformer(new StringConverter());
         registerTransformer(new DateConverter());
         registerTransformer(new TimestampConverter());
@@ -220,6 +219,21 @@ public class SQLTypeConverter implements IConverter<String, Object>
         public Integer[] getSupportedTypes()
         {
             return new Integer[] { Types.DOUBLE, Types.REAL, Types.DECIMAL };
+        }
+    }
+
+    public static class NumberConverter extends TypeConverter<Number>
+    {
+        public Number convert(String from, Map hints)
+                throws SerializationException
+        {
+            return NumberUtils.createNumber(from);
+        }
+
+        @Override
+        public Integer[] getSupportedTypes()
+        {
+            return new Integer[] { Types.NUMERIC };
         }
     }
 

@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Rover
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Rover is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package rover.impl.sql;
 
@@ -45,8 +45,9 @@ import rover.SQLTypeConverter;
  * Converter that turns an Object into a {@link PreparedStatement}.
  * 
  * The object (of table fields/values) must conform to a {@link Map} interface,
- * and the hints map is required to provide the table name. An optional "where"
- * clause for a database UPDATE can also be provided in the hints map.
+ * and the hints map is required to provide
+ * the table name. An optional "where" clause for a database UPDATE can also be
+ * provided in the hints map.
  * 
  * @author tzellman
  * 
@@ -146,7 +147,7 @@ public class PreparedStatementConverter extends
                 {
                     // this could be dangerous... maybe we should force Strings
                     String sKey = ObjectUtils.toString(key);
-                    String sVal = ObjectUtils.toString(map.get(key));
+                    String sVal = ObjectUtils.toString(whereMap.get(key));
                     whereFields.add(sKey);
                     values.add(toSQLObject(tableInfo, sKey, sVal));
                 }
