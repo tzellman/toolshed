@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Rover
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Rover is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package rover.impl.sql;
 
@@ -30,8 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import rover.IQueryContext;
 import rover.ITableInfo;
@@ -49,6 +53,7 @@ import rover.impl.SQLOp;
  */
 public class SQLQueryInput extends QueryInput
 {
+    protected Log log = LogFactory.getLog(getClass());
 
     public SQLQueryInput(QueryInput dolly) throws Exception
     {
@@ -303,32 +308,82 @@ public class SQLQueryInput extends QueryInput
             }
         }
 
-        // select all from first table by default
-        ITableInfo table = tables.getLast();
-        String tableName = table.getName();
-        String tableId = p.tableIds.get(tableName).get(0);
+        ITableInfo firstTable = tables.getLast();
+        String firstTableName = firstTable.getName();
+        String firstTableId = p.tableIds.get(firstTableName).get(0);
+
+        // String validTables = "(?i)("
+        // + StringUtils.join(p.tableIds.keySet(), "|") + ")";
+
+        String validTables = "([^\\s.]+)"; // for now...
+
+        Pattern fieldPattern = Pattern.compile(validTables
+                + "[.]([^.*\\s]+)(\\s+AS\\s+([^.\\s]+))?");
 
         if (selectFields != null)
         {
             for (String select : selectFields)
             {
                 select = select.trim();
-                if (select.matches(".*[ .].*"))
+
+                Matcher fieldMatcher = fieldPattern.matcher(select);
+                if (fieldMatcher.matches())
+                {
+                    String tName = fieldMatcher.group(1);
+                    String field = fieldMatcher.group(2);
+                    String userAlias = fieldMatcher.group(4);
+
+                    if (userAlias == null)
+                        userAlias = field;
+
+                    ITableInfo table = context.getDatabaseInfo().getTableInfo(
+                            tName);
+
+                    if (table == null)
+                    {
+                        throw new Exception("Invalid table: " + tName);
+                    }
+
+                    if (table.getFields().containsKey(field.toUpperCase()))
+                    {
+                        // alias
+                        String selectAs = String.format("%s__%s",
+                                firstTableName, userAlias).toLowerCase();
+                        String alias = newAlias(selectAs, p.selectAliases);
+                        p.selectStatements.add(String.format("%s.%s AS %s",
+                                p.tableIds.get(table.getName()).get(0), field
+                                        .toUpperCase(), alias));
+                        p.reverseSelectAliases.put(selectAs, alias);
+                    }
+                    else
+                    {
+                        log.warn(String.format(
+                                "Invalid field [%s] for table [%s]", field,
+                                tName));
+                    }
+                }
+                else if (select.matches(validTables + "[.][*]"))
+                {
+                    String tName = select.split("[.]")[0];
+                    selectAll(p, tName);
+                }
+                else if (select.matches(".*[ .].*"))
                 {
                     // add it as-is - the user better know what they're doing
                     p.selectStatements.add(select);
                 }
                 else
                 {
-                    // it's a field they want to add
+                    // it's a field they want to add from the top table
                     // for now, only support fields in the top table
-                    if (table.getFields().containsKey(select.toUpperCase()))
+                    if (firstTable.getFields()
+                            .containsKey(select.toUpperCase()))
                     {
                         // alias
                         String selectAs = select.toLowerCase();
                         String alias = newAlias(selectAs, p.selectAliases);
                         p.selectStatements.add(String.format("%s.%s AS %s",
-                                tableId, select.toUpperCase(), alias));
+                                firstTableId, select.toUpperCase(), alias));
                         p.reverseSelectAliases.put(selectAs, alias);
                     }
                 }
@@ -338,16 +393,7 @@ public class SQLQueryInput extends QueryInput
         if (p.selectStatements.isEmpty())
         {
             // select all from first table by default
-            for (String field : table.getFields().keySet())
-            {
-                // alias
-                String selectAs = String.format("%s__%s", tableName, field)
-                        .toLowerCase();
-                String alias = newAlias(selectAs, p.selectAliases);
-                p.selectStatements.add(String.format("%s.%s AS %s", tableId,
-                        field, alias));
-                p.reverseSelectAliases.put(selectAs, alias);
-            }
+            selectAll(p, firstTable.getName());
         }
 
         // if (selectRelatedDepth > 0
@@ -471,6 +517,27 @@ public class SQLQueryInput extends QueryInput
         q.values = p.values.toArray();
         q.selectAliases = p.selectAliases;
         return q;
+    }
+
+    protected void selectAll(ProcessData p, String table) throws Exception
+    {
+        ITableInfo tableInfo = context.getDatabaseInfo().getTableInfo(table);
+        if (tableInfo == null)
+            throw new Exception("Invalid table: " + table);
+
+        String tableName = tableInfo.getName();
+        String tableId = p.tableIds.get(tableName).get(0); // default to first
+        // select all from first table by default
+        for (String field : tableInfo.getFields().keySet())
+        {
+            // alias
+            String selectAs = String.format("%s__%s", tableName, field)
+                    .toLowerCase();
+            String alias = newAlias(selectAs, p.selectAliases);
+            p.selectStatements.add(String.format("%s.%s AS %s", tableId, field,
+                    alias));
+            p.reverseSelectAliases.put(selectAs, alias);
+        }
     }
 
     protected String newAlias(String value, Map<String, String> aliasMap)

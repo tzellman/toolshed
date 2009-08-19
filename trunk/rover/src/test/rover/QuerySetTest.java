@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Rover
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Rover is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package rover;
 
@@ -142,35 +142,26 @@ public class QuerySetTest extends TestCase
         }
     }
 
-    // public void testRelated()
-    // {
-    // try
-    // {
-    // IQueryResultSet q = new SQLQueryResultSet("requirement",
-    // queryContext);
-    // q = q.filter("release__name=1.0");
-    // List results = q.selectRelated(2).list();
-    //
-    // // loop over the objects
-    // for (Object result : results)
-    // {
-    // // use the OGNLConverter to dig down and get some values
-    // String relName = (String) OGNLConverter.evaluate(result,
-    // "requirement.release.name".split("[.]"));
-    // String projectName = (String) OGNLConverter.evaluate(result,
-    // "requirement.release.project.name".split("[.]"));
-    // System.out.println(String.format(
-    // "Release: [%s], Project: [%s]", relName, projectName));
-    // }
-    //
-    // // or, this is easier...
-    // System.out.println(serializer.convert(results));
-    // }
-    // catch (Exception e)
-    // {
-    // fail(ExceptionUtils.getStackTrace(e));
-    // }
-    // }
+    public void testRelated()
+    {
+        try
+        {
+            IQueryResultSet q = new SQLQueryResultSet("requirement",
+                    queryContext);
+            q = q.filter("release__name=1.0", "number__gte=1");
+            q = q.values("release.name AS releaseName", "release.name",
+                    "number");
+
+            List<Object> results = q.list();
+
+            // or, this is easier...
+            System.out.println("results: " + serializer.convert(results));
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
 
     // public void testRelated2()
     // {
@@ -271,7 +262,7 @@ public class QuerySetTest extends TestCase
             fail(ExceptionUtils.getStackTrace(e));
         }
     }
-    
+
     public void testIn()
     {
         try
@@ -281,6 +272,22 @@ public class QuerySetTest extends TestCase
             assertEquals(2, q.filter("number__in=200,201").count());
             assertEquals(3, q.filter("number__in=100").count());
             assertEquals(0, q.filter("number__in=1000,2000,3000").count());
+        }
+        catch (Exception e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testSelect()
+    {
+        try
+        {
+            IQueryResultSet q = new SQLQueryResultSet("requirement",
+                    queryContext);
+            List<Object> data = q.filter("number__in=200,201").values(
+                    "requirement.*").list();
+            System.out.println(data);
         }
         catch (Exception e)
         {
