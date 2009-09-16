@@ -47,7 +47,7 @@ public class MIMETypeSerializer extends JesterRegistry
     public MIMETypeSerializer(String defaultContentType)
     {
         super(defaultContentType);
-        mimeTypeMap.put("text/plain", "txt");
+        mimeTypeMap.put("text/plain", "text");
     }
 
     /**

@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Jester
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Jester is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package jester.json;
 
@@ -38,6 +38,8 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
     // ! Specify this hint along with a function name to get a jsonp result
     public static final String HINT_JSONP = "jsonp";
 
+    public static final String HINT_CALLBACK = "callback";
+
     public JSONSerializer()
     {
         register(new CollectionConverter());
@@ -54,14 +56,14 @@ public class JSONSerializer extends ConverterRegistry<Object, String>
                         from), String.class);
             }
         });
-        
+
         register(new IConverter<IBean, String>()
         {
             public String convert(IBean from, Map hints)
                     throws SerializationException
             {
-                return JSONSerializer.this.convert(new BeanMap(
-                        from), String.class);
+                return JSONSerializer.this.convert(new BeanMap(from),
+                        String.class);
             }
         });
     }
