@@ -67,6 +67,7 @@ States
     with_var,       //{% with obj.expensive.op as var %} {% endwith %}
     with_member,
     with_filter,
+    set_arg,
     set_var,       //{% set obj.expensive.op as var %}
     set_member,
     set_filter,
@@ -178,7 +179,7 @@ Tokens
     {default->with_var}
         with_start      = '{%' ws* 'with' ws+;
     
-    {default->set_var}
+    {default->set_arg}
         set_start       = '{%' ws* 'set' ws+;
     
     {default->now_tag}
@@ -239,10 +240,10 @@ Tokens
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
     load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
     firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var,
-    macro_var, binary_var->if_var}
+    macro_var, binary_var->if_var, set_arg->set_var}
         string_literal  = string;
     
-    {binary_var->if_var}
+    {binary_var->if_var, set_arg->set_var}
         decimal  = digit+ '.'? digit*;
     
     {var->var_member, with_var->with_member, load_var->load_member,
@@ -252,7 +253,7 @@ Tokens
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, for_var, block_tag,
     include_tag, for_tag, firstof_var, filter_var, template_tag, macro_tag,
-    macro_var, binary_var->if_var}
+    macro_var, binary_var->if_var, set_arg->set_var}
         id              = variable_id;
     
     {var_member->var, with_member->with_var, load_member->load_var,
@@ -326,7 +327,7 @@ Productions
         |   {templatetag} templatetag [tag]:id tag_end                  {-> New entity.templatetag(tag)}
         |   {now}       now_start [format]:string_literal? tag_end      {-> New entity.now(format)}
         |   {macro}     [macro]:macro_block                             {-> New entity.macro(macro)}
-        |   {set}       set_start [value]:var_expression
+        |   {set}       set_start [value]:argument
                         kw_as [var]:id tag_end_eol                      {-> New entity.set(value, var)}
         ;
     
@@ -496,7 +497,7 @@ Abstract Syntax Tree
         |   {templatetag} [tag]:id
         |   {now}       [format]:string_literal?
         |   {macro}     [macro]:macro_block
-        |   {set}       [value]:var_expression [var]:id
+        |   {set}       [value]:argument [var]:id
         ;
 
     variable_block =
@@ -510,8 +511,9 @@ Abstract Syntax Tree
     
     argument =
             {string}    [string]:string_literal
+        |   {number}    [number]:decimal
         |   {variable}  [variable]:var_expression
-        |   {number}    [number]:decimal;
+        ;
             
     block =             [id]:id? [entities]:entity*;
     
