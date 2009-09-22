@@ -634,6 +634,18 @@ public class TemplateTest extends TestCase
             t = new Template("{% set intArray|length as len %}{{ len }}");
             output = t.render(context);
             assertEquals(output, String.valueOf(intArray.length));
+            
+            t = new Template("{% set 0 as zero %}{{ zero }}");
+            output = t.render(context);
+            assertEquals(output, "0");
+            
+            t = new Template("{% set \"0\" as zeroString %}{{ zeroString }}");
+            output = t.render(context);
+            assertEquals(output, "0");
+            
+            t = new Template("{% set doubleList.0 as val1 %}{{ val1 }}");
+            output = t.render(context);
+            assertEquals(output, "0.0");
         }
         catch (IOException e)
         {
