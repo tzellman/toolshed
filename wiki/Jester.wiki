@@ -1,4 +1,4 @@
-#labels Featured,Jester
+#labels Deprecated,Jester
 == Introduction ==
 
 Jester is a pluggable serialization library written in Java. You can use it to serialize Objects to/from an output/input streams. In addition, Jester provides tools that assist in the serialization process.
