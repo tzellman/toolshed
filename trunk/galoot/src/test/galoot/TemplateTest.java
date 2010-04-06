@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Galoot
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Galoot is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package galoot;
 
@@ -634,15 +634,20 @@ public class TemplateTest extends TestCase
             t = new Template("{% set intArray|length as len %}{{ len }}");
             output = t.render(context);
             assertEquals(output, String.valueOf(intArray.length));
-            
+
             t = new Template("{% set 0 as zero %}{{ zero }}");
             output = t.render(context);
             assertEquals(output, "0");
-            
+
             t = new Template("{% set \"0\" as zeroString %}{{ zeroString }}");
             output = t.render(context);
             assertEquals(output, "0");
-            
+
+            t = new Template(
+                    "{% set \"Some \\\"quotes\\\"\" as quotes %}{{ quotes }}");
+            output = t.render(context);
+            assertEquals(output, "Some \\\"quotes\\\"");
+
             t = new Template("{% set doubleList.0 as val1 %}{{ val1 }}");
             output = t.render(context);
             assertEquals(output, "0.0");
