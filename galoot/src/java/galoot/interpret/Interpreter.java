@@ -186,10 +186,7 @@ public class Interpreter extends DepthFirstAdapter
     protected Object evaluateObject(Object object, List<TMember> members,
                                     List<PFilter> filters)
     {
-        if (object == null)
-            return null;
-
-        if (members != null && members.size() > 0)
+        if (object != null && members != null && members.size() > 0)
         {
             List<String> stringMembers = new ArrayList<String>(
                     members != null ? members.size() : 0);
