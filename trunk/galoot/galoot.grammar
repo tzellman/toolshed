@@ -49,9 +49,9 @@ Helpers
     octal_escape    = '\' (octal_digit octal_digit? | ['0'..'3'] octal_digit octal_digit);
     escape_sequence = '\b' | '\t' | '\n' | '\f' | '\r' | '\"' | '\' ''' | '\\' | octal_escape;
     dq_string_char  = [input_char - ['"' + '\']] | escape_sequence;
-//    sq_string_char  = [input_char - [''' + '\']] | escape_sequence;
-//    string          = '"' dq_string_char* '"' | ''' sq_string_char* ''';
-    string          = '"' dq_string_char* '"';
+    sq_string_char  = [input_char - [''' + '\']] | escape_sequence;
+    string          = '"' dq_string_char* '"' | ''' sq_string_char* ''';
+//    string          = '"' dq_string_char* '"';
     
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,6 @@ States
     load_var,       //{% load plugin1 plugin2 %}
     load_as,
     load_member,
-    load_filter,
     if_var,         //{% if not var and var2 %} {% else %} {% endif %}
     if_member,
     if_filter,
@@ -238,12 +237,12 @@ Tokens
         comment_text    = any_char;
     
     {include_tag, extends_tag, ifeq_var, filter->var, with_filter->with_var,
-    load_filter->load_var, load_var->load_as, firstof_filter->firstof_var,
+    load_var->load_as, firstof_filter->firstof_var,
     firstof_var, filter_filter->filter_var, now_tag, set_filter->set_var,
-    macro_var, binary_var->if_var, set_arg->set_var}
+    macro_var, binary_var->if_var, set_arg->set_var, var}
         string_literal  = string;
     
-    {binary_var->if_var, set_arg->set_var}
+    {binary_var->if_var, set_arg->set_var, var}
         decimal  = digit+ '.'? digit*;
     
     {var->var_member, with_var->with_member, load_var->load_member,
@@ -262,7 +261,7 @@ Tokens
         member          = member_id;
     
     {var, with_var, set_var, load_var, if_var, ifeq_var, block_tag, include_tag,
-    for_var, for_tag, filter, with_filter, set_filter, load_filter, if_filter,
+    for_var, for_tag, filter, with_filter, set_filter, if_filter,
     extends_tag, load_as, firstof_var, filter_var, template_tag, now_tag,
     macro_var, macro_tag, binary_var}
         strip_ws        = ws+;
@@ -274,16 +273,16 @@ Tokens
     firstof_var, filter_var}
         vert_pipe       = '|';
     
-    {var, with_var, load_var, if_var, ifeq_var, for_var, firstof_var, macro_var}
+    {var, with_var, if_var, ifeq_var, for_var, firstof_var, macro_var, load_var, load_as->load_var}
         comma           = ',';
     
-    {var->filter, with_var->with_filter, load_var->load_filter,
+    {var->filter, with_var->with_filter, load_var,
     if_var->if_filter, ifeq_var->ifeq_filter, for_var->for_filter,
     firstof_var->firstof_filter, filter_var->filter_filter,
     set_var->set_filter}
         colon           = ':';
     
-    {filter->var, with_filter->with_var, load_filter->load_var,
+    {filter->var, with_filter->with_var,
     if_filter->if_var, ifeq_filter->ifeq_var, for_filter->for_var,
     firstof_filter->firstof_var, filter_filter->filter_var,
     set_filter->set_var}
@@ -318,7 +317,7 @@ Productions
         |   {block}     [block]:block                                   {-> New entity.block(block)}
         |   {load}      [load]:load                                     {-> New entity.load(load)}
         |   {include}   include_start [include]:include tag_end         {-> New entity.include(include)}
-        |   {first_of}  firstof_start [args]:argument+ tag_end          {-> New entity.first_of([args.argument])}
+        |   {first_of}  firstof_start [args]:var_expression+ tag_end    {-> New entity.first_of([args.var_expression])}
         |   {for}       [for]:for_block                                 {-> New entity.for(for)}
         |   {if}        [if]:if_block                                   {-> New entity.if(if)}
         |   {ifequal}   [ifequal]:ifequal_block                         {-> New entity.ifequal(ifequal)}
@@ -327,15 +326,15 @@ Productions
         |   {templatetag} templatetag [tag]:id tag_end                  {-> New entity.templatetag(tag)}
         |   {now}       now_start [format]:string_literal? tag_end      {-> New entity.now(format)}
         |   {macro}     [macro]:macro_block                             {-> New entity.macro(macro)}
-        |   {set}       set_start [value]:argument
+        |   {set}       set_start [value]:var_expression
                         kw_as [var]:id tag_end_eol                      {-> New entity.set(value, var)}
         ;
     
     
     variable_block {-> variable_block} =
-            {variable}  var_start [expression]:var_expression var_end   {-> New variable_block.variable(expression)}
+            {variable}  var_start [expression]:var_expression var_end         {-> New variable_block.variable(expression)}
         |   {macro}     var_start [macro]:id l_paren
-                            [args]:argument_list? r_paren var_end      {-> New variable_block.macro(macro, [args.argument])}
+                            [args]:argument_list? r_paren var_end       {-> New variable_block.macro(macro, [args.var_expression])}
         ;
     
     extends {-> extends} =
@@ -363,10 +362,10 @@ Productions
         ;
     
     ifequal_block {-> ifequal_block} =
-                        ifeq_start [first]:argument
-                            [remaining]:argument+
+                        ifeq_start [first]:var_expression
+                            [remaining]:var_expression+
                             tag_end_eol [entities]:entity*
-                            [else]:else_block? ifeq_end                 {-> New ifequal_block([first.argument, remaining.argument], [entities.entity], [else.entity])}
+                            [else]:else_block? ifeq_end                 {-> New ifequal_block([first.var_expression, remaining.var_expression], [entities.entity], [else.entity])}
         ;
 
     boolean_expr {-> boolean_expr} =
@@ -375,12 +374,12 @@ Productions
         ;
 
     binary_expr {-> binary_expr} =
-            {gt}        [lhs]:var_expression kw_gt [rhs]:argument       {-> New binary_expr.gt(lhs, rhs)}
-        |   {gte}       [lhs]:var_expression kw_gte [rhs]:argument      {-> New binary_expr.gte(lhs, rhs)}
-        |   {lt}        [lhs]:var_expression kw_lt [rhs]:argument       {-> New binary_expr.lt(lhs, rhs)}
-        |   {lte}       [lhs]:var_expression kw_lte [rhs]:argument      {-> New binary_expr.lte(lhs, rhs)}
-        |   {eq}        [lhs]:var_expression kw_eq [rhs]:argument       {-> New binary_expr.eq(lhs, rhs)}
-        |   {ne}        [lhs]:var_expression kw_ne [rhs]:argument       {-> New binary_expr.ne(lhs, rhs)}
+            {gt}        [lhs]:var_expression kw_gt [rhs]:var_expression       {-> New binary_expr.gt(lhs, rhs)}
+        |   {gte}       [lhs]:var_expression kw_gte [rhs]:var_expression      {-> New binary_expr.gte(lhs, rhs)}
+        |   {lt}        [lhs]:var_expression kw_lt [rhs]:var_expression       {-> New binary_expr.lt(lhs, rhs)}
+        |   {lte}       [lhs]:var_expression kw_lte [rhs]:var_expression      {-> New binary_expr.lte(lhs, rhs)}
+        |   {eq}        [lhs]:var_expression kw_eq [rhs]:var_expression       {-> New binary_expr.eq(lhs, rhs)}
+        |   {ne}        [lhs]:var_expression kw_ne [rhs]:var_expression       {-> New binary_expr.ne(lhs, rhs)}
         ;
 
     else_block {-> entity*} =
@@ -417,7 +416,7 @@ Productions
         ;
     
     
-    load {-> load} =    load_start [plugins]:plugin+ tag_end            {-> New load([plugins])}
+    load {-> load} =    load_start [plugins]:plugin_list tag_end        {-> New load([plugins.plugin])}
         ;
     
     plugin {-> plugin} =
@@ -445,6 +444,10 @@ Productions
     var_expression {-> var_expression} = 
             {variable}  [referent]:id
                 [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression.variable(referent, [lookup.member], [filters.filter])}
+        |   {string}  [referent]:string_literal
+                [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression.string(referent, [lookup.member], [filters.filter])}
+        |   {number}  [referent]:decimal
+                [lookup]:memberchain? [filters]:var_filter*             {-> New var_expression.number(referent, [lookup.member], [filters.filter])}
         ;
 
     memberchain {-> member+} =
@@ -452,15 +455,9 @@ Productions
         |   {multiple}  dot [member]:member [rest]:memberchain          {-> [member, rest.member]}
         ;
     
-    argument {-> argument} =
-            {string}    [string]:string_literal                         {-> New argument.string(string)}
-        |   {number}    [number]:decimal                                {-> New argument.number(number)}
-        |   {variable}  [variable]:var_expression                       {-> New argument.variable(variable)}
-        ;
-    
-    argument_list {-> argument+} =
-            {single}    [arg]:argument                                  {-> [arg]}
-        |   {multiple}  [arg]:argument comma [rest]:argument_list       {-> [arg, rest.argument]}
+    argument_list {-> var_expression+} =
+            {single}    [arg]:var_expression                                  {-> [arg]}
+        |   {multiple}  [arg]:var_expression comma [rest]:argument_list       {-> [arg, rest.var_expression]}
         ;
     
     var_filter {-> filter} =
@@ -488,7 +485,7 @@ Abstract Syntax Tree
         |   {block}     [block]:block
         |   {load}      [load]:load
         |   {include}   [include]:include
-        |   {first_of}  [args]:argument+
+        |   {first_of}  [args]:var_expression+
         |   {for}       [for]:for_block
         |   {if}        [if]:if_block
         |   {ifequal}   [ifequal]:ifequal_block
@@ -497,24 +494,22 @@ Abstract Syntax Tree
         |   {templatetag} [tag]:id
         |   {now}       [format]:string_literal?
         |   {macro}     [macro]:macro_block
-        |   {set}       [value]:argument [var]:id
+        |   {set}       [value]:var_expression [var]:id
         ;
 
     variable_block =
             {variable}  [expression]:var_expression
-        |   {macro}     [macro]:id [args]:argument*;
+        |   {macro}     [macro]:id [args]:var_expression*;
 
     extends =           [parent_name]:string_literal;
     
     var_expression =
-            {variable}  [referent]:id [members]:member* [filters]:filter*;
-    
-    argument =
-            {string}    [string]:string_literal
-        |   {number}    [number]:decimal
-        |   {variable}  [variable]:var_expression
+            {variable}  [referent]:id [members]:member* [filters]:filter*
+        |   {string}    [referent]:string_literal [members]:member* [filters]:filter*
+        |   {number}    [referent]:decimal [members]:member* [filters]:filter*
         ;
             
+    
     block =             [id]:id? [entities]:entity*;
     
     for_block =         [iter_var]:id [variable]:var_expression [entities]:entity*;
@@ -544,7 +539,7 @@ Abstract Syntax Tree
     elseif_block =      [expr1]:boolean_expr [expr2]:boolean_op?
                             [elseif]:entity*;
     
-    ifequal_block =     [arguments]:argument+ [ifequal]:entity* [else]:entity*;
+    ifequal_block =     [arguments]:var_expression+ [ifequal]:entity* [else]:entity*;
 
     boolean_expr =
             {unary}    [not]:kw_not? [variable]:var_expression
@@ -555,12 +550,12 @@ Abstract Syntax Tree
         |   {or}        [expression]:boolean_expr;
 
     binary_expr =
-            {gt}        [lhs]:var_expression [rhs]:argument
-        |   {gte}       [lhs]:var_expression [rhs]:argument
-        |   {lt}        [lhs]:var_expression [rhs]:argument
-        |   {lte}       [lhs]:var_expression [rhs]:argument
-        |   {eq}        [lhs]:var_expression [rhs]:argument
-        |   {ne}        [lhs]:var_expression [rhs]:argument;
+            {gt}        [lhs]:var_expression [rhs]:var_expression
+        |   {gte}       [lhs]:var_expression [rhs]:var_expression
+        |   {lt}        [lhs]:var_expression [rhs]:var_expression
+        |   {lte}       [lhs]:var_expression [rhs]:var_expression
+        |   {eq}        [lhs]:var_expression [rhs]:var_expression
+        |   {ne}        [lhs]:var_expression [rhs]:var_expression;
         
 
 

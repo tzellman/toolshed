@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Galoot
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Galoot is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package galoot;
 
@@ -86,37 +86,48 @@ public class ContextStack
      */
     public Object getVariable(String key)
     {
-        for (Iterator<Context> it = contextStack.iterator(); it.hasNext();)
-        {
-            Context context = (Context) it.next();
-            if (context.hasVariable(key))
-                return context.getVariable(key);
-        }
-        return null;
+        Context context = getVariableContext(key);
+        return context != null ? context.getVariable(key) : null;
     }
 
     public Macro getMacro(String macroName)
     {
-        for (Iterator<Context> it = contextStack.iterator(); it.hasNext();)
-        {
-            Context context = (Context) it.next();
-            if (context.hasMacro(macroName))
-                return context.getMacro(macroName);
-        }
-        return null;
+        Context context = getMacroContext(macroName);
+        return context != null ? context.getMacro(macroName) : null;
     }
 
     /**
-     * Puts a variable into the current map
+     * Puts a variable into the current map.
+     * 
+     * Same as putVariable(key, val, false);
      * 
      * @param key
      * @param val
      */
     public boolean putVariable(String key, Object val)
     {
+        return putVariable(key, val, false);
+    }
+
+    /**
+     * Puts a variable into the context. If global is set to true and the
+     * variable already exists in a higher stack frame, then the variable is
+     * updated in that frame.
+     * 
+     * @param key
+     * @param val
+     * @param global
+     * @return
+     */
+    public boolean putVariable(String key, Object val, boolean global)
+    {
         if (contextStack.isEmpty())
             return false;
-        contextStack.peek().putVariable(key, val);
+        Context context = global ? getVariableContext(key) : null;
+        if (context != null)
+            context.putVariable(key, val);
+        else
+            contextStack.peek().putVariable(key, val);
         return true;
     }
 
@@ -129,9 +140,18 @@ public class ContextStack
      */
     public boolean putMacro(String macroName, Macro macro)
     {
+        return putMacro(macroName, macro, false);
+    }
+
+    public boolean putMacro(String macroName, Macro macro, boolean global)
+    {
         if (contextStack.isEmpty())
             return false;
-        contextStack.peek().putMacro(macroName, macro);
+        Context context = global ? getMacroContext(macroName) : null;
+        if (context != null)
+            context.putMacro(macroName, macro);
+        else
+            contextStack.peek().putMacro(macroName, macro);
         return true;
     }
 
@@ -160,6 +180,28 @@ public class ContextStack
         if (contextStack.isEmpty() || !contextStack.peek().hasVariable(key))
             return null;
         return contextStack.peek().removeVariable(key);
+    }
+
+    protected Context getVariableContext(String key)
+    {
+        for (Iterator<Context> it = contextStack.iterator(); it.hasNext();)
+        {
+            Context context = (Context) it.next();
+            if (context.hasVariable(key))
+                return context;
+        }
+        return null;
+    }
+
+    protected Context getMacroContext(String macro)
+    {
+        for (Iterator<Context> it = contextStack.iterator(); it.hasNext();)
+        {
+            Context context = (Context) it.next();
+            if (context.hasMacro(macro))
+                return context;
+        }
+        return null;
     }
 
 }

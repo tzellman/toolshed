@@ -29,8 +29,10 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -286,15 +288,19 @@ public class TemplateTest extends TestCase
 
     public void testMacroStatement()
     {
-        // nested ifs
         try
         {
-            final String templateText = "{% macro testMacro(zellmo, var) %}{{ zellmo|upper }}{{ var|upper }}{% endmacro %}"
+            String templateText = "{% macro testMacro(zellmo, var) %}{{ zellmo|upper }}{{ var|upper }}{% endmacro %}"
                     + "{{ testMacro(name, name) }}";
             System.out.println(templateText);
             Template t = new Template(templateText);
             String output = t.render(context);
             assertEquals("TOMTOM", output);
+            templateText = "{% macro testMacro(zellmo, var) %}{{ zellmo|upper }}{{ var|upper }}{% endmacro %}"
+                    + "{{ testMacro(\"tom\", \"z\") }}";
+            t = new Template(templateText);
+            output = t.render(context);
+            assertEquals("TOMZ", output);
         }
         catch (IOException e)
         {
@@ -415,9 +421,10 @@ public class TemplateTest extends TestCase
     {
         // make an anonymous filter which returns "true" if the object is null,
         // "false" otherwise
-        Filter filter = new Filter()
+        PluginRegistry.getInstance().registerFilter(new Filter()
         {
-            public Object filter(Object object, String args)
+            public Object filter(Object object, ContextStack context,
+                                 String... args)
             {
                 return object == null ? "true" : "false";
             }
@@ -426,10 +433,43 @@ public class TemplateTest extends TestCase
             {
                 return "is_null";
             }
-        };
+        });
 
-        // add the filter to the global registry
-        PluginRegistry.getInstance().registerFilter(filter);
+        PluginRegistry.getInstance().registerFilter(new Filter()
+        {
+            public Object filter(Object object, ContextStack context,
+                                 String... args)
+            {
+                return NumberUtils.createNumber(ObjectUtils.toString(object))
+                        .intValue();
+            }
+
+            public String getName()
+            {
+                return "int";
+            }
+        });
+
+        PluginRegistry.getInstance().registerFilter(new Filter()
+        {
+            public Object filter(Object object, ContextStack context,
+                                 String... args)
+            {
+                Integer min = NumberUtils.createInteger(ObjectUtils
+                        .toString(object));
+                for (String arg : args)
+                {
+                    Integer num = NumberUtils.createInteger(arg);
+                    min = Math.min(min, num);
+                }
+                return min;
+            }
+
+            public String getName()
+            {
+                return "minInt";
+            }
+        });
 
         try
         {
@@ -444,16 +484,29 @@ public class TemplateTest extends TestCase
             assertEquals(output, "true");
 
             // let's remove the plugin from the context to force another load
-            context.getFilterMap().removeFilter(filter.getName());
+            context.getFilterMap().removeFilter("is_null");
 
             // now, let's test the alias op
             t = new Template(
                     "{% load \"is_null\" as isNull %}{{ bad_var|isNull }}");
             output = t.render(context);
             assertEquals(output, "true");
+            context.getFilterMap().removeFilter("is_null");
+
+            // now, let's try loading multiple
+            t = new Template("{% load \"is_null\", \"int\" %}{{ 1.2|int }}");
+            output = t.render(context);
+            assertEquals(output, "1");
+
+            // now, let's try loading and calling with multi args
+            t = new Template("{% load \"minInt\" %}{{ 5|minInt:\"42,15,3\" }}");
+            output = t.render(context);
+            assertEquals(output, "3");
 
             // cleanup for other tests
-            context.getFilterMap().removeFilter(filter.getName());
+            context.getFilterMap().removeFilter("is_null");
+            context.getFilterMap().removeFilter("int");
+            context.getFilterMap().removeFilter("minInt");
         }
         catch (IOException e)
         {
@@ -711,6 +764,32 @@ public class TemplateTest extends TestCase
                     "{% if number < 0 %}negative{% elseif number != 42 %}perfect{% endif %}");
             output = t.render(context);
             assertEquals(output, "");
+        }
+        catch (IOException e)
+        {
+            fail(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public void testVars()
+    {
+        try
+        {
+            Template t = new Template("{{ 0 }}");
+            String output = t.render(context);
+            assertEquals(output, "0");
+
+            t = new Template("{{ \"string\" }}");
+            output = t.render(context);
+            assertEquals(output, "string");
+
+            t = new Template("{{ 'string2' }}");
+            output = t.render(context);
+            assertEquals(output, "string2");
+
+            t = new Template("{{ 'st'|cat:rings}}");
+            output = t.render(context);
+            assertEquals(output, "strings");
         }
         catch (IOException e)
         {

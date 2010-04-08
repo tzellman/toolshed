@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Galoot
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Galoot is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package galoot;
 
@@ -25,14 +25,22 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public final class TemplateUtils
 {
+
+    private static final Log log = LogFactory.getLog(TemplateUtils.class);
+
     private TemplateUtils()
     {
     }
@@ -52,7 +60,8 @@ public final class TemplateUtils
      * @return
      */
     public static Object evaluateObject(Object object,
-            Iterable<String> members, ContextStack context)
+                                        Iterable<String> members,
+                                        ContextStack context)
     {
         for (Iterator<String> it = members.iterator(); object != null
                 && it.hasNext();)
@@ -114,8 +123,22 @@ public final class TemplateUtils
                 }
                 catch (Exception e)
                 {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    log.error(ExceptionUtils.getStackTrace(e));
+                }
+            }
+            else if (TemplateUtils.isArrayType(object))
+            {
+                // try to convert the name to an index
+                try
+                {
+                    Vector v = new Vector(TemplateUtils
+                            .objectToCollection(object));
+                    int index = Integer.parseInt(memberName);
+                    object = v.get(index);
+                }
+                catch (Exception e)
+                {
+                    log.error(ExceptionUtils.getStackTrace(e));
                 }
             }
             // try it as a collection, maybe -- more expensive, possibly
@@ -146,8 +169,7 @@ public final class TemplateUtils
                 }
                 catch (Exception e)
                 {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    log.error(ExceptionUtils.getStackTrace(e));
                 }
             }
             // it could be a member of a Map
@@ -165,6 +187,20 @@ public final class TemplateUtils
                         object = mapObj.get(key);
                     else
                         object = null;
+                }
+            }
+            // see if it is a string
+            else if (object instanceof CharSequence)
+            {
+                CharSequence charObj = (CharSequence) object;
+                try
+                {
+                    int index = Integer.parseInt(memberName);
+                    object = charObj.charAt(index);
+                }
+                catch (Exception e)
+                {
+                    log.error(ExceptionUtils.getStackTrace(e));
                 }
             }
             // otherwise, it can't find the member object
@@ -274,6 +310,19 @@ public final class TemplateUtils
      */
     public static Collection<?> objectToCollection(Object a)
     {
+        if (a instanceof Collection<?>)
+            return (Collection<?>) a;
+
+        if (a instanceof Iterable<?> || a instanceof Iterator<?>)
+        {
+            Iterator<?> it = a instanceof Iterator<?> ? (Iterator<?>) a
+                    : ((Iterable<?>) a).iterator();
+            Collection coll = new LinkedList();
+            while (it.hasNext())
+                coll.add(it.next());
+            return (Collection<?>) coll;
+        }
+
         if (!isArrayType(a))
             return null;
 
@@ -374,13 +423,17 @@ public final class TemplateUtils
      * @return the original string if not encased by the given character, or the
      *         stripped string
      */
-    public static String stripEncasedString(String s, char c)
+    public static String stripEncasedString(String s, char... chars)
     {
         int sLen = s == null ? 0 : s.length();
         if (sLen <= 1)
             return s;
-        if (s.charAt(0) == c && s.charAt(sLen - 1) == c)
-            return s.substring(1, sLen - 1);
+
+        for (char c : chars)
+        {
+            if (s.charAt(0) == c && s.charAt(sLen - 1) == c)
+                return s.substring(1, sLen - 1);
+        }
         return s;
     }
 
