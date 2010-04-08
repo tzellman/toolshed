@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
@@ -97,9 +98,7 @@ public final class DefaultFilters
         public Object filter(Object object, ContextStack contextStack,
                              String... args)
         {
-            if (object instanceof String)
-                return ((String) object).toLowerCase();
-            return object;
+            return ObjectUtils.toString(object, "").toLowerCase();
         }
     }
 
@@ -108,9 +107,7 @@ public final class DefaultFilters
         public Object filter(Object object, ContextStack contextStack,
                              String... args)
         {
-            if (object instanceof String)
-                return ((String) object).toUpperCase();
-            return object;
+            return ObjectUtils.toString(object, "").toUpperCase();
         }
     }
 
@@ -328,5 +325,5 @@ public final class DefaultFilters
             return null;
         }
     }
-    
+
 }
