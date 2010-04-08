@@ -5,6 +5,7 @@ package galoot.examples.madlibs;
 
 import galoot.AbstractFilter;
 import galoot.Context;
+import galoot.ContextStack;
 import galoot.InputAdapter;
 import galoot.PluginRegistry;
 import galoot.Template;
@@ -221,7 +222,8 @@ public class MadlibExample
      */
     private static final class Underline extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack context,
+                             String... args)
         {
             if (object != null)
             {

@@ -48,14 +48,14 @@ import galoot.node.AMacroBlock;
 import galoot.node.AMacroVariableBlock;
 import galoot.node.ANeBinaryExpr;
 import galoot.node.ANowEntity;
-import galoot.node.ANumberArgument;
+import galoot.node.ANumberVarExpression;
 import galoot.node.AOrBooleanOp;
 import galoot.node.AQuotedFilterArg;
 import galoot.node.ASetEntity;
-import galoot.node.AStringArgument;
 import galoot.node.AStringAsPlugin;
 import galoot.node.AStringInclude;
 import galoot.node.AStringPlugin;
+import galoot.node.AStringVarExpression;
 import galoot.node.ATemplatetagEntity;
 import galoot.node.AUnaryBooleanExpr;
 import galoot.node.AUnquotedFilterArg;
@@ -65,11 +65,11 @@ import galoot.node.AVariableInclude;
 import galoot.node.AVariableVarExpression;
 import galoot.node.AVariableVariableBlock;
 import galoot.node.AWithBlock;
-import galoot.node.PArgument;
 import galoot.node.PElseifBlock;
 import galoot.node.PEntity;
+import galoot.node.PFilter;
+import galoot.node.PVarExpression;
 import galoot.node.Start;
-import galoot.node.TDecimal;
 import galoot.node.TId;
 import galoot.node.TMember;
 import galoot.parser.ParserException;
@@ -95,6 +95,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
@@ -182,6 +183,66 @@ public class Interpreter extends DepthFirstAdapter
         }
     }
 
+    protected Object evaluateObject(Object object, List<TMember> members,
+                                    List<PFilter> filters)
+    {
+        if (object == null)
+            return null;
+
+        if (members != null && members.size() > 0)
+        {
+            List<String> stringMembers = new ArrayList<String>(
+                    members != null ? members.size() : 0);
+
+            for (TMember member : members)
+                stringMembers.add(member.getText().trim());
+
+            object = TemplateUtils.evaluateObject(object, stringMembers,
+                    context);
+        }
+
+        // apply the filters
+        for (int i = 0, size = filters != null ? filters.size() : 0; i < size; ++i)
+        {
+            Pair<String, String> nextFilter = filterStack.removeLast();
+            Filter filter = context.getFilterMap().getFilter(
+                    nextFilter.getFirst());
+            if (filter == null)
+            {
+                log.warn("Missing filter: [" + nextFilter.getFirst()
+                        + "] - setting object to 'null'");
+                object = null;
+            }
+            else
+            {
+                log.info("running filter: " + nextFilter.getFirst());
+                String args = nextFilter.getSecond();
+                object = filter.filter(object, context,
+                        args != null ? StringUtils.split(args, ',')
+                                : new String[0]);
+            }
+        }
+        return object;
+    }
+
+    @Override
+    public void outAStringVarExpression(AStringVarExpression node)
+    {
+        String referent = TemplateUtils.stripEncasedString(node.getReferent()
+                .getText(), '"', '\'');
+        variableStack.push(evaluateObject(referent, node.getMembers(), node
+                .getFilters()));
+    }
+
+    @Override
+    public void outANumberVarExpression(ANumberVarExpression node)
+    {
+        variableStack
+                .push(evaluateObject(NumberUtils.createNumber(node
+                        .getReferent().getText()), node.getMembers(), node
+                        .getFilters()));
+    }
+
     @Override
     public void outAVariableVarExpression(AVariableVarExpression node)
     {
@@ -193,39 +254,17 @@ public class Interpreter extends DepthFirstAdapter
 
         // turn the members into a String list
         LinkedList<TMember> members = node.getMembers();
-        List<String> stringMembers = new ArrayList<String>(members.size());
         String fullDotExpression = referent; // construct a full expression
         for (TMember member : members)
-        {
-            String memberText = member.getText();
-            stringMembers.add(memberText);
-            fullDotExpression += "." + memberText;
-        }
+            fullDotExpression += "." + member.getText().trim();
 
         // first things first, see if the full "dot" expression is in the map
         Object object = context.getVariable(fullDotExpression);
-        if (object == null)
-        {
-            // try to get just the base object then
-            object = context.getVariable(referent);
-
-            // evaluate the object/methods
-            object = TemplateUtils.evaluateObject(object, stringMembers,
-                    context);
-        }
-
-        // apply the filters
-        for (int i = 0, size = node.getFilters().size(); i < size; ++i)
-        {
-            Pair<String, String> nextFilter = filterStack.removeLast();
-            Filter filter = context.getFilterMap().getFilter(
-                    nextFilter.getFirst());
-            if (filter == null)
-                object = null;
-            else
-                object = filter.filter(object, nextFilter.getSecond());
-        }
-
+        if (object != null)
+            object = evaluateObject(object, null, node.getFilters());
+        else
+            object = evaluateObject(context.getVariable(referent), members,
+                    node.getFilters());
         variableStack.push(object);
     }
 
@@ -273,7 +312,7 @@ public class Interpreter extends DepthFirstAdapter
     {
         // strip the quotes and push it on the stack
         variableStack.push(TemplateUtils.stripEncasedString(node.getArg()
-                .getText(), '"'));
+                .getText(), '"', '\''));
     }
 
     @Override
@@ -308,28 +347,6 @@ public class Interpreter extends DepthFirstAdapter
             finishString(object.toString());
         }
     }
-
-    // @Override
-    // public void outAVariableEntity(AVariableEntity node)
-    // {
-    // Object object = variableStack.pop();
-    // if (object != null)
-    // {
-    // finishString(object.toString());
-    // }
-    // }
-
-    // @Override
-    // public void outABooleanExpr(ABooleanExpr node)
-    // {
-    // // pop the variable (evaluated expression) off the stack
-    // Object object = variableStack.pop();
-    // boolean negate = node.getNot() != null;
-    //
-    // boolean boolObj = TemplateUtils.evaluateAsBoolean(object);
-    // boolObj = negate ? !boolObj : boolObj;
-    // variableStack.push(boolObj);
-    // }
 
     @Override
     public void outAUnaryBooleanExpr(AUnaryBooleanExpr node)
@@ -425,21 +442,6 @@ public class Interpreter extends DepthFirstAdapter
         variableStack.push(result);
     }
 
-    @Override
-    public void outAStringArgument(AStringArgument node)
-    {
-        // remove the end-quotes and push the string argument onto the stack
-        variableStack.push(TemplateUtils.stripEncasedString(node.getString()
-                .getText(), '"'));
-    }
-
-    @Override
-    public void outANumberArgument(ANumberArgument node)
-    {
-        TDecimal number = node.getNumber();
-        variableStack.push(NumberUtils.createNumber(number.getText()));
-    }
-
     private void loadFilterPlugin(String pluginName, String alias)
     {
         if (alias == null)
@@ -447,10 +449,12 @@ public class Interpreter extends DepthFirstAdapter
         Filter filter = PluginRegistry.getInstance().getFilter(pluginName);
         if (filter == null)
         {
-            // TODO log here
+            log.warn("Unable to load filter plugin: [" + pluginName + "]");
         }
         else
         {
+            log.info("Loaded filter plugin: [" + pluginName + "] as [" + alias
+                    + "]");
             // add the filter to the context's filter map
             context.getFilterMap().addFilter(filter, alias);
         }
@@ -461,7 +465,7 @@ public class Interpreter extends DepthFirstAdapter
     {
         // strip the quotes
         loadFilterPlugin(TemplateUtils.stripEncasedString(node.getString()
-                .getText(), '"'), null);
+                .getText(), '"', '\''), null);
     }
 
     @Override
@@ -469,7 +473,7 @@ public class Interpreter extends DepthFirstAdapter
     {
         // strip the quotes
         loadFilterPlugin(TemplateUtils.stripEncasedString(node.getString()
-                .getText(), '"'), node.getAlias().getText());
+                .getText(), '"', '\''), node.getAlias().getText());
     }
 
     @Override
@@ -497,7 +501,7 @@ public class Interpreter extends DepthFirstAdapter
     public void outAStringInclude(AStringInclude node)
     {
         String filename = TemplateUtils.stripEncasedString(node.getString()
-                .getText(), '"');
+                .getText(), '"', '\'');
 
         processIncludedFile(filename);
     }
@@ -602,8 +606,9 @@ public class Interpreter extends DepthFirstAdapter
      *            true if this iteration is the last in the loop
      */
     private void processForLoopIteration(String loopVar, Object loopObj,
-            int iterCount, Iterable<PEntity> entities, boolean isLast,
-            int totalLoops)
+                                         int iterCount,
+                                         Iterable<PEntity> entities,
+                                         boolean isLast, int totalLoops)
     {
         // push a new context
         context.push();
@@ -740,8 +745,9 @@ public class Interpreter extends DepthFirstAdapter
     {
         inAIfequalBlock(node);
         {
-            List<PArgument> copy = new ArrayList<PArgument>(node.getArguments());
-            for (PArgument e : copy)
+            List<PVarExpression> copy = new ArrayList<PVarExpression>(node
+                    .getArguments());
+            for (PVarExpression e : copy)
             {
                 e.apply(this);
             }
@@ -807,7 +813,10 @@ public class Interpreter extends DepthFirstAdapter
                 output = null;
             else
             {
-                output = filter.filter(output, nextFilter.getSecond());
+                String args = nextFilter.getSecond();
+                output = filter.filter(output, context,
+                        args != null ? StringUtils.split(args, ',')
+                                : new String[0]);
             }
         }
 
@@ -920,7 +929,7 @@ public class Interpreter extends DepthFirstAdapter
     {
         // if we are in here, then this document extends another one
         String parentDoc = TemplateUtils.stripEncasedString(node
-                .getParentName().getText(), '"');
+                .getParentName().getText(), '"', '\'');
 
         try
         {
@@ -1073,7 +1082,8 @@ public class Interpreter extends DepthFirstAdapter
     {
         Calendar cal = Calendar.getInstance();
         String format = node.getFormat() != null ? TemplateUtils
-                .stripEncasedString(node.getFormat().getText(), '"') : null;
+                .stripEncasedString(node.getFormat().getText(), '"', '\'')
+                : null;
 
         try
         {
@@ -1112,8 +1122,8 @@ public class Interpreter extends DepthFirstAdapter
         Object value = variableStack.pop();
         String varName = node.getVar().getText();
 
-        // add the variable to the current context
-        context.putVariable(varName, value);
+        // add the variable to the current or higher context
+        context.putVariable(varName, value, true);
     }
 
     @Override

@@ -1,21 +1,21 @@
-/* =============================================================================
+/*
+ * =============================================================================
  * This file is part of Galoot
  * =============================================================================
  * (C) Copyright 2009, Tom Zellman, tzellman@gmail.com
- *
+ * 
  * Galoot is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either 
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public 
- * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 package galoot;
 
@@ -94,7 +94,8 @@ public final class DefaultFilters
 
     static class Lower extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (object instanceof String)
                 return ((String) object).toLowerCase();
@@ -104,7 +105,8 @@ public final class DefaultFilters
 
     static class Upper extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (object instanceof String)
                 return ((String) object).toUpperCase();
@@ -114,7 +116,8 @@ public final class DefaultFilters
 
     static class Length extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             return TemplateUtils.getObjectLength(object);
         }
@@ -126,7 +129,8 @@ public final class DefaultFilters
      */
     static class Random extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             java.util.Random rand = new java.util.Random();
             if (object instanceof List)
@@ -185,7 +189,8 @@ public final class DefaultFilters
      */
     static class Make_List extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (object instanceof List)
                 return object;
@@ -227,9 +232,10 @@ public final class DefaultFilters
      */
     static class Default extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
-            return object != null ? object : args;
+            return object != null ? object : (args.length > 0 ? args[0] : null);
         }
     }
 
@@ -240,17 +246,17 @@ public final class DefaultFilters
      */
     static class YesNo extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (args == null)
                 return null;
-            String[] split = args.split(",");
             boolean boolVal = TemplateUtils.evaluateAsBoolean(object);
 
-            if (split.length == 3 && object == null)
-                return split[2];
-            else if (split.length == 2 || split.length == 3)
-                return boolVal ? split[0] : split[1];
+            if (args.length == 3 && object == null)
+                return args[2];
+            else if (args.length == 2 || args.length == 3)
+                return boolVal ? args[0] : args[1];
             else
                 return null;
         }
@@ -262,7 +268,8 @@ public final class DefaultFilters
      */
     static class Length_Is extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             // just use the Length filter to get the length
             Object lenObj = new Length().filter(object, null);
@@ -270,11 +277,11 @@ public final class DefaultFilters
             {
                 try
                 {
-                    int lengthIs = Integer.parseInt(args);
+                    int lengthIs = Integer.parseInt(args[0]);
                     Number len = ((Number) lenObj);
                     return len.intValue() == lengthIs;
                 }
-                catch (NumberFormatException e)
+                catch (Exception e)
                 {
                     return false;
                 }
@@ -285,7 +292,8 @@ public final class DefaultFilters
 
     static class WordCount extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (object instanceof String)
                 return ((String) object).split("\\s+").length;
@@ -295,7 +303,8 @@ public final class DefaultFilters
 
     static class Title extends AbstractFilter
     {
-        public Object filter(Object object, String args)
+        public Object filter(Object object, ContextStack contextStack,
+                             String... args)
         {
             if (object instanceof String)
             {
@@ -319,5 +328,5 @@ public final class DefaultFilters
             return null;
         }
     }
-
+    
 }
