@@ -67,7 +67,6 @@ import galoot.node.AVariableVariableBlock;
 import galoot.node.AWithBlock;
 import galoot.node.PElseifBlock;
 import galoot.node.PEntity;
-import galoot.node.PFilter;
 import galoot.node.PVarExpression;
 import galoot.node.Start;
 import galoot.node.TId;
@@ -95,6 +94,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -184,7 +184,7 @@ public class Interpreter extends DepthFirstAdapter
     }
 
     protected Object evaluateObject(Object object, List<TMember> members,
-                                    List<PFilter> filters)
+                                    int nFilters)
     {
         if (object != null && members != null && members.size() > 0)
         {
@@ -198,10 +198,14 @@ public class Interpreter extends DepthFirstAdapter
                     context);
         }
 
+        // pop off the last N filters from the stack
+        LinkedList<Pair<String, String>> filters = new LinkedList<Pair<String, String>>();
+        for (int i = 0; i < nFilters; ++i)
+            filters.addFirst(filterStack.removeLast());
+
         // apply the filters
-        for (int i = 0, size = filters != null ? filters.size() : 0; i < size; ++i)
+        for (Pair<String, String> nextFilter : filters)
         {
-            Pair<String, String> nextFilter = filterStack.removeLast();
             Filter filter = context.getFilterMap().getFilter(
                     nextFilter.getFirst());
             if (filter == null)
@@ -228,16 +232,15 @@ public class Interpreter extends DepthFirstAdapter
         String referent = TemplateUtils.stripEncasedString(node.getReferent()
                 .getText(), '"', '\'');
         variableStack.push(evaluateObject(referent, node.getMembers(), node
-                .getFilters()));
+                .getFilters().size()));
     }
 
     @Override
     public void outANumberVarExpression(ANumberVarExpression node)
     {
-        variableStack
-                .push(evaluateObject(NumberUtils.createNumber(node
-                        .getReferent().getText()), node.getMembers(), node
-                        .getFilters()));
+        variableStack.push(evaluateObject(NumberUtils.createNumber(node
+                .getReferent().getText()), node.getMembers(), node.getFilters()
+                .size()));
     }
 
     @Override
@@ -258,10 +261,10 @@ public class Interpreter extends DepthFirstAdapter
         // first things first, see if the full "dot" expression is in the map
         Object object = context.getVariable(fullDotExpression);
         if (object != null)
-            object = evaluateObject(object, null, node.getFilters());
+            object = evaluateObject(object, null, node.getFilters().size());
         else
             object = evaluateObject(context.getVariable(referent), members,
-                    node.getFilters());
+                    node.getFilters().size());
         variableStack.push(object);
     }
 
@@ -332,7 +335,7 @@ public class Interpreter extends DepthFirstAdapter
         // pop the filter arg off of the var stack, if it exists
         String arg = node.getArg() != null ? variableStack.pop().toString()
                 : "";
-        filterStack.addFirst(new Pair<String, String>(name, arg));
+        filterStack.addLast(new Pair<String, String>(name, arg));
     }
 
     @Override
@@ -796,11 +799,14 @@ public class Interpreter extends DepthFirstAdapter
         StringBuffer filteredData = filterBlockData.pop();
         Object output = filteredData.toString();
 
+        // pop off the last N filters from the stack
+        LinkedList<Pair<String, String>> filters = new LinkedList<Pair<String, String>>();
+        for (int i = 0, size = node.getFilters().size(); i < size; ++i)
+            filters.addFirst(filterStack.removeLast());
+
         // apply the filters
-        for (int i = 0, size = node.getFilters().size(); i < size
-                && output != null; ++i)
+        for (Pair<String, String> nextFilter : filters)
         {
-            Pair<String, String> nextFilter = filterStack.removeLast();
             Filter filter = context.getFilterMap().getFilter(
                     nextFilter.getFirst());
 
@@ -816,9 +822,7 @@ public class Interpreter extends DepthFirstAdapter
                                 : new String[0]);
             }
         }
-
-        if (output != null)
-            finishString(output.toString());
+        finishString(ObjectUtils.toString(output, ""));
     }
 
     @Override
