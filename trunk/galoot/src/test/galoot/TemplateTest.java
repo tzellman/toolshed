@@ -786,10 +786,6 @@ public class TemplateTest extends TestCase
             t = new Template("{{ 'string2' }}");
             output = t.render(context);
             assertEquals(output, "string2");
-
-            t = new Template("{{ 'st'|cat:rings}}");
-            output = t.render(context);
-            assertEquals(output, "strings");
         }
         catch (IOException e)
         {
